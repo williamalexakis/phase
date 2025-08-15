@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Project
+build/
+tests/
+examples/
+
+# C
+*.o
+*.out
+*.cgen
+*.exe
+*.c~
+
+# zirc
+zirc
