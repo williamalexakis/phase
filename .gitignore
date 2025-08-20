@@ -3,7 +3,7 @@
 .AppleDouble
 .LSOverride
 
-# Project
+# Directories
 build/
 tests/
 examples/
@@ -15,5 +15,5 @@ examples/
 *.exe
 *.c~
 
-# zirc
+# Project
 zirc
