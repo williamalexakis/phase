@@ -4,7 +4,8 @@
 
 int main(int argc, char **argv) {
 
-    // Check if not enough args or help flag is used
+    // Check if not enough args provided or
+    // the help flag is used
     if (argc < 2 || strcmp(argv[1], "--help") == 0) {
 
         // Display error and exit
@@ -24,13 +25,13 @@ int main(int argc, char **argv) {
 
     }
 
-    unsigned int temp_buffer = 256;
-    char input_content[temp_buffer];
+    unsigned int max_line_size = 256;
+    char line_buffer[max_line_size];
 
-    // Read file content and print it
-    while (fgets(input_content, temp_buffer, input_file)) {
+    // Print each line of the file until EOF reached
+    while (fgets(line_buffer, max_line_size, input_file)) {
 
-            printf("%s", input_content);
+            printf("%s", line_buffer);
 
     }
 
