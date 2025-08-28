@@ -1,3 +1,4 @@
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -346,7 +347,7 @@ void vector_push(void ***items, size_t *len, size_t *cap, void *elt) {
         *cap = *cap ? *cap * 2 : 8;
         *items = realloc(*items, *cap * sizeof(void*));
 
-        if (!*items) {
+        if (!items) {
 
             fprintf(stderr, "[zirc] ERROR: OUT OF MEMORY\n");
             free(items);
@@ -436,7 +437,7 @@ AstExpression *parse_expression(Parser *parser) {
 
     }
 
-    fprintf(stderr, "[zirc] ERROR (LINE %d): EXPECTED EXPRSESION\n", parser->look.line);
+    fprintf(stderr, "[zirc] ERROR (LINE %d): EXPECTED EXPRESSION\n", parser->look.line);
     exit(1);
 
 }
@@ -525,70 +526,330 @@ AstProgram *parse_program(Parser *parser) {
 
 }
 
-/* AST printer */
+void free_expression(AstExpression *expression) {
 
-void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
-
-void print_expression(AstExpression *expression, int ind) {
+    if (!expression) return;
 
     switch (expression->tag) {
 
-        case E_STRING:
-
-            indent(ind);
-            printf("EXPRESSION (STRING) \"%s\"\n", expression->str_lit.value);
-            break;
+        case E_STRING: free(expression->str_lit.value); break;
 
     }
 
+    free(expression);
+
 }
 
-void print_statement(AstStatement *statement, int ind) {
+void free_statement(AstStatement *statement) {
+
+    if (!statement) return;
 
     switch (statement->tag) {
 
-        case S_OUT:
-
-            indent(ind);
-            printf("STATEMENT (OUT)");
-            print_expression(statement->out.expression, ind + 4);
-            break;
+        case S_OUT: free_expression(statement->out.expression); break;
 
     }
 
-}
-
-void print_block(AstBlock *block, int ind) {
-
-    indent(ind);
-    printf("BLOCK\n");
-
-    for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 4);
+    free(statement);
 
 }
 
-void print_declaration(AstDeclare *declare, int ind) {
+void free_block(AstBlock *block) {
+
+    if (!block) return;
+
+    for (size_t i = 0; i < block->len; i++) free_statement(block->statements[i]);
+
+    free(block->statements);
+    free(block);
+
+}
+
+void free_declaration(AstDeclare *declare) {
+
+    if (!declare) return;
 
     switch (declare->tag) {
 
-        case DECL_ENTRY:
+        case DECL_ENTRY: free_block(declare->entry.block); break;
 
-            indent(ind);
-            printf("DECLARATION (ENTRY)\n");
-            print_block(declare->entry.block, ind + 4);
-            break;
+    }
+
+    free(declare);
+
+}
+
+void free_program(AstProgram *program) {
+
+    if (!program) return;
+
+    for (size_t i = 0; i < program->len; i++);
+
+    free(program->decls);
+    free(program);
+
+}
+
+/* Codegen */
+
+typedef struct {
+
+    FILE *output;
+    int indent;
+
+} Emitter;
+
+void emit(Emitter *emitter, const char *str) { fputs(str, emitter->output); }
+void emit_char(Emitter *emitter, char c) { fputc(c, emitter->output); }
+void indent_increase(Emitter *emitter) { emitter->indent += 4; }
+void indent_decrease(Emitter *emitter) { emitter->indent -= 4; }
+
+void emit_newline(Emitter *emitter) {
+
+    fputc('\n', emitter->output);
+    for (int i = 0; i < emitter->indent; i++) fputc(' ', emitter->output);
+
+}
+
+char *escape_c_str(const char *str) {
+
+    size_t cap = strlen(str) * 2 + 16;
+    char *output = malloc(cap);
+
+    if (!output) {
+
+        fprintf(stderr, "[zirc] ERROR: OUT OF MEMORY\n");
+        free(output);
+
+        exit(1);
+
+    };
+
+    size_t n = 0;
+
+    for (size_t i = 0; str[i]; i++) {
+
+        unsigned char c = (unsigned char)str[i];
+
+        if (n + 4 >= cap) {
+
+            cap *= 2;
+            output = realloc(output, cap);
+
+        }
+
+        if (c == '\"') {
+
+            output[n++] = '\\';
+            output[n++] = '\"';
+
+        } else if (c == '\\') {
+
+            output[n++] = '\\';
+            output[n++] = '\\';
+
+        } else if (c == '\n') {
+
+            output[n++] = '\\';
+            output[n++] = 'n';
+
+        } else if (c == '\t') {
+
+            output[n++] = '\\';
+            output[n++] = 't';
+
+        } else if (c < 32) {
+
+            n += (size_t)sprintf(output + n, "\\x%02x", c);
+
+        } else {
+
+            output[n++] = (char)c;
+
+        }
+
+    }
+
+    output[n] = '\0';
+
+    return output;
+
+}
+
+void emit_expression(Emitter *emitter, AstExpression *expression) {
+
+    switch (expression->tag) {
+
+        case E_STRING: {
+
+            char *escape = escape_c_str(expression->str_lit.value);
+
+            emit(emitter, "\"");
+            emit(emitter, escape);
+            emit(emitter, "\\n\"");
+
+            free(escape);
+
+        } break;
 
     }
 
 }
 
-void print_program(AstProgram *program) {
+void emit_statement(Emitter *emitter, AstStatement *statement) {
 
-    printf("PROGRAM\n");
+    switch (statement->tag) {
 
-    for (size_t i = 0; i < program->len; i++) print_declaration(program->decls[i], 4);
+        case S_OUT: {
+
+            emit(emitter, "printf(");
+            emit_expression(emitter, statement->out.expression);
+            emit(emitter, ");");
+
+        } break;
+
+    }
 
 }
+
+void emit_block(Emitter *emitter, AstBlock *block) {
+
+    emit(emitter, "{");
+    indent_increase(emitter);
+    emit_newline(emitter);
+
+    for (size_t i = 0; i < block->len; i++) emit_statement(emitter, block->statements[i]);
+
+    indent_decrease(emitter);
+    emit_newline(emitter);
+    emit(emitter, "}");
+    emit_newline(emitter);
+
+}
+
+void emit_declaration(Emitter *emitter, AstDeclare *declare, bool *entry_exists) {
+
+    switch (declare->tag) {
+
+        case DECL_ENTRY: {
+
+            if (*entry_exists) {
+
+                fprintf(stderr, "[zirc] ERROR: CANNOT HAVE MULTIPLE PROGRAM ENTRYPOINTS\n");
+                exit(1);
+
+            }
+
+            emit(emitter, "int main(void) ");
+            emit(emitter, "{");
+            indent_increase(emitter);
+            emit_newline(emitter);
+
+            AstBlock *block = declare->entry.block;
+
+            for (size_t i = 0; i < block->len; i++) emit_statement(emitter, block->statements[i]);
+
+            emit_newline(emitter);
+            indent_increase(emitter);
+            emit(emitter, "\nreturn 0;");
+            emit_newline(emitter);
+            indent_decrease(emitter);
+            emit(emitter, "}");
+            emit_newline(emitter);
+
+            *entry_exists = true;
+
+        } break;
+
+    }
+
+}
+
+void emit_program(Emitter *emitter, AstProgram *program) {
+
+    emit(emitter, "#include <stdio.h>\n");
+    emit_newline(emitter);
+    bool entry_exists = false;
+
+    for (size_t i = 0; i < program->len; i++) {
+
+        emit_declaration(emitter, program->decls[i], &entry_exists);
+
+    }
+
+    if (!entry_exists) {
+
+        fprintf(stderr, "[zirc] ERROR: NO PROGRAM ENTRYPOINT FOUND\n");
+        exit(1);
+
+    }
+
+}
+
+// /* AST printer */
+
+// void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
+
+// void print_expression(AstExpression *expression, int ind) {
+
+//     switch (expression->tag) {
+
+//         case E_STRING:
+
+//             indent(ind);
+//             printf("EXPRESSION (STRING) \"%s\"\n", expression->str_lit.value);
+//             break;
+
+//     }
+
+// }
+
+// void print_statement(AstStatement *statement, int ind) {
+
+//     switch (statement->tag) {
+
+//         case S_OUT:
+
+//             indent(ind);
+//             printf("STATEMENT (OUT)");
+//             print_expression(statement->out.expression, ind + 4);
+//             break;
+
+//     }
+
+// }
+
+// void print_block(AstBlock *block, int ind) {
+
+//     indent(ind);
+//     printf("BLOCK\n");
+
+//     for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 4);
+
+// }
+
+// void print_declaration(AstDeclare *declare, int ind) {
+
+//     switch (declare->tag) {
+
+//         case DECL_ENTRY:
+
+//             indent(ind);
+//             printf("DECLARATION (ENTRY)\n");
+//             print_block(declare->entry.block, ind + 4);
+//             break;
+
+//     }
+
+// }
+
+// void print_program(AstProgram *program) {
+
+//     printf("PROGRAM\n");
+
+//     for (size_t i = 0; i < program->len; i++) print_declaration(program->decls[i], 4);
+
+// }
 
 /* Main */
 int main(int argc, char **argv) {
@@ -612,7 +873,7 @@ int main(int argc, char **argv) {
     FILE *input_file = fopen(argv[1], "r");  // Open the input file
 
     // Check if file is not found
-    if (input_file == NULL) {
+    if (!input_file) {
 
         fprintf(stderr, "[zirc] ERROR: INPUT FILE '%s' NOT FOUND\n", argv[1]);
         exit(1);
@@ -643,12 +904,28 @@ int main(int argc, char **argv) {
 
     fclose(input_file);
 
+    FILE *output_file = fopen(argv[2], "w");
+
+    if (!output_file) {
+
+        fprintf(stderr, "[zirc] ERROR: OUTPUT FILE '%s' NOT FOUND\n", argv[2]);
+        exit(1);
+
+    }
+
     // Initialize lexer
     Lexer lexer = { .src = file_content, .pos = 0, .line = 1 };
     Parser parser = init_parser(&lexer);
     AstProgram *program = parse_program(&parser);
+    Emitter emitter = { .output = output_file, .indent = 0 };
 
-    print_program(program);
+    emit_program(&emitter, program);
+
+    fclose(output_file);
+
+    free_program(program);
+    free_token(&parser.look);
+    free(file_content);
 
     // Display the tokenized form of the source
     // file, including the src lexemes and line
@@ -693,8 +970,24 @@ int main(int argc, char **argv) {
 
     // }
 
-    free(file_content);
-
     return 0;
 
 }
+
+/*
+ * TODO:
+ * - Decipher all this shit
+ * - Figure out why indentation emition is autistic
+ * - Make error manager with separate .c/.h files
+ * - Improve error display system
+ * - Make funcs out of token/AST display and add
+ *   them as --flagged options
+ * - Add --flag to just print output to stdout
+ * - Add --flag for emitting .o file or running
+ *   output directly instead, plus --flag to specify
+ *   the C compiler path to do either of these
+ * - Add some more documentation to the parser and
+ *   codegen
+ * - Begin the file modularization process (we're
+ *   cooked)
+ */
