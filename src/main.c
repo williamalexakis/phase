@@ -705,6 +705,7 @@ void emit_statement(Emitter *emitter, AstStatement *statement) {
             emit(emitter, "printf(");
             emit_expression(emitter, statement->out.expression);
             emit(emitter, ");");
+            emit_newline(emitter);
 
         } break;
 
@@ -749,11 +750,10 @@ void emit_declaration(Emitter *emitter, AstDeclare *declare, bool *entry_exists)
 
             for (size_t i = 0; i < block->len; i++) emit_statement(emitter, block->statements[i]);
 
-            emit_newline(emitter);
-            indent_increase(emitter);
-            emit(emitter, "\nreturn 0;");
-            emit_newline(emitter);
+            emit_newline(emitter); emit_newline(emitter);
+            emit(emitter, "return 0;");
             indent_decrease(emitter);
+            emit_newline(emitter);
             emit(emitter, "}");
             emit_newline(emitter);
 
@@ -976,8 +976,6 @@ int main(int argc, char **argv) {
 
 /*
  * TODO:
- * - Decipher all this shit
- * - Figure out why indentation emition is autistic
  * - Make error manager with separate .c/.h files
  * - Improve error display system
  * - Make funcs out of token/AST display and add
