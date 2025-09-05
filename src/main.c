@@ -1,9 +1,9 @@
-#include <stdatomic.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "errors.c"
 
 /* Lexer */
 
@@ -148,7 +148,7 @@ Token lex_ident_or_kw(Lexer *lexer) {
 
     if (!lexeme) {
 
-        fprintf(stderr, "[zirc] ERROR: OUT OF MEMORY\n");
+        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(lexeme);
 
         exit(1);
@@ -180,14 +180,7 @@ Token lex_string(Lexer *lexer) {
 
         if (c == '\0') {
 
-            fprintf(stderr, "[zirc] ERROR: UNTERMINATED STRING (LINE %d)\n", line);
-            exit(1);
-
-        }
-
-        if (c == '\n') {
-
-            fprintf(stderr, "[zirc] ERROR: NEWLINE IN STRING LITERAL (LINE %d)\n", line);
+            fprintf(stderr, "[phasec] ERROR: UNTERMINATED STRING (LINE %d)\n", line);
             exit(1);
 
         }
@@ -205,7 +198,7 @@ Token lex_string(Lexer *lexer) {
 
     if (!lexeme) {
 
-        fprintf(stderr, "[zirc] ERROR: OUT OF MEMORY\n");
+        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(lexeme);
 
         exit(1);
@@ -275,7 +268,7 @@ struct AstProgram {
 // Declarations
 typedef enum {
 
-    DECL_ENTRY
+    D_ENTRY
 
 } DeclareTag;
 
@@ -349,7 +342,7 @@ void vector_push(void ***items, size_t *len, size_t *cap, void *elt) {
 
         if (!items) {
 
-            fprintf(stderr, "[zirc] ERROR: OUT OF MEMORY\n");
+            fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
             free(items);
 
             exit(1);
@@ -414,7 +407,7 @@ void expect(Parser *parser, TokenType t_type,const char *message) {
 
     if (!match(parser, t_type)) {
 
-        fprintf(stderr, "[zirc] ERROR (LINE %d): EXPECTED %s\n", parser->look.line, message);
+        fprintf(stderr, "[phasec] ERROR (LINE %d): EXPECTED %s\n", parser->look.line, message);
         exit(1);
 
     }
@@ -437,7 +430,7 @@ AstExpression *parse_expression(Parser *parser) {
 
     }
 
-    fprintf(stderr, "[zirc] ERROR (LINE %d): EXPECTED EXPRESSION\n", parser->look.line);
+    fprintf(stderr, "[phasec] ERROR (LINE %d): EXPECTED EXPRESSION\n", parser->look.line);
     exit(1);
 
 }
@@ -460,7 +453,7 @@ AstStatement *parse_statement(Parser *parser) {
 
     }
 
-    fprintf(stderr, "[zirc] ERROR (LINE %d): EXPECTED STATEMENT\n", parser->look.line);
+    fprintf(stderr, "[phasec] ERROR (LINE %d): EXPECTED STATEMENT\n", parser->look.line);
     exit(1);
 
 }
@@ -491,7 +484,7 @@ AstDeclare *parse_entry_decl(Parser *parser) {
     AstBlock *block = parse_block(parser);
     AstDeclare *declare = calloc(1, sizeof(*declare));
 
-    declare->tag = DECL_ENTRY;
+    declare->tag = D_ENTRY;
     declare->line = line;
     declare->entry.block = block;
 
@@ -513,7 +506,7 @@ AstProgram *parse_program(Parser *parser) {
 
         } else {
 
-            fprintf(stderr, "[zirc] ERROR (LINE %d): UNEXPECTED TOPLEVEL TOKEN\n", parser->look.line);
+            fprintf(stderr, "[phasec] ERROR (LINE %d): UNEXPECTED TOPLEVEL TOKEN\n", parser->look.line);
             exit(1);
 
         }
@@ -571,7 +564,7 @@ void free_declaration(AstDeclare *declare) {
 
     switch (declare->tag) {
 
-        case DECL_ENTRY: free_block(declare->entry.block); break;
+        case D_ENTRY: free_block(declare->entry.block); break;
 
     }
 
@@ -599,10 +592,10 @@ typedef struct {
 
 } Emitter;
 
-void emit(Emitter *emitter, const char *str) { fputs(str, emitter->output); }
-void emit_char(Emitter *emitter, char c) { fputc(c, emitter->output); }
-void indent_increase(Emitter *emitter) { emitter->indent += 4; }
-void indent_decrease(Emitter *emitter) { emitter->indent -= 4; }
+void emit(Emitter *emitter, const char *str) { fputs(str, emitter->output); }  /* Emit a string */
+void emit_char(Emitter *emitter, char c) { fputc(c, emitter->output); }  /* Emit a char */
+void indent_increase(Emitter *emitter) { emitter->indent += 4; }  /* Increment the indent */
+void indent_decrease(Emitter *emitter) { emitter->indent -= 4; }  /* Decrement the indent */
 
 void emit_newline(Emitter *emitter) {
 
@@ -618,7 +611,7 @@ char *escape_c_str(const char *str) {
 
     if (!output) {
 
-        fprintf(stderr, "[zirc] ERROR: OUT OF MEMORY\n");
+        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(output);
 
         exit(1);
@@ -732,11 +725,11 @@ void emit_declaration(Emitter *emitter, AstDeclare *declare, bool *entry_exists)
 
     switch (declare->tag) {
 
-        case DECL_ENTRY: {
+        case D_ENTRY: {
 
             if (*entry_exists) {
 
-                fprintf(stderr, "[zirc] ERROR: CANNOT HAVE MULTIPLE PROGRAM ENTRYPOINTS\n");
+                fprintf(stderr, "[phasec] ERROR: CANNOT HAVE MULTIPLE PROGRAM ENTRYPOINTS\n");
                 exit(1);
 
             }
@@ -750,7 +743,7 @@ void emit_declaration(Emitter *emitter, AstDeclare *declare, bool *entry_exists)
 
             for (size_t i = 0; i < block->len; i++) emit_statement(emitter, block->statements[i]);
 
-            emit_newline(emitter); emit_newline(emitter);
+            emit_newline(emitter);
             emit(emitter, "return 0;");
             indent_decrease(emitter);
             emit_newline(emitter);
@@ -779,7 +772,7 @@ void emit_program(Emitter *emitter, AstProgram *program) {
 
     if (!entry_exists) {
 
-        fprintf(stderr, "[zirc] ERROR: NO PROGRAM ENTRYPOINT FOUND\n");
+        fprintf(stderr, "[phasec] ERROR: NO PROGRAM ENTRYPOINT FOUND\n");
         exit(1);
 
     }
@@ -855,17 +848,16 @@ void emit_program(Emitter *emitter, AstProgram *program) {
 int main(int argc, char **argv) {
 
     // Check if not enough args are provided
-    if (argc < 2) {
+    if (argc < 1) {
 
-        fprintf(stderr, "[zirc] ERROR: INSUFFICIENT ARGUMENTS PROVIDED\n");
-        exit(1);
+        error_no_args();
 
     }
 
     // Check if help flag is used
     if (strcmp(argv[1], "--help") == 0) {
 
-        fprintf(stderr, "[zirc] USAGE: zirc <input.zrc> <output.c>\n");
+        fprintf(stderr, "[phasec] USAGE: zirc <input.zrc> <output.c>\n");
         exit(0);
 
     }
@@ -875,7 +867,7 @@ int main(int argc, char **argv) {
     // Check if file is not found
     if (!input_file) {
 
-        fprintf(stderr, "[zirc] ERROR: INPUT FILE '%s' NOT FOUND\n", argv[1]);
+        fprintf(stderr, "[phasec] ERROR: INPUT FILE '%s' NOT FOUND\n", argv[1]);
         exit(1);
 
     }
@@ -890,7 +882,7 @@ int main(int argc, char **argv) {
 
     if (!file_content) {
 
-        fprintf(stderr, "[zirc] ERROR: OUT OF MEMORY\n");
+        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(file_content);
         fclose(input_file);
 
@@ -908,7 +900,7 @@ int main(int argc, char **argv) {
 
     if (!output_file) {
 
-        fprintf(stderr, "[zirc] ERROR: OUTPUT FILE '%s' NOT FOUND\n", argv[2]);
+        fprintf(stderr, "[phasec] ERROR: OUTPUT FILE NOT FOUND\n");
         exit(1);
 
     }
