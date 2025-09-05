@@ -1,3 +1,3 @@
-# zirc
+# phasec
 
-A minimal transpiler for the **Zircon** programming language that emits C code
+A minimal compiler for the **Phase** programming language
