@@ -1,6 +1,14 @@
 #ifndef COLOURS_H
 #define COLOURS_H
 
-#define END ""
+#define RESET "\e[0m"
+
+#define FG_WHITE "\e[0;97m"
+#define FG_BLUE "\e[0;94m"
+#define FG_RED "\e[0;91m"
+#define FG_GREEN "\e[0;92m"
+
+#define BG_RED "\e[0;101m"
+#define BG_GREEN "\e[0;102m"
 
 #endif

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(zirc LANGUAGES C)
-
+project(phasec LANGUAGES C)
 
 set(CMAKE_C_COMPILER /opt/homebrew/bin/gcc-15)
 set(CMAKE_C_STANDARD 17)
@@ -16,5 +15,4 @@ add_executable(${PROJECT_NAME} ${SRC_FILES} ${HDR_FILES})
 target_compile_options(${PROJECT_NAME} PRIVATE
     -Wall
     -Wextra
-    -pedantic
 )
