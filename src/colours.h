@@ -7,6 +7,10 @@
 #define FG_BLUE "\e[0;94m"
 #define FG_RED "\e[0;91m"
 #define FG_GREEN "\e[0;92m"
+#define FG_CYAN "\e[0;96m"
+#define FG_PURPLE "\e[0;95m"
+
+#define FG_RED_BOLD "\e[1;91m"
 
 #define BG_RED "\e[0;101m"
 #define BG_GREEN "\e[0;102m"

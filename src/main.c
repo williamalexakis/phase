@@ -5,6 +5,71 @@
 #include <stdbool.h>
 #include "codegen.c"
 
+static void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
+
+static void print_expression(AstExpression *expression, int ind) {
+
+    switch (expression->tag) {
+
+        case E_STRING:
+
+            indent(ind);
+            printf("╰ EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->str_lit.value, RESET);
+            break;
+
+    }
+
+}
+
+static void print_statement(AstStatement *statement, int ind) {
+
+    switch (statement->tag) {
+
+        case S_OUT:
+
+            indent(ind);
+            printf("╰ STATEMENT (%sOUT%s)\n", FG_CYAN, RESET);
+            print_expression(statement->out.expression, ind + 8);
+            break;
+
+    }
+
+}
+
+static void print_block(AstBlock *block, int ind) {
+
+    indent(ind);
+    printf("╰ BLOCK ╮\n");
+
+    for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 8);
+
+}
+
+static void print_declaration(AstDeclare *declare, int ind) {
+
+    switch (declare->tag) {
+
+        case D_ENTRY:
+
+            indent(ind);
+            printf("╰ DECLARATION (%sENTRY%s)\n", FG_CYAN, RESET);
+            print_block(declare->entry.block, ind + 8);
+            break;
+
+    }
+
+}
+
+static void print_program(AstProgram *program) {
+
+    printf("PROGRAM ╮\n");
+
+    for (size_t i = 0; i < program->len; i++) print_declaration(program->decls[i], 8);
+
+    exit(0);
+
+}
+
 static void display_tokens(Lexer *lexer) {
 
     const char *token_names[] = {
@@ -27,9 +92,10 @@ static void display_tokens(Lexer *lexer) {
 
         Token token = next_token(lexer);
 
-        printf("%s", token_names[token.type]);              // Display token type
-        if (token.lexeme) printf(" \"%s\"", token.lexeme);  // Display the lexeme
-        printf(" [LINE %d]\n", token.line);                 // Display line num
+        printf("%d | ", token.line);                 // Display line num
+        printf("%s%s%s", FG_CYAN, token_names[token.type], RESET);              // Display token type
+        if (token.lexeme) printf(" %s'%s'%s", FG_PURPLE, token.lexeme, RESET);  // Display the lexeme
+        printf("\n");
 
         // Use a linear search to determine if
         // the token has an allocated lexeme
@@ -50,7 +116,14 @@ static void display_tokens(Lexer *lexer) {
 
     }
 
-    printf("\n%sEOF%s\n", FG_RED, RESET);
+    exit(0);
+
+}
+
+static void help_flag() {
+
+    printf("USAGE: %s./phasec <input.phase> <output.c / --output-flag> ...%s\n\n", FG_GREEN, RESET);
+    printf("Flags:\n\t%s--tokens%s\tDisplays the source file as tokens.\n", FG_GREEN, RESET);
     exit(0);
 
 }
@@ -59,25 +132,16 @@ int main(int argc, char **argv) {
 
     bool token_mode = false;
     bool ast_mode = false;
+    char *valid_args[] = {"--help", "--tokens", "--ast"};
+    FILE *output_file = NULL;
 
     // Check if not enough args are provided
-    if (argc < 1) {
+    if (argc < 3) {
 
         fprintf(stderr, "[phasec] ERROR: INSUFFICIENT ARGUMENTS PROVIDED\n");
         exit(1);
 
     }
-
-    // Check if help flag is used
-    if (strcmp(argv[1], "--help") == 0) {
-
-        printf("USAGE: %s./phasec <input.phase> <output.c / --output-flag> ...%s\n\n", FG_GREEN, RESET);
-        printf("Flags:\n\t%s--tokens%s\tDisplays the source file as tokens.\n", FG_GREEN, RESET);
-        exit(0);
-
-    }
-
-    if (strcmp(argv[1], "--tokens")) token_mode = true;
 
     FILE *input_file = fopen(argv[1], "r");  // Open the input file
 
@@ -113,9 +177,31 @@ int main(int argc, char **argv) {
 
     fclose(input_file);
 
-    FILE *output_file = fopen(argv[2], "w");
+    for (int i = 2; i < argc; i++) {
 
-    if (!output_file && !token_mode) {
+        if (strcmp(argv[i], "--help") == 0) {
+
+            help_flag();
+
+        } else if (strcmp(argv[i], "--tokens") == 0) {
+
+            token_mode = true;
+
+        } else if (strcmp(argv[i], "--ast") == 0) {
+
+            ast_mode = true;
+
+        } else {
+
+            fprintf(stderr, "ERROR: UNRECOGNIZED ARGUMENT '%s'\n", argv[i]);
+            exit(1);
+
+        }
+    }
+
+    if (!token_mode && !ast_mode) output_file = fopen(argv[1], "w");
+
+    if (!output_file && !token_mode && !ast_mode) {
 
         error_no_output();
 
@@ -128,6 +214,9 @@ int main(int argc, char **argv) {
 
     Parser parser = init_parser(&lexer);
     AstProgram *program = parse_program(&parser);
+
+    if (ast_mode) print_program(program);
+
     Emitter emitter = { .output = output_file, .indent = 0 };
 
     emit_program(&emitter, program);
@@ -139,72 +228,6 @@ int main(int argc, char **argv) {
     free(file_content);
 
     printf("%s%s[phasec] PROGRAM BUILT%s\n", FG_BLUE, BG_GREEN, RESET);
-
-    // /* AST printer */
-
-    // static void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
-
-    // static void print_expression(AstExpression *expression, int ind) {
-
-    //     switch (expression->tag) {
-
-    //         case E_STRING:
-
-    //             indent(ind);
-    //             printf("EXPRESSION (STRING) \"%s\"\n", expression->str_lit.value);
-    //             break;
-
-    //     }
-
-    // }
-
-    // static void print_statement(AstStatement *statement, int ind) {
-
-    //     switch (statement->tag) {
-
-    //         case S_OUT:
-
-    //             indent(ind);
-    //             printf("STATEMENT (OUT)\n");
-    //             print_expression(statement->out.expression, ind + 4);
-    //             break;
-
-    //     }
-
-    // }
-
-    // static void print_block(AstBlock *block, int ind) {
-
-    //     indent(ind);
-    //     printf("BLOCK\n");
-
-    //     for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 4);
-
-    // }
-
-    // static void print_declaration(AstDeclare *declare, int ind) {
-
-    //     switch (declare->tag) {
-
-    //         case DECL_ENTRY:
-
-    //             indent(ind);
-    //             printf("DECLARATION (ENTRY)\n");
-    //             print_block(declare->entry.block, ind + 4);
-    //             break;
-
-    //     }
-
-    // }
-
-    // static void print_program(AstProgram *program) {
-
-    //     printf("PROGRAM\n");
-
-    //     for (size_t i = 0; i < program->len; i++) print_declaration(program->decls[i], 4);
-
-    // }
-
 
     return 0;
 

@@ -20,7 +20,7 @@ typedef enum {
 
 static void error_no_output() {
 
-    fprintf(stderr, "%s%sERROR [%d]: Output file not found%s\n\n", FG_WHITE, BG_RED, E_OFNF, RESET);
+    fprintf(stderr, "%sERROR [%d]: Output file not found%s\n\n", FG_RED_BOLD, E_OFNF, RESET);
     fprintf(stderr, "%sNote:%s A path to an output file is required unless an output flag is used.\n", FG_BLUE, RESET);
     exit(1);
 
