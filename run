@@ -1,0 +1,11 @@
+#!/bin/zsh
+
+cd build
+
+if [ ! -f "CMakeCache.txt" ]; then
+    cmake ..
+fi
+
+cmake --build .
+echo ""
+./phase "$@"

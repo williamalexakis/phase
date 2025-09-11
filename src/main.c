@@ -132,14 +132,12 @@ int main(int argc, char **argv) {
 
     bool token_mode = false;
     bool ast_mode = false;
-    char *valid_args[] = {"--help", "--tokens", "--ast"};
     FILE *output_file = NULL;
 
     // Check if not enough args are provided
-    if (argc < 3) {
+    if (argc < 2) {
 
-        fprintf(stderr, "[phasec] ERROR: INSUFFICIENT ARGUMENTS PROVIDED\n");
-        exit(1);
+        error_no_args();
 
     }
 
@@ -148,8 +146,7 @@ int main(int argc, char **argv) {
     // Check if file is not found
     if (!input_file) {
 
-        fprintf(stderr, "[phasec] ERROR: INPUT FILE '%s' NOT FOUND\n", argv[1]);
-        exit(1);
+        error_ifnf(argv[1]);
 
     }
 
@@ -163,11 +160,9 @@ int main(int argc, char **argv) {
 
     if (!file_content) {
 
-        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(file_content);
         fclose(input_file);
-
-        exit(1);
+        error_oom();
 
     }
 
@@ -193,29 +188,51 @@ int main(int argc, char **argv) {
 
         } else {
 
-            fprintf(stderr, "ERROR: UNRECOGNIZED ARGUMENT '%s'\n", argv[i]);
+            error_invalid_arg(argv[i]);
+
+        }
+
+    }
+
+    // Check if we are outputing a
+    // compiled file (this is temporary
+    // until I get the bytecode VM
+    // running)
+    if (!token_mode && !ast_mode) {
+
+        output_file = fopen(argv[2], "w");
+
+        // Placeholder handling for no output file
+        if (!output_file) {
+
+            fprintf(stderr, "WRONG OUTPUT PATH\n");
             exit(1);
 
         }
-    }
-
-    if (!token_mode && !ast_mode) output_file = fopen(argv[1], "w");
-
-    if (!output_file && !token_mode && !ast_mode) {
-
-        error_no_output();
 
     }
 
     // Initialize lexer
     Lexer lexer = { .src = file_content, .pos = 0, .line = 1 };
 
-    if (token_mode) display_tokens(&lexer);
+    if (token_mode) {
+
+        display_tokens(&lexer);
+        free(file_content);
+
+    }
 
     Parser parser = init_parser(&lexer);
     AstProgram *program = parse_program(&parser);
 
-    if (ast_mode) print_program(program);
+    if (ast_mode) {
+
+        print_program(program);
+        free_program(program);
+        free_token(&parser.look);
+        free(file_content);
+
+    }
 
     Emitter emitter = { .output = output_file, .indent = 0 };
 

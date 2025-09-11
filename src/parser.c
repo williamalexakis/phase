@@ -1,4 +1,5 @@
 #include "lexer.c"
+#include <stddef.h>
 
 typedef struct AstProgram AstProgram;
 typedef struct AstDeclare AstDeclare;
@@ -86,17 +87,18 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *elt) {
 
     if (*len + 1 > *cap) {
 
-        *cap = *cap ? *cap * 2 : 8;
-        *items = realloc(*items, *cap * sizeof(void*));
+        size_t new_cap = *cap ? *cap * 2 : 8;
+        void **new_items = realloc(*items, new_cap * sizeof(void*));
 
         if (!items) {
 
             fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
-            free(items);
-
             exit(1);
 
-        };
+        }
+
+        *items = new_items;
+        *cap = new_cap;
 
     }
 
@@ -121,12 +123,11 @@ static Parser init_parser(Lexer *lexer) {
 
 static void free_token(Token *token) {
 
-    TokenType heap_tokens[3] = {T_OUT, T_ENTRY, T_STRING};
+    TokenType heap_tokens[] = {T_OUT, T_ENTRY, T_STRING};
     size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
     bool needs_freeing = is_heap_lexeme(*token, heap_tokens, ht_len);
 
     if (token->lexeme && needs_freeing) free(token->lexeme);
-    token->lexeme = NULL;
 
 }
 
@@ -313,7 +314,10 @@ static void free_declaration(AstDeclare *declare) {
 
     switch (declare->tag) {
 
-        case D_ENTRY: free_block(declare->entry.block); break;
+        case D_ENTRY:
+
+            free_block(declare->entry.block);
+            break;
 
     }
 
@@ -325,7 +329,7 @@ static void free_program(AstProgram *program) {
 
     if (!program) return;
 
-    for (size_t i = 0; i < program->len; i++);
+    for (size_t i = 0; i < program->len; i++) free_declaration(program->decls[i]);
 
     free(program->decls);
     free(program);
