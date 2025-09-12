@@ -29,7 +29,7 @@ static void print_statement(AstStatement *statement, int ind) {
 
             indent(ind);
             printf("╰ STATEMENT (%sOUT%s)\n", FG_CYAN, RESET);
-            print_expression(statement->out.expression, ind + 8);
+            print_expression(statement->out.expression, ind + 6);
             break;
 
     }
@@ -39,9 +39,9 @@ static void print_statement(AstStatement *statement, int ind) {
 static void print_block(AstBlock *block, int ind) {
 
     indent(ind);
-    printf("╰ BLOCK ╮\n");
+    printf("╰ BLOCK\n");
 
-    for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 8);
+    for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 6);
 
 }
 
@@ -53,7 +53,7 @@ static void print_declaration(AstDeclare *declare, int ind) {
 
             indent(ind);
             printf("╰ DECLARATION (%sENTRY%s)\n", FG_CYAN, RESET);
-            print_block(declare->entry.block, ind + 8);
+            print_block(declare->entry.block, ind + 6);
             break;
 
     }
@@ -62,9 +62,9 @@ static void print_declaration(AstDeclare *declare, int ind) {
 
 static void print_program(AstProgram *program) {
 
-    printf("PROGRAM ╮\n");
+    printf("PROGRAM\n");
 
-    for (size_t i = 0; i < program->len; i++) print_declaration(program->decls[i], 8);
+    for (size_t i = 0; i < program->len; i++) print_declaration(program->decls[i], 6);
 
     exit(0);
 
@@ -122,8 +122,11 @@ static void display_tokens(Lexer *lexer) {
 
 static void help_flag() {
 
-    printf("USAGE: %s./phasec <input.phase> <output.c / --output-flag> ...%s\n\n", FG_GREEN, RESET);
-    printf("Flags:\n\t%s--tokens%s\tDisplays the source file as tokens.\n", FG_GREEN, RESET);
+    printf("Usage: %s./phase <input.phase> <output.c / --output-flag> ...%s\n\n", FG_GREEN, RESET);
+    printf("Flags:\n");
+    printf("\t%s--help%s : Displays usage information.\n", FG_GREEN, RESET);
+    printf("\t%s--tokens%s : Displays the source file as its tokens.\n", FG_GREEN, RESET);
+    printf("\t%s--ast%s : Displays the source file as the AST.\n", FG_GREEN, RESET);
     exit(0);
 
 }

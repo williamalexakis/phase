@@ -81,7 +81,7 @@ static void error_multiple_entry() {
 
 static void error_no_entry() {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Multiple program entrypoints found%s\n|\n", FG_RED_BOLD, E_NO_ENTRY, RESET);
+    fprintf(stderr, "╭ %sERROR [%d]: No program entrypoint found%s\n|\n", FG_RED_BOLD, E_NO_ENTRY, RESET);
     fprintf(stderr, "╰ %sNote:%s An 'entry' block must be used.\n", FG_BLUE, RESET);
     exit(1);
 
