@@ -26,10 +26,9 @@ static char *escape_c_str(const char *str) {
 
     if (!output) {
 
-        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(output);
 
-        exit(1);
+        error_oom();
 
     };
 
@@ -144,8 +143,7 @@ static void emit_declaration(Emitter *emitter, AstDeclare *declare, bool *entry_
 
             if (*entry_exists) {
 
-                fprintf(stderr, "[phasec] ERROR: CANNOT HAVE MULTIPLE PROGRAM ENTRYPOINTS\n");
-                exit(1);
+                error_multiple_entry();
 
             }
 
@@ -187,8 +185,7 @@ static void emit_program(Emitter *emitter, AstProgram *program) {
 
     if (!entry_exists) {
 
-        fprintf(stderr, "[phasec] ERROR: NO PROGRAM ENTRYPOINT FOUND\n");
-        exit(1);
+        error_no_entry();
 
     }
 

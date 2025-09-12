@@ -92,8 +92,7 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *elt) {
 
         if (!items) {
 
-            fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
-            exit(1);
+            error_oom();
 
         }
 
@@ -157,8 +156,7 @@ static void expect(Parser *parser, TokenType t_type,const char *message) {
 
     if (!match(parser, t_type)) {
 
-        fprintf(stderr, "[phasec] ERROR (LINE %d): EXPECTED %s\n", parser->look.line, message);
-        exit(1);
+        error_expect_generic(parser->look.line, message);
 
     }
 
@@ -180,8 +178,7 @@ static AstExpression *parse_expression(Parser *parser) {
 
     }
 
-    fprintf(stderr, "[phasec] ERROR (LINE %d): EXPECTED EXPRESSION\n", parser->look.line);
-    exit(1);
+    error_expect_expression(parser->look.line);
 
 }
 
@@ -203,8 +200,7 @@ static AstStatement *parse_statement(Parser *parser) {
 
     }
 
-    fprintf(stderr, "[phasec] ERROR (LINE %d): EXPECTED STATEMENT\n", parser->look.line);
-    exit(1);
+    error_expect_statement(parser->look.line);
 
 }
 
@@ -256,8 +252,7 @@ static AstProgram *parse_program(Parser *parser) {
 
         } else {
 
-            fprintf(stderr, "[phasec] ERROR (LINE %d): UNEXPECTED TOPLEVEL TOKEN\n", parser->look.line);
-            exit(1);
+            error_invalid_token(parser->look.line);
 
         }
 

@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
     free_token(&parser.look);
     free(file_content);
 
-    printf("%s%s[phasec] PROGRAM BUILT%s\n", FG_BLUE, BG_GREEN, RESET);
+    printf("%sPROGRAM BUILT%s\n", BG_GREEN, RESET);
 
     return 0;
 

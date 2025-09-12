@@ -146,10 +146,8 @@ static Token lex_ident_or_kw(Lexer *lexer) {
 
     if (!lexeme) {
 
-        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(lexeme);
-
-        exit(1);
+        error_oom();
 
     }
 
@@ -178,8 +176,7 @@ static Token lex_string(Lexer *lexer) {
 
         if (c == '\0') {
 
-            fprintf(stderr, "[phasec] ERROR: UNTERMINATED STRING (LINE %d)\n", line);
-            exit(1);
+            error_open_str(lexer->line);
 
         }
 
@@ -196,10 +193,8 @@ static Token lex_string(Lexer *lexer) {
 
     if (!lexeme) {
 
-        fprintf(stderr, "[phasec] ERROR: OUT OF MEMORY\n");
         free(lexeme);
-
-        exit(1);
+        error_oom();
 
     }
 
