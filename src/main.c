@@ -123,7 +123,7 @@ static void display_tokens(Lexer *lexer) {
 
 static void help_flag() {
 
-    printf("Usage: %s./phase <input.phase> <output.c / --output-flag> ...%s\n\n", FG_GREEN, RESET);
+    printf("Usage: %s./phase <input.phase> ...%s\n\n", FG_GREEN, RESET);
     printf("Flags:\n");
     printf("\t%s--help%s : Displays usage information.\n", FG_GREEN, RESET);
     printf("\t%s--tokens%s : Displays the source file as its tokens.\n", FG_GREEN, RESET);
@@ -136,12 +136,18 @@ int main(int argc, char **argv) {
 
     bool token_mode = false;
     bool ast_mode = false;
-    FILE *output_file = NULL;
 
     // Check if not enough args are provided
     if (argc < 2) {
 
         error_no_args();
+
+    }
+
+    // Check if it's just the --help flag
+    if (strcmp(argv[1], "--help") == 0) {
+
+        help_flag();
 
     }
 
@@ -164,7 +170,6 @@ int main(int argc, char **argv) {
 
     if (!file_content) {
 
-        free(file_content);
         fclose(input_file);
         error_oom();
 

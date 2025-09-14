@@ -146,7 +146,6 @@ static Token lex_ident_or_kw(Lexer *lexer) {
 
     if (!lexeme) {
 
-        free(lexeme);
         error_oom();
 
     }
@@ -193,7 +192,6 @@ static Token lex_string(Lexer *lexer) {
 
     if (!lexeme) {
 
-        free(lexeme);
         error_oom();
 
     }
