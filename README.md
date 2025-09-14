@@ -1,3 +1,3 @@
 # phase
 
-A minimal compiler for the **Phase** programming language
+A minimal interpreter with a bytecode VM for the **Phase** programming language

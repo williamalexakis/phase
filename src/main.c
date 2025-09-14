@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "codegen.c"
+#include "colours.h"
 
 static void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
 
@@ -197,24 +198,6 @@ int main(int argc, char **argv) {
 
     }
 
-    // Check if we are outputing a
-    // compiled file (this is temporary
-    // until I get the bytecode VM
-    // running)
-    if (!token_mode && !ast_mode) {
-
-        output_file = fopen(argv[2], "w");
-
-        // Placeholder handling for no output file
-        if (!output_file) {
-
-            fprintf(stderr, "WRONG OUTPUT PATH\n");
-            exit(1);
-
-        }
-
-    }
-
     // Initialize lexer
     Lexer lexer = { .src = file_content, .pos = 0, .line = 1 };
 
@@ -237,17 +220,24 @@ int main(int argc, char **argv) {
 
     }
 
-    Emitter emitter = { .output = output_file, .indent = 0 };
+    if (!token_mode && !ast_mode) {
 
-    emit_program(&emitter, program);
+        Emitter emitter = {0};
+        emit_program(&emitter, program);
 
-    fclose(output_file);
+        VM vm = {0};
+        init_vm(&vm, emitter.constants, emitter.const_count, emitter.code, emitter.code_len);
+        interpret(&vm);
 
-    free_program(program);
-    free_token(&parser.look);
-    free(file_content);
+        free_vm(&vm);
+        free_emitter(&emitter);
+        free_program(program);
+        free_token(&parser.look);
+        free(file_content);
 
-    printf("%sPROGRAM BUILT%s\n", BG_GREEN, RESET);
+        printf("\n%sPROGRAM EXECUTED%s\n", BG_GREEN, RESET);
+
+    }
 
     return 0;
 
