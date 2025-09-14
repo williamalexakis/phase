@@ -16,5 +16,5 @@ examples/
 *.c~
 
 # Project
-phasec
-run.sh
+phase
+run
