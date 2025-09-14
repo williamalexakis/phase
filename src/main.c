@@ -1,8 +1,3 @@
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include "codegen.c"
 #include "colours.h"
 
@@ -240,7 +235,7 @@ int main(int argc, char **argv) {
         free_token(&parser.look);
         free(file_content);
 
-        printf("\n%sPROGRAM EXECUTED%s\n", BG_GREEN, RESET);
+        printf("\n%sPROGRAM EXECUTED%s\n", FG_GREEN_BOLD, RESET);
 
     }
 

@@ -1,5 +1,4 @@
 #include "lexer.c"
-#include <stddef.h>
 
 typedef struct AstProgram AstProgram;
 typedef struct AstDeclare AstDeclare;
