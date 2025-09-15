@@ -1,46 +1,11 @@
 #include "lexer.c"
 
-typedef struct AstProgram AstProgram;
-typedef struct AstDeclare AstDeclare;
-typedef struct AstBlock AstBlock;
-typedef struct AstStatement AstStatement;
-typedef struct AstExpression AstExpression;
-
-// Program
-struct AstProgram {
-
-    AstDeclare **decls;
-    size_t len, cap;
-
-};
-
 // Declarations
 typedef enum {
 
     D_ENTRY
 
-} DeclareTag;
-
-struct AstDeclare {
-
-    DeclareTag tag;
-    int line;
-
-    union {
-
-        struct { AstBlock *block; } entry;
-
-    };
-
-};
-
-// Block
-struct AstBlock {
-
-    AstStatement **statements;
-    size_t len, cap;
-
-};
+} DeclarationTag;
 
 // Statements
 typedef enum {
@@ -49,19 +14,6 @@ typedef enum {
 
 } StatementTag;
 
-struct AstStatement {
-
-    StatementTag tag;
-    int line;
-
-    union {
-
-        struct { AstExpression *expression; } out;
-
-    };
-
-};
-
 // Expressions
 typedef enum {
 
@@ -69,7 +21,7 @@ typedef enum {
 
 } ExpressionTag;
 
-struct AstExpression {
+typedef struct {
 
     ExpressionTag tag;
     int line;
@@ -80,9 +32,66 @@ struct AstExpression {
 
     };
 
-};
+} AstExpression;
 
-static void vector_push(void ***items, size_t *len, size_t *cap, void *elt) {
+typedef struct {
+
+    StatementTag tag;
+    int line;
+
+    union {
+
+        struct { AstExpression *expression; } out;
+
+    };
+
+} AstStatement;
+
+// Block
+typedef struct {
+
+    AstStatement **statements;
+    size_t len, cap;
+
+} AstBlock;
+
+typedef struct {
+
+    DeclarationTag tag;
+    int line;
+
+    union {
+
+        struct { AstBlock *block; } entry;
+
+    };
+
+} AstDeclaration;
+
+// Program
+typedef struct {
+
+    AstDeclaration **declarations;
+    size_t len, cap;
+
+} AstProgram;
+
+typedef struct {
+
+    Lexer *lexer;
+    Token look;
+
+} Parser;
+
+static Parser init_parser(Lexer *lexer) {
+
+    Parser parser = { .lexer = lexer, .look = next_token(lexer) };
+
+    return parser;
+
+}
+
+static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
 
     if (*len + 1 > *cap) {
 
@@ -100,26 +109,15 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *elt) {
 
     }
 
-    (*items)[(*len)++] = elt;
-
-}
-
-typedef struct {
-
-    Lexer *lexer;
-    Token look;
-
-} Parser;
-
-static Parser init_parser(Lexer *lexer) {
-
-    Parser parser = { .lexer = lexer, .look = next_token(lexer) };
-
-    return parser;
+    (*items)[(*len)++] = item;
 
 }
 
 static void free_token(Token *token) {
+
+    // TODO: Fix the heap allocation and
+    // detection system here so it isn't
+    // garbage
 
     TokenType heap_tokens[] = {T_OUT, T_ENTRY, T_STRING};
     size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
@@ -221,19 +219,19 @@ static AstBlock *parse_block(Parser *parser) {
 
 }
 
-static AstDeclare *parse_entry_decl(Parser *parser) {
+static AstDeclaration *parse_entry_decl(Parser *parser) {
 
     int line = parser->look.line;
     expect(parser, T_ENTRY, "'entry'");
 
     AstBlock *block = parse_block(parser);
-    AstDeclare *declare = calloc(1, sizeof(*declare));
+    AstDeclaration *declaration = calloc(1, sizeof(*declaration));
 
-    declare->tag = D_ENTRY;
-    declare->line = line;
-    declare->entry.block = block;
+    declaration->tag = D_ENTRY;
+    declaration->line = line;
+    declaration->entry.block = block;
 
-    return declare;
+    return declaration;
 
 }
 
@@ -243,7 +241,7 @@ static AstProgram *parse_program(Parser *parser) {
 
     while (parser->look.type != T_EOF) {
 
-        AstDeclare *declare = NULL;
+        AstDeclaration *declare = NULL;
 
         if (parser->look.type == T_ENTRY) {
 
@@ -255,7 +253,7 @@ static AstProgram *parse_program(Parser *parser) {
 
         }
 
-        vector_push((void***)&program->decls, &program->len, &program->cap, declare);
+        vector_push((void***)&program->declarations, &program->len, &program->cap, declare);
 
     }
 
@@ -263,6 +261,7 @@ static AstProgram *parse_program(Parser *parser) {
 
 }
 
+/* AST freeing */
 static void free_expression(AstExpression *expression) {
 
     if (!expression) return;
@@ -302,20 +301,20 @@ static void free_block(AstBlock *block) {
 
 }
 
-static void free_declaration(AstDeclare *declare) {
+static void free_declaration(AstDeclaration *declaration) {
 
-    if (!declare) return;
+    if (!declaration) return;
 
-    switch (declare->tag) {
+    switch (declaration->tag) {
 
         case D_ENTRY:
 
-            free_block(declare->entry.block);
+            free_block(declaration->entry.block);
             break;
 
     }
 
-    free(declare);
+    free(declaration);
 
 }
 
@@ -323,9 +322,9 @@ static void free_program(AstProgram *program) {
 
     if (!program) return;
 
-    for (size_t i = 0; i < program->len; i++) free_declaration(program->decls[i]);
+    for (size_t i = 0; i < program->len; i++) free_declaration(program->declarations[i]);
 
-    free(program->decls);
+    free(program->declarations);
     free(program);
 
 }
