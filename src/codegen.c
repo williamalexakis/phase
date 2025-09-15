@@ -159,7 +159,7 @@ static void emit_block(Emitter *emitter, AstBlock *block) {
 
 }
 
-static void emit_declaration(Emitter *emitter, AstDeclare *declare, bool *entry_exists) {
+static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *entry_exists) {
 
     switch (declare->tag) {
 
@@ -189,7 +189,7 @@ static void emit_program(Emitter *emitter, AstProgram *program) {
 
     for (size_t i = 0; i < program->len; i++) {
 
-        emit_declaration(emitter, program->decls[i], &entry_exists);
+        emit_declaration(emitter, program->declarations[i], &entry_exists);
 
     }
 
