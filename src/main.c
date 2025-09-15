@@ -41,7 +41,7 @@ static void print_block(AstBlock *block, int ind) {
 
 }
 
-static void print_declaration(AstDeclare *declare, int ind) {
+static void print_declaration(AstDeclaration *declare, int ind) {
 
     switch (declare->tag) {
 
@@ -60,7 +60,7 @@ static void print_program(AstProgram *program) {
 
     printf("PROGRAM\n");
 
-    for (size_t i = 0; i < program->len; i++) print_declaration(program->decls[i], 6);
+    for (size_t i = 0; i < program->len; i++) print_declaration(program->declarations[i], 6);
 
     exit(0);
 
