@@ -5,14 +5,14 @@
 
 typedef enum {
 
-    T_EOF,      // EOF
-    T_NEWLINE,  // \n
-    T_LBRACE,   // {
-    T_RBRACE,   // }
-    T_ENTRY,    // entry
-    T_OUT,      // out
-    T_STRING,   // "string"
-    T_UNKNOWN   // Any unrecognized lexeme
+    TOK_EOF,      // EOF
+    TOK_NEWLINE,  // \n
+    TOK_LBRACE,   // {
+    TOK_RBRACE,   // }
+    TOK_ENTRY,    // entry
+    TOK_OUT,      // out
+    TOK_STRING,   // "string"
+    TOK_UNKNOWN   // Any unrecognized lexeme
 
 } TokenType;
 
@@ -151,10 +151,10 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     memcpy(lexeme, lexer->src + start, len);  // Copy str from memory
     lexeme[len] = '\0';  // Add a null terminator so str ops don't explode
 
-    if (strcmp(lexeme, "entry") == 0) return make_token(T_ENTRY, lexeme, line);
-    if (strcmp(lexeme, "out") == 0) return make_token(T_OUT, lexeme, line);
+    if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line);
+    if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line);
 
-    return make_token(T_UNKNOWN, lexeme, line);  // Unrecognized lexeme
+    return make_token(TOK_UNKNOWN, lexeme, line);  // Unrecognized lexeme
 
 }
 
@@ -199,7 +199,7 @@ static Token lex_string(Lexer *lexer) {
 
     advance_lexer(lexer);  // Skip closing "
 
-    return make_token(T_STRING, lexeme, line);
+    return make_token(TOK_STRING, lexeme, line);
 
 }
 
@@ -213,16 +213,16 @@ static Token next_token(Lexer *lexer) {
 
     char c = peek(lexer);
 
-    if (c == '\0') return make_token(T_EOF, NULL, lexer->line);
-    if (c == '{') { advance_lexer(lexer); return make_token(T_LBRACE, "{", lexer->line); }
-    if (c == '}') { advance_lexer(lexer); return make_token(T_RBRACE, "}", lexer->line); }
+    if (c == '\0') return make_token(TOK_EOF, NULL, lexer->line);
+    if (c == '{') { advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line); }
+    if (c == '}') { advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line); }
     if (c == '"') return lex_string(lexer);
     if (is_ident_start(c)) return lex_ident_or_kw(lexer);
 
     // Fallback if char is unrecognized
     advance_lexer(lexer);
 
-    return make_token(T_UNKNOWN, NULL, lexer->line);
+    return make_token(TOK_UNKNOWN, NULL, lexer->line);
 
 }
 

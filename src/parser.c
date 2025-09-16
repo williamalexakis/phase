@@ -3,21 +3,21 @@
 // Declarations
 typedef enum {
 
-    D_ENTRY
+    DEC_ENTRY
 
 } DeclarationTag;
 
 // Statements
 typedef enum {
 
-    S_OUT
+    STM_OUT
 
 } StatementTag;
 
 // Expressions
 typedef enum {
 
-    E_STRING
+    EXP_STRING
 
 } ExpressionTag;
 
@@ -119,7 +119,7 @@ static void free_token(Token *token) {
     // detection system here so it isn't
     // garbage
 
-    TokenType heap_tokens[] = {T_OUT, T_ENTRY, T_STRING};
+    TokenType heap_tokens[] = {TOK_OUT, TOK_ENTRY, TOK_STRING};
     size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
     bool needs_freeing = is_heap_lexeme(*token, heap_tokens, ht_len);
 
@@ -129,7 +129,7 @@ static void free_token(Token *token) {
 
 static void advance_parser(Parser *parser) {
 
-    if (parser->look.type != T_EOF) free_token(&parser->look);
+    if (parser->look.type != TOK_EOF) free_token(&parser->look);
 
     parser->look = next_token(parser->lexer);
 
@@ -161,11 +161,11 @@ static void expect(Parser *parser, TokenType t_type,const char *message) {
 
 static AstExpression *parse_expression(Parser *parser) {
 
-    if (parser->look.type == T_STRING) {
+    if (parser->look.type == TOK_STRING) {
 
         AstExpression *expression = calloc(1, sizeof(*expression));
 
-        expression->tag = E_STRING;
+        expression->tag = EXP_STRING;
         expression->line = parser->look.line;
         expression->str_lit.value = strdup(parser->look.lexeme ? parser->look.lexeme : "");
 
@@ -181,7 +181,7 @@ static AstExpression *parse_expression(Parser *parser) {
 
 static AstStatement *parse_statement(Parser *parser) {
 
-    if (parser->look.type == T_OUT) {
+    if (parser->look.type == TOK_OUT) {
 
         int line = parser->look.line;
         advance_parser(parser);
@@ -189,7 +189,7 @@ static AstStatement *parse_statement(Parser *parser) {
         AstExpression *expression = parse_expression(parser);
         AstStatement *statement = calloc(1, sizeof(*statement));
 
-        statement->tag = S_OUT;
+        statement->tag = STM_OUT;
         statement->line = line;
         statement->out.expression = expression;
 
@@ -203,17 +203,17 @@ static AstStatement *parse_statement(Parser *parser) {
 
 static AstBlock *parse_block(Parser *parser) {
 
-    expect(parser, T_LBRACE, "'{'");
+    expect(parser, TOK_LBRACE, "'{'");
     AstBlock *block = calloc(1, sizeof(*block));
 
-    while (parser->look.type != T_RBRACE) {
+    while (parser->look.type != TOK_RBRACE) {
 
         AstStatement *statement = parse_statement(parser);
         vector_push((void***)&block->statements, &block->len, &block->cap, statement);
 
     }
 
-    expect(parser, T_RBRACE, "'}'");
+    expect(parser, TOK_RBRACE, "'}'");
 
     return block;
 
@@ -222,12 +222,12 @@ static AstBlock *parse_block(Parser *parser) {
 static AstDeclaration *parse_entry_decl(Parser *parser) {
 
     int line = parser->look.line;
-    expect(parser, T_ENTRY, "'entry'");
+    expect(parser, TOK_ENTRY, "'entry'");
 
     AstBlock *block = parse_block(parser);
     AstDeclaration *declaration = calloc(1, sizeof(*declaration));
 
-    declaration->tag = D_ENTRY;
+    declaration->tag = DEC_ENTRY;
     declaration->line = line;
     declaration->entry.block = block;
 
@@ -239,11 +239,11 @@ static AstProgram *parse_program(Parser *parser) {
 
     AstProgram *program = calloc(1, sizeof(*program));
 
-    while (parser->look.type != T_EOF) {
+    while (parser->look.type != TOK_EOF) {
 
         AstDeclaration *declare = NULL;
 
-        if (parser->look.type == T_ENTRY) {
+        if (parser->look.type == TOK_ENTRY) {
 
             declare = parse_entry_decl(parser);
 
@@ -268,7 +268,7 @@ static void free_expression(AstExpression *expression) {
 
     switch (expression->tag) {
 
-        case E_STRING: free(expression->str_lit.value); break;
+        case EXP_STRING: free(expression->str_lit.value); break;
 
     }
 
@@ -282,7 +282,7 @@ static void free_statement(AstStatement *statement) {
 
     switch (statement->tag) {
 
-        case S_OUT: free_expression(statement->out.expression); break;
+        case STM_OUT: free_expression(statement->out.expression); break;
 
     }
 
@@ -307,7 +307,7 @@ static void free_declaration(AstDeclaration *declaration) {
 
     switch (declaration->tag) {
 
-        case D_ENTRY:
+        case DEC_ENTRY:
 
             free_block(declaration->entry.block);
             break;

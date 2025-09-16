@@ -116,7 +116,7 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
     switch (expression->tag) {
 
-        case E_STRING: {
+        case EXP_STRING: {
 
             Value value = {
 
@@ -138,7 +138,7 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
     switch (statement->tag) {
 
-        case S_OUT: {
+        case STM_OUT: {
 
             emit_expression(emitter, statement->out.expression);
             emit_byte(emitter, OP_PRINT);
@@ -163,7 +163,7 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
     switch (declare->tag) {
 
-        case D_ENTRY: {
+        case DEC_ENTRY: {
 
             if (*entry_exists) {
 

@@ -7,7 +7,7 @@ static void print_expression(AstExpression *expression, int ind) {
 
     switch (expression->tag) {
 
-        case E_STRING:
+        case EXP_STRING:
 
             indent(ind);
             printf("╰ EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->str_lit.value, RESET);
@@ -21,7 +21,7 @@ static void print_statement(AstStatement *statement, int ind) {
 
     switch (statement->tag) {
 
-        case S_OUT:
+        case STM_OUT:
 
             indent(ind);
             printf("╰ STATEMENT (%sOUT%s)\n", FG_CYAN, RESET);
@@ -45,7 +45,7 @@ static void print_declaration(AstDeclaration *declare, int ind) {
 
     switch (declare->tag) {
 
-        case D_ENTRY:
+        case DEC_ENTRY:
 
             indent(ind);
             printf("╰ DECLARATION (%sENTRY%s)\n", FG_CYAN, RESET);
@@ -95,7 +95,7 @@ static void display_tokens(Lexer *lexer) {
 
         // Use a linear search to determine if
         // the token has an allocated lexeme
-        const TokenType heap_tokens[3] = {T_OUT, T_ENTRY, T_STRING};
+        const TokenType heap_tokens[3] = {TOK_OUT, TOK_ENTRY, TOK_STRING};
         const size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
         const bool needs_freeing = is_heap_lexeme(token, heap_tokens, ht_len);
 
@@ -108,7 +108,7 @@ static void display_tokens(Lexer *lexer) {
 
         }
 
-        if (token.type == T_EOF) break;
+        if (token.type == TOK_EOF) break;
 
     }
 
