@@ -13,10 +13,11 @@ typedef enum {
     ERR_INVALID_TOK,
     ERR_MANY_ENTRY,
     ERR_NO_ENTRY,
+    ERR_TYPE_MISMATCH,
 
     ERR_NO_ARGS,
     ERR_INVALID_ARG,
-    ERR_IFNF,
+    ERR_NO_INPUT
 
 } ErrorType;
 
@@ -105,8 +106,16 @@ static void error_invalid_arg(const char *arg) {
 
 static void error_ifnf(const char *name) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Input file '%s' not found%s\n|\n", FG_RED_BOLD, ERR_IFNF, name, RESET);
+    fprintf(stderr, "╭ %sERROR [%d]: Input file '%s' not found%s\n|\n", FG_RED_BOLD, ERR_NO_INPUT, name, RESET);
     fprintf(stderr, "╰ %sNote:%s A valid input file path is required (e.g. path/to/file.phase).\n", FG_BLUE, RESET);
+    exit(1);
+
+}
+
+static void error_type_mismatch(const char *var_name, const char *expected_type, const char *actual_type) {
+
+    fprintf(stderr, "╭ %sERROR [%d]: Type mismatch for variable '%s'%s\n|\n", FG_RED_BOLD, ERR_TYPE_MISMATCH, var_name, RESET);
+    fprintf(stderr, "╰ %sNote:%s Expected %s, but got %s.\n", FG_BLUE, RESET, expected_type, actual_type);
     exit(1);
 
 }

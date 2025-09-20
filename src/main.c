@@ -13,6 +13,20 @@ static void print_expression(AstExpression *expression, int ind) {
             printf("╰ EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->str_lit.value, RESET);
             break;
 
+        case EXP_INTEGER:
+
+            indent(ind);
+            printf("╰ EXPRESSION (%sINTEGER%s) [%s%d%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->int_lit.value, RESET);
+            break;
+
+        case EXP_VARIABLE:
+
+            indent(ind);
+            printf("╰ EXPRESSION (%sVARIABLE%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->variable.name, RESET);
+            break;
+
+
+
     }
 
 }
@@ -26,6 +40,24 @@ static void print_statement(AstStatement *statement, int ind) {
             indent(ind);
             printf("╰ STATEMENT (%sOUT%s)\n", FG_CYAN, RESET);
             print_expression(statement->out.expression, ind + 6);
+            break;
+
+        case STM_ASSIGN:
+
+            indent(ind);
+            printf("╰ STATEMENT (%sASSIGN%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, statement->assign.var_name, RESET);
+            print_expression(statement->assign.expression, ind + 6);
+            break;
+
+        case STM_VAR_DECL:
+
+            indent(ind);
+            printf("╰ STATEMENT (%sVAR_DECL%s) [%s%s%s %s%s%s]\n", FG_CYAN, RESET, 
+                   FG_PURPLE, statement->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET,
+                   FG_PURPLE, statement->var_decl.var_name, RESET);
+            if (statement->var_decl.init_expr) {
+                print_expression(statement->var_decl.init_expr, ind + 6);
+            }
             break;
 
     }
@@ -50,6 +82,14 @@ static void print_declaration(AstDeclaration *declare, int ind) {
             indent(ind);
             printf("╰ DECLARATION (%sENTRY%s)\n", FG_CYAN, RESET);
             print_block(declare->entry.block, ind + 6);
+            break;
+
+        case DEC_VAR:
+
+            indent(ind);
+            printf("╰ DECLARATION (%sVAR%s) [%s%s%s %s%s%s]\n", FG_CYAN, RESET,
+                   FG_PURPLE, declare->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET,
+                   FG_PURPLE, declare->var_decl.var_name ? declare->var_decl.var_name : "(anonymous)", RESET);
             break;
 
     }
@@ -77,6 +117,8 @@ static void display_tokens(Lexer *lexer) {
         "ENTRY",
         "OUT",
         "STRING",
+        "INTEGER",
+        "VARIABLE",
         "UNKNOWN"
 
     };
@@ -89,13 +131,24 @@ static void display_tokens(Lexer *lexer) {
         Token token = next_token(lexer);
 
         printf("%d | ", token.line);                 // Display line num
-        printf("%s%s%s", FG_CYAN, token_names[token.type], RESET);              // Display token type
+        printf("%s%s%s", FG_CYAN, (char*)token.type, RESET);              // Display token type
         if (token.lexeme) printf(" %s'%s'%s", FG_PURPLE, token.lexeme, RESET);  // Display the lexeme
         printf("\n");
 
         // Use a linear search to determine if
         // the token has an allocated lexeme
-        const TokenType heap_tokens[3] = {TOK_OUT, TOK_ENTRY, TOK_STRING};
+        const TokenType heap_tokens[] = {
+
+            TOK_OUT,
+            TOK_ENTRY,
+            TOK_STRING_T,
+            TOK_INTEGER_T,
+            TOK_STRING_LIT,
+            TOK_INTEGER_LIT,
+            TOK_VARIABLE
+
+        };
+
         const size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
         const bool needs_freeing = is_heap_lexeme(token, heap_tokens, ht_len);
 

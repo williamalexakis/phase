@@ -5,13 +5,16 @@ typedef enum {
 
     OP_PUSH_CONST,
     OP_PRINT,
+    OP_SET_VAR,
+    OP_GET_VAR,
     OP_HALT
 
 } Opcode;
 
 typedef enum {
 
-    VAL_STRING
+    VAL_STRING,
+    VAL_INTEGER
 
 } ValueType;
 
@@ -22,6 +25,7 @@ typedef struct {
     union {
 
         char *str;
+        int integer;
 
     } as;
 
@@ -37,6 +41,11 @@ typedef struct {
     size_t const_count;
     size_t const_cap;
 
+    char **var_names;
+    TokenType *var_types;
+    size_t var_count;
+    size_t var_cap;
+
 } Emitter;
 
 static void init_emitter(Emitter *emitter) {
@@ -48,6 +57,11 @@ static void init_emitter(Emitter *emitter) {
     emitter->constants = NULL;
     emitter->const_count = 0;
     emitter->const_cap = 0;
+
+    emitter->var_names = NULL;
+    emitter->var_types = NULL;
+    emitter->var_count = 0;
+    emitter->var_cap = 0;
 
 }
 
@@ -66,6 +80,13 @@ static void free_emitter(Emitter *emitter) {
     }
 
     free(emitter->constants);
+
+    for (size_t i = 0; i < emitter->var_count; i++) {
+        free(emitter->var_names[i]);
+    }
+
+    free(emitter->var_names);
+    free(emitter->var_types);
 
 }
 
@@ -112,6 +133,79 @@ static size_t add_constant(Emitter *emitter, Value value) {
 
 }
 
+static size_t add_variable(Emitter *emitter, const char *name, TokenType type) {
+
+    if (emitter->var_count + 1 > emitter->var_cap) {
+
+        size_t new_cap = emitter->var_cap ? emitter->var_cap * 2 : 8;
+        emitter->var_names = realloc(emitter->var_names, new_cap * sizeof(char*));
+        emitter->var_types = realloc(emitter->var_types, new_cap * sizeof(TokenType));
+
+        if (!emitter->var_names || !emitter->var_types) error_oom();
+
+        emitter->var_cap = new_cap;
+
+    }
+
+    emitter->var_names[emitter->var_count] = strdup(name);
+    emitter->var_types[emitter->var_count] = type;
+
+    return emitter->var_count++;
+
+}
+
+static size_t find_variable(Emitter *emitter, const char *name) {
+
+    for (size_t i = 0; i < emitter->var_count; i++) {
+
+        if (strcmp(emitter->var_names[i], name) == 0) {
+
+            return i;
+
+        }
+
+    }
+
+    return SIZE_MAX;  // Not found
+
+}
+
+static TokenType get_variable_type(Emitter *emitter, size_t var_indx) {
+
+    if (var_indx >= emitter->var_count) {
+        return TOK_UNKNOWN;
+    }
+
+    return emitter->var_types[var_indx];
+
+}
+
+static TokenType get_expression_type(Emitter *emitter, AstExpression *expression) {
+
+    switch (expression->tag) {
+        case EXP_STRING: return TOK_STRING_T;
+        case EXP_INTEGER: return TOK_INTEGER_T;
+        case EXP_VARIABLE: {
+            size_t var_indx = find_variable(emitter, expression->variable.name);
+            if (var_indx == SIZE_MAX) {
+                fprintf(stderr, "UNDEFINED VARIABLE: %s\n", expression->variable.name);
+                exit(1);
+            }
+            return get_variable_type(emitter, var_indx);
+        }
+        default: return TOK_UNKNOWN;
+    }
+
+}
+
+static const char *token_type_to_string(TokenType type) {
+    switch (type) {
+        case TOK_STRING_T: return "str";
+        case TOK_INTEGER_T: return "int";
+        default: return "unknown";
+    }
+}
+
 static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
     switch (expression->tag) {
@@ -130,6 +224,36 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
         } break;
 
+        case EXP_INTEGER: {
+
+            Value value = {
+
+                .type = VAL_INTEGER,
+                .as.integer = expression->int_lit.value
+
+            };
+            size_t indx = add_constant(emitter, value);
+            emit_byte(emitter, OP_PUSH_CONST);
+            emit_u16(emitter, (uint16_t)indx);
+
+        } break;
+
+        case EXP_VARIABLE: {
+
+            size_t var_indx = find_variable(emitter, expression->variable.name);
+
+            if (var_indx == SIZE_MAX) {
+
+                fprintf(stderr, "UNDEFINED VARIABLE: %s\n", expression->variable.name);
+                exit(1);
+
+            }
+
+            emit_byte(emitter, OP_GET_VAR);
+            emit_u16(emitter, (uint16_t)var_indx);
+
+        } break;
+
     }
 
 }
@@ -142,6 +266,55 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
             emit_expression(emitter, statement->out.expression);
             emit_byte(emitter, OP_PRINT);
+
+        } break;
+
+        case STM_ASSIGN: {
+
+            size_t var_indx = find_variable(emitter, statement->assign.var_name);
+
+            if (var_indx == SIZE_MAX) {
+
+                fprintf(stderr, "UNDEFINED VARIABLE: %s\n", statement->assign.var_name);
+                exit(1);
+
+            }
+
+            TokenType var_type = get_variable_type(emitter, var_indx);
+            TokenType expr_type = get_expression_type(emitter, statement->assign.expression);
+
+            if (var_type != expr_type) {
+                error_type_mismatch(statement->assign.var_name, 
+                                   token_type_to_string(var_type), 
+                                   token_type_to_string(expr_type));
+            }
+
+            emit_expression(emitter, statement->assign.expression);
+            emit_byte(emitter, OP_SET_VAR);
+            emit_u16(emitter, (uint16_t)var_indx);
+
+        } break;
+
+        case STM_VAR_DECL: {
+
+            size_t var_indx = add_variable(emitter, statement->var_decl.var_name, statement->var_decl.var_type);
+
+            if (statement->var_decl.init_expr) {
+
+                TokenType var_type = statement->var_decl.var_type;
+                TokenType expr_type = get_expression_type(emitter, statement->var_decl.init_expr);
+
+                if (var_type != expr_type) {
+                    error_type_mismatch(statement->var_decl.var_name, 
+                                       token_type_to_string(var_type), 
+                                       token_type_to_string(expr_type));
+                }
+
+                emit_expression(emitter, statement->var_decl.init_expr);
+                emit_byte(emitter, OP_SET_VAR);
+                emit_u16(emitter, (uint16_t)var_indx);
+
+            }
 
         } break;
 
@@ -174,6 +347,16 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
             emit_block(emitter, declare->entry.block);
 
             *entry_exists = true;
+
+        } break;
+
+        case DEC_VAR: {
+
+            if (declare->var_decl.var_name) {
+
+                add_variable(emitter, declare->var_decl.var_name, declare->var_decl.var_type);
+
+            }
 
         } break;
 
@@ -213,6 +396,9 @@ typedef struct {
 
     size_t pos;  // Instruction pointer (but I just call it position)
 
+    Value *variables;
+    size_t var_count;
+
 } VM;
 
 static void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t code_len) {
@@ -229,11 +415,15 @@ static void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code,
 
     vm->pos = 0;
 
+    vm->variables = calloc(256, sizeof(Value));  // Support up to 256 variables
+    vm->var_count = 256;
+
 }
 
 static void free_vm(VM *vm) {
 
     free(vm->stack);
+    free(vm->variables);
 
 }
 
@@ -310,14 +500,50 @@ static void interpret(VM *vm) {
 
                 Value value = pop(vm);
 
-                if (value.type != VAL_STRING) {
+                if (value.type == VAL_STRING) {
 
-                    fprintf(stderr, "PRINT EXPECTS STRING\n");
+                    printf("%s\n", value.as.str);
+
+                } else if (value.type == VAL_INTEGER) {
+
+                    printf("%d\n", value.as.integer);
+
+                } else {
+
+                    fprintf(stderr, "PRINT EXPECTS STRING OR INTEGER\n");
                     exit(1);
 
                 }
 
-                printf("%s\n", value.as.str);  // Execute print
+            } break;
+
+            case OP_SET_VAR: {
+
+                uint16_t var_indx = read_u16(vm);
+
+                if (var_indx >= vm->var_count) {
+
+                    fprintf(stderr, "INVALID VARIABLE INDEX\n");
+                    exit(1);
+
+                }
+
+                vm->variables[var_indx] = pop(vm);
+
+            } break;
+
+            case OP_GET_VAR: {
+
+                uint16_t var_indx = read_u16(vm);
+
+                if (var_indx >= vm->var_count) {
+
+                    fprintf(stderr, "INVALID VARIABLE INDEX\n");
+                    exit(1);
+
+                }
+
+                push(vm, vm->variables[var_indx]);
 
             } break;
 
