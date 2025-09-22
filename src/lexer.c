@@ -9,6 +9,9 @@ typedef enum {
     TOK_NEWLINE,      // \n
     TOK_LBRACE,       // {
     TOK_RBRACE,       // }
+    TOK_LPAREN,       // (
+    TOK_RPAREN,       // )
+    TOK_COMMA,        // ,
     TOK_ENTRY,        // entry
     TOK_OUT,          // out
     TOK_STRING_T,     // str type
@@ -254,8 +257,12 @@ static Token next_token(Lexer *lexer) {
     if (c == '\0') return make_token(TOK_EOF, NULL, lexer->line);
     if (c == '{') { advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line); }
     if (c == '}') { advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line); }
+    if (c == '(') { advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line); }
+    if (c == ')') { advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line); }
+    if (c == ',') { advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line); }
     if (c == '=') { advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line); }
     if (c == '"') return lex_string(lexer);
+
     if (is_ident_start(c)) return lex_ident_or_kw(lexer);
     if (is_digit(c)) return lex_int(lexer);
 

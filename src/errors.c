@@ -115,7 +115,7 @@ static void error_ifnf(const char *name) {
 static void error_type_mismatch(const char *var_name, const char *expected_type, const char *actual_type) {
 
     fprintf(stderr, "╭ %sERROR [%d]: Type mismatch for variable '%s'%s\n|\n", FG_RED_BOLD, ERR_TYPE_MISMATCH, var_name, RESET);
-    fprintf(stderr, "╰ %sNote:%s Expected %s, but got %s.\n", FG_BLUE, RESET, expected_type, actual_type);
+    fprintf(stderr, "╰ %sNote:%s Expected %s but recieved %s.\n", FG_BLUE, RESET, expected_type, actual_type);
     exit(1);
 
 }

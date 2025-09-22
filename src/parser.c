@@ -50,7 +50,13 @@ typedef struct {
 
         struct { AstExpression *expression; } out;
         struct { char *var_name; AstExpression *expression; } assign;
-        struct { char *var_name; TokenType var_type; AstExpression *init_expr; } var_decl;
+        struct {
+            char **var_names;
+            size_t var_count;
+            TokenType var_type;
+            AstExpression **init_exprs;
+            size_t init_count;
+        } var_decl;
 
     };
 
@@ -72,7 +78,11 @@ typedef struct {
     union {
 
         struct { AstBlock *block; } entry;
-        struct { char *var_name; TokenType var_type; } var_decl;
+        struct {
+            char **var_names;
+            size_t var_count;
+            TokenType var_type;
+        } var_decl;
 
     };
 
@@ -108,11 +118,7 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
         size_t new_cap = *cap ? *cap * 2 : 8;
         void **new_items = realloc(*items, new_cap * sizeof(void*));
 
-        if (!items) {
-
-            error_oom();
-
-        }
+        if (!items) error_oom();
 
         *items = new_items;
         *cap = new_cap;
@@ -170,9 +176,12 @@ static void expect(Parser *parser, TokenType t_type,const char *message) {
 
 static AstExpression *parse_expression(Parser *parser) {
 
+    // String literals
     if (parser->look.type == TOK_STRING_LIT) {
 
         AstExpression *expression = calloc(1, sizeof(*expression));
+
+        if (!expression) error_oom();
 
         expression->tag = EXP_STRING;
         expression->line = parser->look.line;
@@ -184,9 +193,12 @@ static AstExpression *parse_expression(Parser *parser) {
 
     }
 
+    // Integer literals
     if (parser->look.type == TOK_INTEGER_LIT) {
 
         AstExpression *expression = calloc(1, sizeof(*expression));
+
+        if (!expression) error_oom();
 
         expression->tag = EXP_INTEGER;
         expression->line = parser->look.line;
@@ -198,15 +210,28 @@ static AstExpression *parse_expression(Parser *parser) {
 
     }
 
+    // Variable names
     if (parser->look.type == TOK_VARIABLE) {
 
         AstExpression *expression = calloc(1, sizeof(*expression));
+
+        if (!expression) error_oom();
 
         expression->tag = EXP_VARIABLE;
         expression->line = parser->look.line;
         expression->variable.name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
 
         advance_parser(parser);
+
+        return expression;
+
+    }
+
+    if (parser->look.type == TOK_LPAREN) {
+
+        advance_parser(parser);
+        AstExpression *expression = parse_expression(parser);
+        expect(parser, TOK_RPAREN, "')'");
 
         return expression;
 
@@ -223,8 +248,13 @@ static AstStatement *parse_statement(Parser *parser) {
         int line = parser->look.line;
         advance_parser(parser);
 
+        expect(parser, TOK_LPAREN, "'('");
         AstExpression *expression = parse_expression(parser);
+        expect(parser, TOK_RPAREN, "')'");
+
         AstStatement *statement = calloc(1, sizeof(*statement));
+
+        if (!statement) error_oom();
 
         statement->tag = STM_OUT;
         statement->line = line;
@@ -245,6 +275,8 @@ static AstStatement *parse_statement(Parser *parser) {
         AstExpression *expression = parse_expression(parser);
         AstStatement *statement = calloc(1, sizeof(*statement));
 
+        if (!statement) error_oom();
+
         statement->tag = STM_ASSIGN;
         statement->line = line;
         statement->assign.var_name = var_name;
@@ -260,25 +292,87 @@ static AstStatement *parse_statement(Parser *parser) {
         TokenType var_type = parser->look.type;
         advance_parser(parser);
 
-        if (parser->look.type != TOK_VARIABLE) {
-            error_expect_generic(parser->look.line, "variable name");
+        // Parse variable names (either single or grouped in parentheses)
+        char **var_names = NULL;
+        size_t var_count = 0;
+        size_t var_cap = 0;
+
+        if (parser->look.type == TOK_LPAREN) {
+            // Grouped declaration: int (a, b, c)
+            advance_parser(parser); // consume '('
+
+            do {
+                if (parser->look.type != TOK_VARIABLE) {
+                    error_expect_generic(parser->look.line, "variable name");
+                }
+
+                // Expand array if needed
+                if (var_count + 1 > var_cap) {
+                    size_t new_cap = var_cap ? var_cap * 2 : 4;
+                    var_names = realloc(var_names, new_cap * sizeof(char*));
+                    if (!var_names) error_oom();
+                    var_cap = new_cap;
+                }
+
+                var_names[var_count++] = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+                advance_parser(parser);
+
+            } while (match(parser, TOK_COMMA));
+
+            expect(parser, TOK_RPAREN, "')'");
+        } else if (parser->look.type == TOK_VARIABLE) {
+            // Single declaration: int a
+            var_names = malloc(sizeof(char*));
+            if (!var_names) error_oom();
+            var_names[0] = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+            var_count = 1;
+            var_cap = 1;
+            advance_parser(parser);
+        } else {
+            error_expect_generic(parser->look.line, "variable name or '('");
         }
 
-        char *var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
-        advance_parser(parser);
+        // Parse initialization expressions
+        AstExpression **init_exprs = NULL;
+        size_t init_count = 0;
 
-        AstExpression *init_expr = NULL;
-        
         if (match(parser, TOK_ASSIGN)) {
-            init_expr = parse_expression(parser);
+            if (parser->look.type == TOK_LPAREN) {
+                // Grouped initialization: = (5, 10, 15)
+                advance_parser(parser); // consume '('
+
+                size_t init_cap = 0;
+                do {
+                    // Expand array if needed
+                    if (init_count + 1 > init_cap) {
+                        size_t new_cap = init_cap ? init_cap * 2 : 4;
+                        init_exprs = realloc(init_exprs, new_cap * sizeof(AstExpression*));
+                        if (!init_exprs) error_oom();
+                        init_cap = new_cap;
+                    }
+
+                    init_exprs[init_count++] = parse_expression(parser);
+
+                } while (match(parser, TOK_COMMA));
+
+                expect(parser, TOK_RPAREN, "')'");
+            } else {
+                // Single initialization: = 5
+                init_exprs = malloc(sizeof(AstExpression*));
+                if (!init_exprs) error_oom();
+                init_exprs[0] = parse_expression(parser);
+                init_count = 1;
+            }
         }
 
         AstStatement *statement = calloc(1, sizeof(*statement));
         statement->tag = STM_VAR_DECL;
         statement->line = line;
-        statement->var_decl.var_name = var_name;
+        statement->var_decl.var_names = var_names;
+        statement->var_decl.var_count = var_count;
         statement->var_decl.var_type = var_type;
-        statement->var_decl.init_expr = init_expr;
+        statement->var_decl.init_exprs = init_exprs;
+        statement->var_decl.init_count = init_count;
 
         return statement;
 
@@ -328,32 +422,56 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
     TokenType var_type = parser->look.type;
     advance_parser(parser);
 
-    if (parser->look.type == TOK_VARIABLE) {
+    // Parse variable names (either single or grouped in parentheses)
+    char **var_names = NULL;
+    size_t var_count = 0;
+    size_t var_cap = 0;
 
-        char *var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+    if (parser->look.type == TOK_LPAREN) {
+        // Grouped declaration: int (a, b, c)
+        advance_parser(parser); // consume '('
+
+        do {
+            if (parser->look.type != TOK_VARIABLE) {
+                error_expect_generic(parser->look.line, "variable name");
+            }
+
+            // Expand array if needed
+            if (var_count + 1 > var_cap) {
+                size_t new_cap = var_cap ? var_cap * 2 : 4;
+                var_names = realloc(var_names, new_cap * sizeof(char*));
+                if (!var_names) error_oom();
+                var_cap = new_cap;
+            }
+
+            var_names[var_count++] = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+            advance_parser(parser);
+
+        } while (match(parser, TOK_COMMA));
+
+        expect(parser, TOK_RPAREN, "')'");
+    } else if (parser->look.type == TOK_VARIABLE) {
+        // Single declaration: int a
+        var_names = malloc(sizeof(char*));
+        if (!var_names) error_oom();
+        var_names[0] = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+        var_count = 1;
+        var_cap = 1;
         advance_parser(parser);
-
-        AstDeclaration *declaration = calloc(1, sizeof(*declaration));
-
-        declaration->tag = DEC_VAR;
-        declaration->line = line;
-        declaration->var_decl.var_name = var_name;
-        declaration->var_decl.var_type = var_type;
-
-        return declaration;
-
     } else {
-
-        AstDeclaration *declaration = calloc(1, sizeof(*declaration));
-
-        declaration->tag = DEC_VAR;
-        declaration->line = line;
-        declaration->var_decl.var_name = NULL;
-        declaration->var_decl.var_type = var_type;
-
-        return declaration;
-
+        // Anonymous declaration: just int or str
+        var_names = NULL;
+        var_count = 0;
     }
+
+    AstDeclaration *declaration = calloc(1, sizeof(*declaration));
+    declaration->tag = DEC_VAR;
+    declaration->line = line;
+    declaration->var_decl.var_names = var_names;
+    declaration->var_decl.var_count = var_count;
+    declaration->var_decl.var_type = var_type;
+
+    return declaration;
 
 }
 
@@ -411,15 +529,19 @@ static void free_statement(AstStatement *statement) {
     switch (statement->tag) {
 
         case STM_OUT: free_expression(statement->out.expression); break;
-        case STM_ASSIGN: 
+        case STM_ASSIGN:
             free(statement->assign.var_name);
             free_expression(statement->assign.expression);
             break;
         case STM_VAR_DECL:
-            free(statement->var_decl.var_name);
-            if (statement->var_decl.init_expr) {
-                free_expression(statement->var_decl.init_expr);
+            for (size_t i = 0; i < statement->var_decl.var_count; i++) {
+                free(statement->var_decl.var_names[i]);
             }
+            free(statement->var_decl.var_names);
+            for (size_t i = 0; i < statement->var_decl.init_count; i++) {
+                free_expression(statement->var_decl.init_exprs[i]);
+            }
+            free(statement->var_decl.init_exprs);
             break;
 
     }
@@ -452,9 +574,10 @@ static void free_declaration(AstDeclaration *declaration) {
 
         case DEC_VAR:
 
-            if (declaration->var_decl.var_name) {
-                free(declaration->var_decl.var_name);
+            for (size_t i = 0; i < declaration->var_decl.var_count; i++) {
+                free(declaration->var_decl.var_names[i]);
             }
+            free(declaration->var_decl.var_names);
             break;
 
     }

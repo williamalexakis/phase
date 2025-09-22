@@ -52,11 +52,18 @@ static void print_statement(AstStatement *statement, int ind) {
         case STM_VAR_DECL:
 
             indent(ind);
-            printf("╰ STATEMENT (%sVAR_DECL%s) [%s%s%s %s%s%s]\n", FG_CYAN, RESET, 
-                   FG_PURPLE, statement->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET,
-                   FG_PURPLE, statement->var_decl.var_name, RESET);
-            if (statement->var_decl.init_expr) {
-                print_expression(statement->var_decl.init_expr, ind + 6);
+            printf("╰ STATEMENT (%sVAR_DECL%s) [%s%s%s", FG_CYAN, RESET,
+                   FG_PURPLE, statement->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET);
+
+            for (size_t i = 0; i < statement->var_decl.var_count; i++) {
+                if (i == 0) printf(" ");
+                else printf(", ");
+                printf("%s%s%s", FG_PURPLE, statement->var_decl.var_names[i], RESET);
+            }
+            printf("]\n");
+
+            for (size_t i = 0; i < statement->var_decl.init_count; i++) {
+                print_expression(statement->var_decl.init_exprs[i], ind + 6);
             }
             break;
 
@@ -87,9 +94,19 @@ static void print_declaration(AstDeclaration *declare, int ind) {
         case DEC_VAR:
 
             indent(ind);
-            printf("╰ DECLARATION (%sVAR%s) [%s%s%s %s%s%s]\n", FG_CYAN, RESET,
-                   FG_PURPLE, declare->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET,
-                   FG_PURPLE, declare->var_decl.var_name ? declare->var_decl.var_name : "(anonymous)", RESET);
+            printf("╰ DECLARATION (%sVAR%s) [%s%s%s", FG_CYAN, RESET,
+                   FG_PURPLE, declare->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET);
+
+            if (declare->var_decl.var_count == 0) {
+                printf(" (anonymous)");
+            } else {
+                for (size_t i = 0; i < declare->var_decl.var_count; i++) {
+                    if (i == 0) printf(" ");
+                    else printf(", ");
+                    printf("%s%s%s", FG_PURPLE, declare->var_decl.var_names[i], RESET);
+                }
+            }
+            printf("]\n");
             break;
 
     }
@@ -107,6 +124,11 @@ static void print_program(AstProgram *program) {
 }
 
 static void display_tokens(Lexer *lexer) {
+
+    // TODO: Fix this cause it's so broken
+    // but I'm also so lazy to both fix this
+    // and come up with a better way for it
+    // to work
 
     const char *token_names[] = {
 

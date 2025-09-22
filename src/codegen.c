@@ -297,23 +297,32 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
         case STM_VAR_DECL: {
 
-            size_t var_indx = add_variable(emitter, statement->var_decl.var_name, statement->var_decl.var_type);
+            // Check if we have mismatched counts for initialization
+            if (statement->var_decl.init_count > 0 && 
+                statement->var_decl.init_count != statement->var_decl.var_count) {
+                fprintf(stderr, "INITIALIZATION ERROR: %zu variables but %zu initializers\n", 
+                        statement->var_decl.var_count, statement->var_decl.init_count);
+                exit(1);
+            }
 
-            if (statement->var_decl.init_expr) {
+            // Add all variables and handle initialization
+            for (size_t i = 0; i < statement->var_decl.var_count; i++) {
+                size_t var_indx = add_variable(emitter, statement->var_decl.var_names[i], statement->var_decl.var_type);
 
-                TokenType var_type = statement->var_decl.var_type;
-                TokenType expr_type = get_expression_type(emitter, statement->var_decl.init_expr);
+                if (i < statement->var_decl.init_count) {
+                    TokenType var_type = statement->var_decl.var_type;
+                    TokenType expr_type = get_expression_type(emitter, statement->var_decl.init_exprs[i]);
 
-                if (var_type != expr_type) {
-                    error_type_mismatch(statement->var_decl.var_name, 
-                                       token_type_to_string(var_type), 
-                                       token_type_to_string(expr_type));
+                    if (var_type != expr_type) {
+                        error_type_mismatch(statement->var_decl.var_names[i], 
+                                           token_type_to_string(var_type), 
+                                           token_type_to_string(expr_type));
+                    }
+
+                    emit_expression(emitter, statement->var_decl.init_exprs[i]);
+                    emit_byte(emitter, OP_SET_VAR);
+                    emit_u16(emitter, (uint16_t)var_indx);
                 }
-
-                emit_expression(emitter, statement->var_decl.init_expr);
-                emit_byte(emitter, OP_SET_VAR);
-                emit_u16(emitter, (uint16_t)var_indx);
-
             }
 
         } break;
@@ -352,10 +361,8 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
         case DEC_VAR: {
 
-            if (declare->var_decl.var_name) {
-
-                add_variable(emitter, declare->var_decl.var_name, declare->var_decl.var_type);
-
+            for (size_t i = 0; i < declare->var_decl.var_count; i++) {
+                add_variable(emitter, declare->var_decl.var_names[i], declare->var_decl.var_type);
             }
 
         } break;
