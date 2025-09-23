@@ -1,5 +1,6 @@
 #include "parser.c"
 #include <stdint.h>
+#include <stdio.h>
 
 typedef enum {
 
@@ -47,6 +48,25 @@ typedef struct {
     size_t var_cap;
 
 } Emitter;
+
+typedef struct {
+
+    Value *stack;
+    size_t stack_count;
+    size_t stack_cap;
+
+    Value *constants;
+    size_t const_count;
+
+    uint8_t *code;
+    size_t code_len;
+
+    size_t pos;  // Instruction pointer (but I just call it position)
+
+    Value *variables;
+    size_t var_count;
+
+} VM;
 
 static void init_emitter(Emitter *emitter) {
 
@@ -183,17 +203,25 @@ static TokenType get_variable_type(Emitter *emitter, size_t var_indx) {
 static TokenType get_expression_type(Emitter *emitter, AstExpression *expression) {
 
     switch (expression->tag) {
+
         case EXP_STRING: return TOK_STRING_T;
         case EXP_INTEGER: return TOK_INTEGER_T;
         case EXP_VARIABLE: {
+
             size_t var_indx = find_variable(emitter, expression->variable.name);
+
             if (var_indx == SIZE_MAX) {
-                fprintf(stderr, "UNDEFINED VARIABLE: %s\n", expression->variable.name);
-                exit(1);
+
+                error_undefined_var(expression->variable.name);
+
             }
+
             return get_variable_type(emitter, var_indx);
+
         }
+
         default: return TOK_UNKNOWN;
+
     }
 
 }
@@ -244,8 +272,7 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
             if (var_indx == SIZE_MAX) {
 
-                fprintf(stderr, "UNDEFINED VARIABLE: %s\n", expression->variable.name);
-                exit(1);
+                error_undefined_var(expression->variable.name);
 
             }
 
@@ -275,8 +302,7 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
             if (var_indx == SIZE_MAX) {
 
-                fprintf(stderr, "UNDEFINED VARIABLE: %s\n", statement->assign.var_name);
-                exit(1);
+                error_undefined_var(statement->assign.var_name);
 
             }
 
@@ -284,8 +310,8 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
             TokenType expr_type = get_expression_type(emitter, statement->assign.expression);
 
             if (var_type != expr_type) {
-                error_type_mismatch(statement->assign.var_name, 
-                                   token_type_to_string(var_type), 
+                error_type_mismatch(statement->assign.var_name,
+                                   token_type_to_string(var_type),
                                    token_type_to_string(expr_type));
             }
 
@@ -298,11 +324,10 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
         case STM_VAR_DECL: {
 
             // Check if we have mismatched counts for initialization
-            if (statement->var_decl.init_count > 0 && 
-                statement->var_decl.init_count != statement->var_decl.var_count) {
-                fprintf(stderr, "INITIALIZATION ERROR: %zu variables but %zu initializers\n", 
-                        statement->var_decl.var_count, statement->var_decl.init_count);
-                exit(1);
+            if (statement->var_decl.init_count > 0 && statement->var_decl.init_count != statement->var_decl.var_count) {
+
+                error_wrong_var_init(statement->var_decl.var_count, statement->var_decl.init_count);
+
             }
 
             // Add all variables and handle initialization
@@ -314,8 +339,8 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
                     TokenType expr_type = get_expression_type(emitter, statement->var_decl.init_exprs[i]);
 
                     if (var_type != expr_type) {
-                        error_type_mismatch(statement->var_decl.var_names[i], 
-                                           token_type_to_string(var_type), 
+                        error_type_mismatch(statement->var_decl.var_names[i],
+                                           token_type_to_string(var_type),
                                            token_type_to_string(expr_type));
                     }
 
@@ -389,25 +414,6 @@ static void emit_program(Emitter *emitter, AstProgram *program) {
 
 }
 
-typedef struct {
-
-    Value *stack;
-    size_t stack_count;
-    size_t stack_cap;
-
-    Value *constants;
-    size_t const_count;
-
-    uint8_t *code;
-    size_t code_len;
-
-    size_t pos;  // Instruction pointer (but I just call it position)
-
-    Value *variables;
-    size_t var_count;
-
-} VM;
-
 static void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t code_len) {
 
     vm->stack = NULL;
@@ -422,7 +428,7 @@ static void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code,
 
     vm->pos = 0;
 
-    vm->variables = calloc(256, sizeof(Value));  // Support up to 256 variables
+    vm->variables = calloc(256, sizeof(Value));  // We can support up to 256 vars
     vm->var_count = 256;
 
 }
@@ -479,8 +485,7 @@ static void interpret(VM *vm) {
 
         if (vm->pos >= vm->code_len) {
 
-            fprintf(stderr, "VM POS OUT OF BOUNDS\n");
-            exit(1);
+            error_vm_oob();
 
         }
 
@@ -494,8 +499,7 @@ static void interpret(VM *vm) {
 
                 if (indx >= vm->const_count) {
 
-                    fprintf(stderr, "INVALID CONSTANT INDEX\n");
-                    exit(1);
+                    error_invalid_const_index(vm->const_count);
 
                 }
 
@@ -517,8 +521,7 @@ static void interpret(VM *vm) {
 
                 } else {
 
-                    fprintf(stderr, "PRINT EXPECTS STRING OR INTEGER\n");
-                    exit(1);
+                    printf("NULL\n");
 
                 }
 
@@ -530,8 +533,7 @@ static void interpret(VM *vm) {
 
                 if (var_indx >= vm->var_count) {
 
-                    fprintf(stderr, "INVALID VARIABLE INDEX\n");
-                    exit(1);
+                    error_invalid_var_index(vm->var_count);
 
                 }
 
@@ -545,8 +547,7 @@ static void interpret(VM *vm) {
 
                 if (var_indx >= vm->var_count) {
 
-                    fprintf(stderr, "INVALID VARIABLE INDEX\n");
-                    exit(1);
+                    error_invalid_var_index(vm->var_count);
 
                 }
 
@@ -562,8 +563,7 @@ static void interpret(VM *vm) {
 
             default: {
 
-                fprintf(stderr, "UNKNOWN OPCODE %d\n", operation);
-                exit(1);
+                error_invalid_opcode(operation);
 
             }
 

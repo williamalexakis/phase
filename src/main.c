@@ -25,8 +25,6 @@ static void print_expression(AstExpression *expression, int ind) {
             printf("╰ EXPRESSION (%sVARIABLE%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->variable.name, RESET);
             break;
 
-
-
     }
 
 }
@@ -45,26 +43,40 @@ static void print_statement(AstStatement *statement, int ind) {
         case STM_ASSIGN:
 
             indent(ind);
-            printf("╰ STATEMENT (%sASSIGN%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, statement->assign.var_name, RESET);
+            printf("╰ STATEMENT (%sASSIGNMENT%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, statement->assign.var_name, RESET);
             print_expression(statement->assign.expression, ind + 6);
             break;
 
         case STM_VAR_DECL:
 
             indent(ind);
-            printf("╰ STATEMENT (%sVAR_DECL%s) [%s%s%s", FG_CYAN, RESET,
+            printf("╰ STATEMENT (%sVAR DECLARATION%s) [%s%s%s", FG_CYAN, RESET,
                    FG_PURPLE, statement->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET);
 
             for (size_t i = 0; i < statement->var_decl.var_count; i++) {
-                if (i == 0) printf(" ");
-                else printf(", ");
+
+                if (i == 0) {
+
+                    printf(" ");
+
+                } else {
+
+                    printf(", ");
+
+                }
+
                 printf("%s%s%s", FG_PURPLE, statement->var_decl.var_names[i], RESET);
+
             }
+
             printf("]\n");
 
             for (size_t i = 0; i < statement->var_decl.init_count; i++) {
+
                 print_expression(statement->var_decl.init_exprs[i], ind + 6);
+
             }
+
             break;
 
     }
@@ -98,15 +110,31 @@ static void print_declaration(AstDeclaration *declare, int ind) {
                    FG_PURPLE, declare->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET);
 
             if (declare->var_decl.var_count == 0) {
+
                 printf(" (anonymous)");
+
             } else {
+
                 for (size_t i = 0; i < declare->var_decl.var_count; i++) {
-                    if (i == 0) printf(" ");
-                    else printf(", ");
+
+                    if (i == 0) {
+
+                        printf(" ");
+
+                    } else {
+
+                        printf(", ");
+
+                    }
+
                     printf("%s%s%s", FG_PURPLE, declare->var_decl.var_names[i], RESET);
+
                 }
+
             }
+
             printf("]\n");
+
             break;
 
     }
