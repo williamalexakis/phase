@@ -168,7 +168,7 @@ static void expect(Parser *parser, TokenType t_type,const char *message) {
 
     if (!match(parser, t_type)) {
 
-        error_expect_generic(parser->look.line, message);
+        error_expect_symbol(parser->look.line, message);
 
     }
 
@@ -237,7 +237,7 @@ static AstExpression *parse_expression(Parser *parser) {
 
     }
 
-    error_expect_expression(parser->look.line);
+    error_expect_symbol(parser->look.line, "expression");
 
 }
 
@@ -292,18 +292,18 @@ static AstStatement *parse_statement(Parser *parser) {
         TokenType var_type = parser->look.type;
         advance_parser(parser);
 
-        // Parse variable names (either single or grouped in parentheses)
+        // Parse variable names
         char **var_names = NULL;
         size_t var_count = 0;
         size_t var_cap = 0;
 
         if (parser->look.type == TOK_LPAREN) {
-            // Grouped declaration: int (a, b, c)
+
             advance_parser(parser); // consume '('
 
             do {
                 if (parser->look.type != TOK_VARIABLE) {
-                    error_expect_generic(parser->look.line, "variable name");
+                    error_expect_symbol(parser->look.line, "variable name");
                 }
 
                 // Expand array if needed
@@ -329,7 +329,7 @@ static AstStatement *parse_statement(Parser *parser) {
             var_cap = 1;
             advance_parser(parser);
         } else {
-            error_expect_generic(parser->look.line, "variable name or '('");
+            error_expect_symbol(parser->look.line, "variable name or '('");
         }
 
         // Parse initialization expressions
@@ -378,7 +378,7 @@ static AstStatement *parse_statement(Parser *parser) {
 
     }
 
-    error_expect_statement(parser->look.line);
+    error_expect_symbol(parser->look.line, "statement or declaration");
 
 }
 
@@ -387,10 +387,28 @@ static AstBlock *parse_block(Parser *parser) {
     expect(parser, TOK_LBRACE, "'{'");
     AstBlock *block = calloc(1, sizeof(*block));
 
+    // Skip initial newlines after opening brace
+    while (parser->look.type == TOK_NEWLINE) {
+        advance_parser(parser);
+    }
+
     while (parser->look.type != TOK_RBRACE) {
 
         AstStatement *statement = parse_statement(parser);
         vector_push((void***)&block->statements, &block->len, &block->cap, statement);
+
+        // Require newline after statement (unless we're at closing brace)
+        if (parser->look.type != TOK_RBRACE) {
+            if (parser->look.type == TOK_NEWLINE) {
+                advance_parser(parser);
+                // Skip additional consecutive newlines
+                while (parser->look.type == TOK_NEWLINE) {
+                    advance_parser(parser);
+                }
+            } else {
+                error_expect_symbol(parser->look.line, "newline or end of block");
+            }
+        }
 
     }
 
@@ -422,18 +440,19 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
     TokenType var_type = parser->look.type;
     advance_parser(parser);
 
-    // Parse variable names (either single or grouped in parentheses)
+    // Parse variable names
     char **var_names = NULL;
     size_t var_count = 0;
     size_t var_cap = 0;
 
     if (parser->look.type == TOK_LPAREN) {
-        // Grouped declaration: int (a, b, c)
+
+        // Grouped declaration
         advance_parser(parser); // consume '('
 
         do {
             if (parser->look.type != TOK_VARIABLE) {
-                error_expect_generic(parser->look.line, "variable name");
+                error_expect_symbol(parser->look.line, "variable name");
             }
 
             // Expand array if needed
@@ -450,18 +469,26 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
         } while (match(parser, TOK_COMMA));
 
         expect(parser, TOK_RPAREN, "')'");
+
     } else if (parser->look.type == TOK_VARIABLE) {
-        // Single declaration: int a
+
+        // Single declaration
         var_names = malloc(sizeof(char*));
+
         if (!var_names) error_oom();
+
         var_names[0] = strdup(parser->look.lexeme ? parser->look.lexeme : "");
         var_count = 1;
         var_cap = 1;
+
         advance_parser(parser);
+
     } else {
-        // Anonymous declaration: just int or str
+
+        // Declaration only
         var_names = NULL;
         var_count = 0;
+
     }
 
     AstDeclaration *declaration = calloc(1, sizeof(*declaration));
@@ -479,7 +506,22 @@ static AstProgram *parse_program(Parser *parser) {
 
     AstProgram *program = calloc(1, sizeof(*program));
 
+    // Skip initial newlines at start of program
+    while (parser->look.type == TOK_NEWLINE) {
+        advance_parser(parser);
+    }
+
     while (parser->look.type != TOK_EOF) {
+
+        // Skip newlines before declarations
+        while (parser->look.type == TOK_NEWLINE) {
+            advance_parser(parser);
+        }
+
+        // Check for EOF after skipping newlines
+        if (parser->look.type == TOK_EOF) {
+            break;
+        }
 
         AstDeclaration *declare = NULL;
 
@@ -498,6 +540,11 @@ static AstProgram *parse_program(Parser *parser) {
         }
 
         vector_push((void***)&program->declarations, &program->len, &program->cap, declare);
+
+        // Skip newlines after declarations
+        while (parser->look.type == TOK_NEWLINE) {
+            advance_parser(parser);
+        }
 
     }
 

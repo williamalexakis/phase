@@ -12,6 +12,7 @@
 
 #define FG_RED_BOLD "\e[1;91m"
 #define FG_GREEN_BOLD "\e[1;92m"
+#define FG_BLUE_BOLD "\e[1;94m"
 
 #define BG_RED "\e[0;101m"
 #define BG_GREEN "\e[0;102m"

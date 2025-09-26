@@ -13,7 +13,9 @@ typedef enum {
     TOK_RPAREN,       // )
     TOK_COMMA,        // ,
     TOK_ENTRY,        // entry
-    TOK_OUT,          // out
+    TOK_OUT,          // out()
+    TOK_TOINT,        // toint()
+    TOK_TOSTR,        // tostr()
     TOK_STRING_T,     // str type
     TOK_INTEGER_T,    // int type
     TOK_VARIABLE,     // var name
@@ -88,8 +90,8 @@ static void ignore_ws_or_comment(Lexer *lexer) {
 
         char c = peek(lexer);
 
-        // Skip whitespace
-        while (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+        // Skip whitespace (but not newlines)
+        while (c == ' ' || c == '\t' || c == '\r') {
 
             advance_lexer(lexer);
             c = peek(lexer);
@@ -106,7 +108,7 @@ static void ignore_ws_or_comment(Lexer *lexer) {
 
         }
 
-        break;  // Alphanumeric char is detected
+        break;  // Alphanumeric char or newline is detected
 
     }
 
@@ -167,6 +169,8 @@ static Token lex_ident_or_kw(Lexer *lexer) {
 
     if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line);
     if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line);
+    if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line);
+    if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line);
     if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line);
     if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line);
 
@@ -181,7 +185,14 @@ static Token lex_string(Lexer *lexer) {
 
     advance_lexer(lexer);  // Skip opening "
 
-    size_t start = lexer->pos;
+    // Use a dynamic buffer to handle escape sequences
+    char *lexeme = malloc(64);
+    size_t lexeme_len = 0;
+    size_t lexeme_cap = 64;
+
+    if (!lexeme) {
+        error_oom();
+    }
 
     for (;;) {
 
@@ -195,23 +206,65 @@ static Token lex_string(Lexer *lexer) {
 
         if (c == '"') break;
 
-        advance_lexer(lexer);
+        // Handle escape sequences
+        if (c == '\\') {
+            advance_lexer(lexer);  // Skip backslash
+            char next_c = peek(lexer);
+            
+            if (next_c == '\0') {
+                error_open_str(lexer->line);
+            }
 
+            char escaped_char;
+            switch (next_c) {
+                case 'n': escaped_char = '\n'; break;
+                case 't': escaped_char = '\t'; break;
+                case 'r': escaped_char = '\r'; break;
+                case '\\': escaped_char = '\\'; break;
+                case '"': escaped_char = '"'; break;
+                default: 
+                    // If not a recognized escape sequence, keep both characters
+                    escaped_char = '\\';
+                    // Don't advance, so the next character gets processed normally
+                    advance_lexer(lexer);
+                    
+                    // Expand buffer if needed
+                    if (lexeme_len + 1 >= lexeme_cap) {
+                        lexeme_cap *= 2;
+                        lexeme = realloc(lexeme, lexeme_cap);
+                        if (!lexeme) error_oom();
+                    }
+                    
+                    lexeme[lexeme_len++] = escaped_char;
+                    continue;  // Process the next character normally
+            }
+            
+            advance_lexer(lexer);  // Skip the escaped character
+            
+            // Expand buffer if needed
+            if (lexeme_len + 1 >= lexeme_cap) {
+                lexeme_cap *= 2;
+                lexeme = realloc(lexeme, lexeme_cap);
+                if (!lexeme) error_oom();
+            }
+            
+            lexeme[lexeme_len++] = escaped_char;
+        } else {
+            // Regular character
+            advance_lexer(lexer);
+            
+            // Expand buffer if needed
+            if (lexeme_len + 1 >= lexeme_cap) {
+                lexeme_cap *= 2;
+                lexeme = realloc(lexeme, lexeme_cap);
+                if (!lexeme) error_oom();
+            }
+            
+            lexeme[lexeme_len++] = c;
+        }
     }
 
-    size_t end = lexer->pos;  // At closing "
-    size_t len = end - start;
-
-    char *lexeme = malloc(len + 1);
-
-    if (!lexeme) {
-
-        error_oom();
-
-    }
-
-    memcpy(lexeme, lexer->src + start, len);  // Copy the str into memory
-    lexeme[len] = '\0';  // Null term for str ops
+    lexeme[lexeme_len] = '\0';  // Null terminate
 
     advance_lexer(lexer);  // Skip closing "
 
@@ -255,6 +308,7 @@ static Token next_token(Lexer *lexer) {
     char c = peek(lexer);
 
     if (c == '\0') return make_token(TOK_EOF, NULL, lexer->line);
+    if (c == '\n') { advance_lexer(lexer); return make_token(TOK_NEWLINE, "\\n", lexer->line - 1); }
     if (c == '{') { advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line); }
     if (c == '}') { advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line); }
     if (c == '(') { advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line); }
