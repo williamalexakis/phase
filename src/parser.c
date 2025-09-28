@@ -113,7 +113,7 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
         size_t new_cap = *cap ? *cap * 2 : 8;
         void **new_items = realloc(*items, new_cap * sizeof(void*));
 
-        if (!items) error_oom();
+        if (!new_items) error_oom();
 
         *items = new_items;
         *cap = new_cap;
