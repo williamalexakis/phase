@@ -5,24 +5,24 @@
 
 typedef enum {
 
-    TOK_EOF,          // EOF
-    TOK_NEWLINE,      // \n
-    TOK_LBRACE,       // {
-    TOK_RBRACE,       // }
-    TOK_LPAREN,       // (
-    TOK_RPAREN,       // )
-    TOK_COMMA,        // ,
-    TOK_ENTRY,        // entry
-    TOK_OUT,          // out()
-    TOK_TOINT,        // toint()
-    TOK_TOSTR,        // tostr()
-    TOK_STRING_T,     // str type
-    TOK_INTEGER_T,    // int type
-    TOK_VARIABLE,     // var name
-    TOK_ASSIGN,       // =
-    TOK_STRING_LIT,   // str value
-    TOK_INTEGER_LIT,  // int value
-    TOK_UNKNOWN       // Any unrecognized lexeme
+    TOK_EOF,
+    TOK_NEWLINE,
+    TOK_LBRACE,
+    TOK_RBRACE,
+    TOK_LPAREN,
+    TOK_RPAREN,
+    TOK_COMMA,
+    TOK_ENTRY,
+    TOK_OUT,
+    TOK_TOINT,
+    TOK_TOSTR,
+    TOK_STRING_T,
+    TOK_INTEGER_T,
+    TOK_VARIABLE,
+    TOK_ASSIGN,
+    TOK_STRING_LIT,
+    TOK_INTEGER_LIT,
+    TOK_UNKNOWN
 
 } TokenType;
 
@@ -30,35 +30,27 @@ typedef struct {
 
     TokenType type;
     char *lexeme;
-    int line;  // Line number for errors
+    int line;
 
 } Token;
 
 typedef struct {
 
-    const char *src;  // Source str
-    size_t pos;       // Cursor position
-    int line;         // Current line number for errors
+    const char *src;
+    size_t pos;
+    int line;
 
 } Lexer;
 
-/*
- * Create a token struct with a type, lexeme,
- * and line for error reporting
- */
+/* Create a token with a type, lexeme, and line for error reporting */
 static Token make_token(TokenType type, char *lexeme, int line) {
 
     return (Token) {.type = type, .lexeme = lexeme, .line = line};
 
 }
 
-/* Check the current char the lexer cursor is on */
 static char peek(Lexer *lexer) { return lexer->src[lexer->pos]; }
 
-/*
- * Check a char proceeding the current cursor pos,
- * intended for 2-char symbols such as comments '--'
- */
 static char peek_2(Lexer *lexer) {
 
     char c = peek(lexer);
@@ -66,7 +58,6 @@ static char peek_2(Lexer *lexer) {
 
 }
 
-/* Move the lexer cursor to the next char in the src */
 static char advance_lexer(Lexer *lexer) {
 
     char c = peek(lexer);
@@ -83,14 +74,12 @@ static char advance_lexer(Lexer *lexer) {
 
 }
 
-/* Skip whitespace, escape chars, and comments */
 static void ignore_ws_or_comment(Lexer *lexer) {
 
     for (;;) {
 
         char c = peek(lexer);
 
-        // Skip whitespace (but not newlines)
         while (c == ' ' || c == '\t' || c == '\r') {
 
             advance_lexer(lexer);
@@ -98,58 +87,45 @@ static void ignore_ws_or_comment(Lexer *lexer) {
 
         }
 
-        // Skip inline comments
         if (c == '-' && peek_2(lexer) == '-') {
 
-            // Continue until newline
             while (c && c != '\n') c = advance_lexer(lexer);
 
             continue;
 
         }
 
-        break;  // Alphanumeric char or newline is detected
+        break;
 
     }
 
 }
 
-/*
- * Check if the current char is the start of
- * an identifier or statement keyword
- */
 static int is_ident_start(char c) {
 
     return (c == '_') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 
 }
 
-/*
- * Check if the current char is within
- * an identifier or statement keyword
- */
 static int is_ident_part(char c) {
 
     return is_ident_start(c) || (c >= '0' && c <='9');
 
 }
 
+/* Check if a character is a digit */
 static bool is_digit(char c) {
 
     return c >= '0' && c <= '9';
 
 }
 
-/*
- * Process an identifier or statement keyword and
- * produce the equivalent tokens
- */
 static Token lex_ident_or_kw(Lexer *lexer) {
 
     int line = lexer->line;
     size_t start = lexer->pos;
 
-    advance_lexer(lexer);  // We know first char is identifier start
+    advance_lexer(lexer);
 
     while (is_ident_part(peek(lexer))) advance_lexer(lexer);
 
@@ -164,7 +140,7 @@ static Token lex_ident_or_kw(Lexer *lexer) {
 
     }
 
-    memcpy(lexeme, lexer->src + start, len);  // Copy str from memory
+    memcpy(lexeme, lexer->src + start, len);
     lexeme[len] = '\0';
 
     if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line);
@@ -174,18 +150,16 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line);
     if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line);
 
-    return make_token(TOK_VARIABLE, lexeme, line);  // Fallback is that it's a var name
+    return make_token(TOK_VARIABLE, lexeme, line);
 
 }
 
-/* Process a string literal and produce a token */
 static Token lex_string(Lexer *lexer) {
 
     int line = lexer->line;
 
-    advance_lexer(lexer);  // Skip opening "
+    advance_lexer(lexer);
 
-    // Use a dynamic buffer to handle escape sequences
     char *lexeme = malloc(64);
     size_t lexeme_len = 0;
     size_t lexeme_cap = 64;
@@ -206,67 +180,78 @@ static Token lex_string(Lexer *lexer) {
 
         if (c == '"') break;
 
-        // Handle escape sequences
         if (c == '\\') {
-            advance_lexer(lexer);  // Skip backslash
+
+            advance_lexer(lexer);
+
             char next_c = peek(lexer);
-            
-            if (next_c == '\0') {
-                error_open_str(lexer->line);
-            }
+
+            if (next_c == '\0') error_open_str(lexer->line);
 
             char escaped_char;
+
             switch (next_c) {
+
                 case 'n': escaped_char = '\n'; break;
                 case 't': escaped_char = '\t'; break;
                 case 'r': escaped_char = '\r'; break;
                 case '\\': escaped_char = '\\'; break;
                 case '"': escaped_char = '"'; break;
-                default: 
-                    // If not a recognized escape sequence, keep both characters
+
+                default:
+
                     escaped_char = '\\';
-                    // Don't advance, so the next character gets processed normally
                     advance_lexer(lexer);
-                    
-                    // Expand buffer if needed
+
                     if (lexeme_len + 1 >= lexeme_cap) {
+
                         lexeme_cap *= 2;
                         lexeme = realloc(lexeme, lexeme_cap);
+
                         if (!lexeme) error_oom();
+
                     }
-                    
+
                     lexeme[lexeme_len++] = escaped_char;
-                    continue;  // Process the next character normally
+
+                    continue;
             }
-            
-            advance_lexer(lexer);  // Skip the escaped character
-            
-            // Expand buffer if needed
-            if (lexeme_len + 1 >= lexeme_cap) {
-                lexeme_cap *= 2;
-                lexeme = realloc(lexeme, lexeme_cap);
-                if (!lexeme) error_oom();
-            }
-            
-            lexeme[lexeme_len++] = escaped_char;
-        } else {
-            // Regular character
+
             advance_lexer(lexer);
-            
-            // Expand buffer if needed
+
             if (lexeme_len + 1 >= lexeme_cap) {
+
                 lexeme_cap *= 2;
                 lexeme = realloc(lexeme, lexeme_cap);
+
                 if (!lexeme) error_oom();
+
             }
-            
+
+            lexeme[lexeme_len++] = escaped_char;
+
+        } else {
+
+            advance_lexer(lexer);
+
+            if (lexeme_len + 1 >= lexeme_cap) {
+
+                lexeme_cap *= 2;
+                lexeme = realloc(lexeme, lexeme_cap);
+
+                if (!lexeme) error_oom();
+
+            }
+
             lexeme[lexeme_len++] = c;
+
         }
+
     }
 
-    lexeme[lexeme_len] = '\0';  // Null terminate
+    lexeme[lexeme_len] = '\0';
 
-    advance_lexer(lexer);  // Skip closing "
+    advance_lexer(lexer);
 
     return make_token(TOK_STRING_LIT, lexeme, line);
 
@@ -284,11 +269,7 @@ static Token lex_int(Lexer *lexer) {
 
     char *lexeme = malloc(len + 1);
 
-    if (!lexeme) {
-
-        error_oom();
-
-    }
+    if (!lexeme) error_oom();
 
     memcpy(lexeme, lexer->src + start, len);
     lexeme[len] = '\0';
@@ -297,10 +278,6 @@ static Token lex_int(Lexer *lexer) {
 
 }
 
-/*
- * Handle the production of the next token from
- * the source, with the lexer
- */
 static Token next_token(Lexer *lexer) {
 
     ignore_ws_or_comment(lexer);
@@ -320,13 +297,13 @@ static Token next_token(Lexer *lexer) {
     if (is_ident_start(c)) return lex_ident_or_kw(lexer);
     if (is_digit(c)) return lex_int(lexer);
 
-    // Fallback if char is unrecognized
     advance_lexer(lexer);
 
     return make_token(TOK_UNKNOWN, NULL, lexer->line);
 
 }
 
+/* Check if a token's lexeme needs to be freed */
 static bool is_heap_lexeme(Token token, const TokenType *list, const size_t len) {
 
     for (size_t i = 0; i < len; i++) {

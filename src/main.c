@@ -7,23 +7,26 @@ static void print_expression(AstExpression *expression, int ind) {
 
     switch (expression->tag) {
 
-        case EXP_STRING:
+        case EXP_STRING: {
 
             indent(ind);
             printf("╰ EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->str_lit.value, RESET);
-            break;
 
-        case EXP_INTEGER:
+        } break;
+
+        case EXP_INTEGER: {
 
             indent(ind);
             printf("╰ EXPRESSION (%sINTEGER%s) [%s%d%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->int_lit.value, RESET);
-            break;
 
-        case EXP_VARIABLE:
+        } break;
+
+        case EXP_VARIABLE: {
 
             indent(ind);
             printf("╰ EXPRESSION (%sVARIABLE%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->variable.name, RESET);
-            break;
+
+        } break;
 
     }
 
@@ -33,21 +36,23 @@ static void print_statement(AstStatement *statement, int ind) {
 
     switch (statement->tag) {
 
-        case STM_OUT:
+        case STM_OUT: {
 
             indent(ind);
             printf("╰ STATEMENT (%sOUT%s)\n", FG_CYAN, RESET);
             print_expression(statement->out.expression, ind + 6);
-            break;
 
-        case STM_ASSIGN:
+        } break;
+
+        case STM_ASSIGN: {
 
             indent(ind);
             printf("╰ STATEMENT (%sASSIGNMENT%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, statement->assign.var_name, RESET);
             print_expression(statement->assign.expression, ind + 6);
-            break;
 
-        case STM_VAR_DECL:
+        } break;
+
+        case STM_VAR_DECL: {
 
             indent(ind);
             printf("╰ STATEMENT (%sVAR DECLARATION%s) [%s%s%s", FG_CYAN, RESET,
@@ -77,7 +82,7 @@ static void print_statement(AstStatement *statement, int ind) {
 
             }
 
-            break;
+        } break;
 
     }
 
@@ -96,14 +101,15 @@ static void print_declaration(AstDeclaration *declare, int ind) {
 
     switch (declare->tag) {
 
-        case DEC_ENTRY:
+        case DEC_ENTRY: {
 
             indent(ind);
             printf("╰ DECLARATION (%sENTRY%s)\n", FG_CYAN, RESET);
             print_block(declare->entry.block, ind + 6);
-            break;
 
-        case DEC_VAR:
+        } break;
+
+        case DEC_VAR: {
 
             indent(ind);
             printf("╰ DECLARATION (%sVAR%s) [%s%s%s", FG_CYAN, RESET,
@@ -135,7 +141,7 @@ static void print_declaration(AstDeclaration *declare, int ind) {
 
             printf("]\n");
 
-            break;
+        } break;
 
     }
 
@@ -153,11 +159,6 @@ static void print_program(AstProgram *program) {
 
 static void display_tokens(Lexer *lexer) {
 
-    // TODO: Fix this cause it's so broken
-    // but I'm also so lazy to both fix this
-    // and come up with a better way for it
-    // to work
-
     const char *token_names[] = {
 
         "EOF",
@@ -173,20 +174,17 @@ static void display_tokens(Lexer *lexer) {
 
     };
 
-    // Display the tokenized form of the source
-    // file, including the src lexemes and line
-    // numbers
     for (;;) {
 
         Token token = next_token(lexer);
 
-        printf("%d | ", token.line);                 // Display line num
-        printf("%s%s%s", FG_CYAN, (char*)token.type, RESET);              // Display token type
+        printf("%d | ", token.line);  // Display line num
+        printf("%s%s%s", FG_CYAN, (char*)token.type, RESET);  // Display token type
+
         if (token.lexeme) printf(" %s'%s'%s", FG_PURPLE, token.lexeme, RESET);  // Display the lexeme
+
         printf("\n");
 
-        // Use a linear search to determine if
-        // the token has an allocated lexeme
         const TokenType heap_tokens[] = {
 
             TOK_OUT,
@@ -202,14 +200,7 @@ static void display_tokens(Lexer *lexer) {
         const size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
         const bool needs_freeing = is_heap_lexeme(token, heap_tokens, ht_len);
 
-        // Free the lexeme only if it was allocated memory,
-        // in this case only if the token is an ident, kw,
-        // or string
-        if (token.lexeme && needs_freeing) {
-
-            free(token.lexeme);
-
-        }
+        if (token.lexeme && needs_freeing) free(token.lexeme);
 
         if (token.type == TOK_EOF) break;
 
@@ -223,7 +214,7 @@ static void help_flag() {
 
     printf("Usage: %s./phase <input.phase> ...%s\n\n", FG_GREEN, RESET);
     printf("Flags:\n");
-    printf("\t%s--help%s : Displays usage information.\n", FG_GREEN, RESET);
+    printf("\t%s--help%s : Displays usage information (input file not required).\n", FG_GREEN, RESET);
     printf("\t%s--tokens%s : Displays the source file as its tokens.\n", FG_GREEN, RESET);
     printf("\t%s--ast%s : Displays the source file as the AST.\n", FG_GREEN, RESET);
     exit(0);
@@ -235,14 +226,12 @@ int main(int argc, char **argv) {
     bool token_mode = false;
     bool ast_mode = false;
 
-    // Check if not enough args are provided
     if (argc < 2) {
 
         error_no_args();
 
     }
 
-    // Check if it's just the --help flag
     if (strcmp(argv[1], "--help") == 0) {
 
         help_flag();
@@ -251,19 +240,16 @@ int main(int argc, char **argv) {
 
     FILE *input_file = fopen(argv[1], "r");  // Open the input file
 
-    // Check if file is not found
     if (!input_file) {
 
         error_ifnf(argv[1]);
 
     }
 
-    // Figure out the file size by moving the file ptr to the end
     fseek(input_file, 0, SEEK_END);
     size_t file_size = (size_t)ftell(input_file);
     rewind(input_file); // Return file ptr to start
 
-    // Allocate buffer large enough for the file + null terminator
     char *file_content = malloc(file_size + 1);
 
     if (!file_content) {
@@ -273,7 +259,6 @@ int main(int argc, char **argv) {
 
     }
 
-    // Read the whole file into the buffer
     fread(file_content, sizeof(char), file_size, input_file);
     file_content[file_size] = '\0';  // Append null terminator for str ops
 
@@ -301,7 +286,6 @@ int main(int argc, char **argv) {
 
     }
 
-    // Initialize lexer
     Lexer lexer = { .src = file_content, .pos = 0, .line = 1 };
 
     if (token_mode) {

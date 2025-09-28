@@ -29,7 +29,7 @@ typedef enum {
 
 } ErrorType;
 
-// Internal
+// Internal errors
 static void error_oom() {
 
     fprintf(stderr, "╭ %sERROR [%d]: Out of memory%s\n|\n", FG_RED_BOLD, ERR_OOM, RESET);
@@ -150,7 +150,7 @@ static void error_undefined_var(const char *name) {
 
 }
 
-// CLI
+// CLI errors
 static void error_no_args() {
 
     fprintf(stderr, "╭ %sERROR [%d]: Insufficient arguments%s\n|\n", FG_RED_BOLD, ERR_NO_ARGS, RESET);

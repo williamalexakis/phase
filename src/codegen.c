@@ -102,7 +102,9 @@ static void free_emitter(Emitter *emitter) {
     free(emitter->constants);
 
     for (size_t i = 0; i < emitter->var_count; i++) {
+
         free(emitter->var_names[i]);
+
     }
 
     free(emitter->var_names);
@@ -178,23 +180,17 @@ static size_t find_variable(Emitter *emitter, const char *name) {
 
     for (size_t i = 0; i < emitter->var_count; i++) {
 
-        if (strcmp(emitter->var_names[i], name) == 0) {
-
-            return i;
-
-        }
+        if (strcmp(emitter->var_names[i], name) == 0) return i;
 
     }
 
-    return SIZE_MAX;  // Not found
+    return SIZE_MAX;
 
 }
 
 static TokenType get_variable_type(Emitter *emitter, size_t var_indx) {
 
-    if (var_indx >= emitter->var_count) {
-        return TOK_UNKNOWN;
-    }
+    if (var_indx >= emitter->var_count) return TOK_UNKNOWN;
 
     return emitter->var_types[var_indx];
 
@@ -226,14 +222,20 @@ static TokenType get_expression_type(Emitter *emitter, AstExpression *expression
 
 }
 
+/* Convert a token type to its string representation for error messages */
 static const char *token_type_to_string(TokenType type) {
+
     switch (type) {
+
         case TOK_STRING_T: return "str";
         case TOK_INTEGER_T: return "int";
         default: return "unknown";
+
     }
+
 }
 
+/* Emit bytecode for an AST expression node */
 static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
     switch (expression->tag) {
@@ -246,7 +248,9 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
                 .as.str = strdup(expression->str_lit.value)
 
             };
+
             size_t indx = add_constant(emitter, value);
+
             emit_byte(emitter, OP_PUSH_CONST);
             emit_u16(emitter, (uint16_t)indx);
 
@@ -260,7 +264,9 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
                 .as.integer = expression->int_lit.value
 
             };
+
             size_t indx = add_constant(emitter, value);
+
             emit_byte(emitter, OP_PUSH_CONST);
             emit_u16(emitter, (uint16_t)indx);
 
@@ -285,6 +291,7 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
 }
 
+/* Emit bytecode for an AST statement node */
 static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
     switch (statement->tag) {
@@ -310,9 +317,11 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
             TokenType expr_type = get_expression_type(emitter, statement->assign.expression);
 
             if (var_type != expr_type) {
+
                 error_type_mismatch(statement->assign.var_name,
                                    token_type_to_string(var_type),
                                    token_type_to_string(expr_type));
+
             }
 
             emit_expression(emitter, statement->assign.expression);
@@ -323,25 +332,27 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
         case STM_VAR_DECL: {
 
-            // Check if we have mismatched counts for initialization
             if (statement->var_decl.init_count > 0 && statement->var_decl.init_count != statement->var_decl.var_count) {
 
                 error_wrong_var_init(statement->var_decl.var_count, statement->var_decl.init_count);
 
             }
 
-            // Add all variables and handle initialization
             for (size_t i = 0; i < statement->var_decl.var_count; i++) {
+
                 size_t var_indx = add_variable(emitter, statement->var_decl.var_names[i], statement->var_decl.var_type);
 
                 if (i < statement->var_decl.init_count) {
+
                     TokenType var_type = statement->var_decl.var_type;
                     TokenType expr_type = get_expression_type(emitter, statement->var_decl.init_exprs[i]);
 
                     if (var_type != expr_type) {
+
                         error_type_mismatch(statement->var_decl.var_names[i],
-                                           token_type_to_string(var_type),
-                                           token_type_to_string(expr_type));
+                            token_type_to_string(var_type),
+                            token_type_to_string(expr_type));
+
                     }
 
                     emit_expression(emitter, statement->var_decl.init_exprs[i]);
@@ -356,6 +367,7 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
 }
 
+/* Emit bytecode for an AST block node */
 static void emit_block(Emitter *emitter, AstBlock *block) {
 
     for (size_t i = 0; i < block->len; i++) {
@@ -366,6 +378,7 @@ static void emit_block(Emitter *emitter, AstBlock *block) {
 
 }
 
+/* Emit bytecode for an AST declaration node */
 static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *entry_exists) {
 
     switch (declare->tag) {
@@ -387,6 +400,7 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
         case DEC_VAR: {
 
             for (size_t i = 0; i < declare->var_decl.var_count; i++) {
+
                 add_variable(emitter, declare->var_decl.var_names[i], declare->var_decl.var_type);
             }
 
@@ -396,6 +410,7 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
 }
 
+/* Emit bytecode for an AST program node */
 static void emit_program(Emitter *emitter, AstProgram *program) {
 
     init_emitter(emitter);
@@ -428,7 +443,7 @@ static void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code,
 
     vm->pos = 0;
 
-    vm->variables = calloc(256, sizeof(Value));  // We can support up to 256 vars
+    vm->variables = calloc(256, sizeof(Value));
     vm->var_count = 256;
 
 }
@@ -463,6 +478,7 @@ static Value pop(VM *vm) {
 
 }
 
+/* Read the next byte from the VM's code and advance the instruction pointer */
 static uint8_t read_byte(VM *vm) {
 
     return vm->code[vm->pos++];
@@ -478,16 +494,11 @@ static uint16_t read_u16(VM *vm) {
 
 }
 
-/* Execution loop */
 static void interpret(VM *vm) {
 
     for (;;) {
 
-        if (vm->pos >= vm->code_len) {
-
-            error_vm_oob();
-
-        }
+        if (vm->pos >= vm->code_len) error_vm_oob();
 
         Opcode operation = (Opcode)read_byte(vm);
 
@@ -497,11 +508,7 @@ static void interpret(VM *vm) {
 
                 uint16_t indx = read_u16(vm);
 
-                if (indx >= vm->const_count) {
-
-                    error_invalid_const_index(vm->const_count);
-
-                }
+                if (indx >= vm->const_count) error_invalid_const_index(vm->const_count);
 
                 push(vm, vm->constants[indx]);
 
@@ -531,11 +538,7 @@ static void interpret(VM *vm) {
 
                 uint16_t var_indx = read_u16(vm);
 
-                if (var_indx >= vm->var_count) {
-
-                    error_invalid_var_index(vm->var_count);
-
-                }
+                if (var_indx >= vm->var_count) error_invalid_var_index(vm->var_count);
 
                 vm->variables[var_indx] = pop(vm);
 
@@ -545,27 +548,15 @@ static void interpret(VM *vm) {
 
                 uint16_t var_indx = read_u16(vm);
 
-                if (var_indx >= vm->var_count) {
-
-                    error_invalid_var_index(vm->var_count);
-
-                }
+                if (var_indx >= vm->var_count) error_invalid_var_index(vm->var_count);
 
                 push(vm, vm->variables[var_indx]);
 
             } break;
 
-            case OP_HALT: {
+            case OP_HALT: return; break;
 
-                return;
-
-            } break;
-
-            default: {
-
-                error_invalid_opcode(operation);
-
-            }
+            default: error_invalid_opcode(operation);
 
         }
 
