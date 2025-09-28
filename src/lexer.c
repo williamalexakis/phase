@@ -31,6 +31,7 @@ typedef struct {
     TokenType type;
     char *lexeme;
     int line;
+    bool heap_allocated;
 
 } Token;
 
@@ -43,9 +44,9 @@ typedef struct {
 } Lexer;
 
 /* Create a token with a type, lexeme, and line for error reporting */
-static Token make_token(TokenType type, char *lexeme, int line) {
+static Token make_token(TokenType type, char *lexeme, int line, bool heap_allocated) {
 
-    return (Token) {.type = type, .lexeme = lexeme, .line = line};
+    return (Token) {.type = type, .lexeme = lexeme, .line = line, .heap_allocated = heap_allocated};
 
 }
 
@@ -143,14 +144,14 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     memcpy(lexeme, lexer->src + start, len);
     lexeme[len] = '\0';
 
-    if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line);
-    if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line);
-    if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line);
-    if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line);
-    if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line);
-    if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line);
+    if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line, true);
+    if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line, true);
+    if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, true);
+    if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, true);
+    if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line, true);
+    if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line, true);
 
-    return make_token(TOK_VARIABLE, lexeme, line);
+    return make_token(TOK_VARIABLE, lexeme, line, true);
 
 }
 
@@ -253,7 +254,7 @@ static Token lex_string(Lexer *lexer) {
 
     advance_lexer(lexer);
 
-    return make_token(TOK_STRING_LIT, lexeme, line);
+    return make_token(TOK_STRING_LIT, lexeme, line, true);
 
 }
 
@@ -274,7 +275,7 @@ static Token lex_int(Lexer *lexer) {
     memcpy(lexeme, lexer->src + start, len);
     lexeme[len] = '\0';
 
-    return make_token(TOK_INTEGER_LIT, lexeme, line);
+    return make_token(TOK_INTEGER_LIT, lexeme, line, true);
 
 }
 
@@ -284,14 +285,14 @@ static Token next_token(Lexer *lexer) {
 
     char c = peek(lexer);
 
-    if (c == '\0') return make_token(TOK_EOF, NULL, lexer->line);
-    if (c == '\n') { advance_lexer(lexer); return make_token(TOK_NEWLINE, "\\n", lexer->line - 1); }
-    if (c == '{') { advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line); }
-    if (c == '}') { advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line); }
-    if (c == '(') { advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line); }
-    if (c == ')') { advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line); }
-    if (c == ',') { advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line); }
-    if (c == '=') { advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line); }
+    if (c == '\0') return make_token(TOK_EOF, NULL, lexer->line, false);
+    if (c == '\n') { advance_lexer(lexer); return make_token(TOK_NEWLINE, "\\n", lexer->line - 1, false); }
+    if (c == '{') { advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line, false); }
+    if (c == '}') { advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line, false); }
+    if (c == '(') { advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line, false); }
+    if (c == ')') { advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line, false); }
+    if (c == ',') { advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, false); }
+    if (c == '=') { advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, false); }
     if (c == '"') return lex_string(lexer);
 
     if (is_ident_start(c)) return lex_ident_or_kw(lexer);
@@ -299,19 +300,42 @@ static Token next_token(Lexer *lexer) {
 
     advance_lexer(lexer);
 
-    return make_token(TOK_UNKNOWN, NULL, lexer->line);
+    return make_token(TOK_UNKNOWN, NULL, lexer->line, false);
 
 }
 
-/* Check if a token's lexeme needs to be freed */
-static bool is_heap_lexeme(Token token, const TokenType *list, const size_t len) {
+/* Get token type name for displaying in token mode */
+static const char *get_token_name(TokenType type) {
 
-    for (size_t i = 0; i < len; i++) {
+    static const char *token_names[] = {
 
-        if (token.type == list[i]) return true;
+        [TOK_EOF] = "EOF",
+        [TOK_NEWLINE] = "NEWLINE",
+        [TOK_LBRACE] = "LEFT BRACE",
+        [TOK_RBRACE] = "RIGHT BRACE",
+        [TOK_LPAREN] = "LEFT PAREN",
+        [TOK_RPAREN] = "RIGHT PAREN",
+        [TOK_COMMA] = "COMMA",
+        [TOK_ENTRY] = "ENTRY",
+        [TOK_OUT] = "OUT",
+        [TOK_TOINT] = "TOINT",
+        [TOK_TOSTR] = "TOSTR",
+        [TOK_STRING_T] = "STRING TYPE",
+        [TOK_INTEGER_T] = "INTEGER TYPE",
+        [TOK_VARIABLE] = "VARIABLE",
+        [TOK_ASSIGN] = "ASSIGN",
+        [TOK_STRING_LIT] = "STRING LITERAL",
+        [TOK_INTEGER_LIT] = "INTEGER LITERAL",
+        [TOK_UNKNOWN] = "UNKNOWN"
+
+    };
+
+    if (type >= 0 && type < sizeof(token_names) / sizeof(token_names[0])) {
+
+        return token_names[type];
 
     }
 
-    return false;
+    return "INVALID";
 
 }

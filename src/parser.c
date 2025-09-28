@@ -126,19 +126,7 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
 
 static void free_token(Token *token) {
 
-    TokenType heap_tokens[] = {
-        TOK_OUT,
-        TOK_ENTRY,
-        TOK_STRING_LIT,
-        TOK_INTEGER_LIT,
-        TOK_VARIABLE,
-        TOK_STRING_T,
-        TOK_INTEGER_T
-    };
-    size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
-    bool needs_freeing = is_heap_lexeme(*token, heap_tokens, ht_len);
-
-    if (token->lexeme && needs_freeing) free(token->lexeme);
+    if (token->lexeme && token->heap_allocated) free(token->lexeme);
 
 }
 

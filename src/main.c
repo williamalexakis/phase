@@ -159,48 +159,18 @@ static void print_program(AstProgram *program) {
 
 static void display_tokens(Lexer *lexer) {
 
-    const char *token_names[] = {
-
-        "EOF",
-        "NEWLINE",
-        "LBRACE",
-        "RBRACE",
-        "ENTRY",
-        "OUT",
-        "STRING",
-        "INTEGER",
-        "VARIABLE",
-        "UNKNOWN"
-
-    };
-
     for (;;) {
 
         Token token = next_token(lexer);
 
         printf("%d | ", token.line);  // Display line num
-        printf("%s%s%s", FG_CYAN, (char*)token.type, RESET);  // Display token type
+        printf("%s%s%s", FG_CYAN, get_token_name(token.type), RESET);  // Display token type
 
         if (token.lexeme) printf(" %s'%s'%s", FG_PURPLE, token.lexeme, RESET);  // Display the lexeme
 
         printf("\n");
 
-        const TokenType heap_tokens[] = {
-
-            TOK_OUT,
-            TOK_ENTRY,
-            TOK_STRING_T,
-            TOK_INTEGER_T,
-            TOK_STRING_LIT,
-            TOK_INTEGER_LIT,
-            TOK_VARIABLE
-
-        };
-
-        const size_t ht_len = sizeof(heap_tokens) / sizeof(heap_tokens[0]);
-        const bool needs_freeing = is_heap_lexeme(token, heap_tokens, ht_len);
-
-        if (token.lexeme && needs_freeing) free(token.lexeme);
+        if (token.lexeme && token.heap_allocated) free(token.lexeme);
 
         if (token.type == TOK_EOF) break;
 
@@ -240,15 +210,11 @@ int main(int argc, char **argv) {
 
     FILE *input_file = fopen(argv[1], "r");  // Open the input file
 
-    if (!input_file) {
+    if (!input_file) error_ifnf(argv[1]);
 
-        error_ifnf(argv[1]);
-
-    }
-
-    fseek(input_file, 0, SEEK_END);
+    fseek(input_file, 0, SEEK_END);  // Move file ptr to end
     size_t file_size = (size_t)ftell(input_file);
-    rewind(input_file); // Return file ptr to start
+    rewind(input_file);  // Return file ptr to start
 
     char *file_content = malloc(file_size + 1);
 
@@ -260,9 +226,10 @@ int main(int argc, char **argv) {
     }
 
     fread(file_content, sizeof(char), file_size, input_file);
+
     file_content[file_size] = '\0';  // Append null terminator for str ops
 
-    fclose(input_file);
+    fclose(input_file);  // Close input file
 
     for (int i = 2; i < argc; i++) {
 
