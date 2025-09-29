@@ -14,7 +14,7 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 ## Examples
 
 ### Hello world
-```
+```phase
 entry {
     out("Hello world!")
 }
