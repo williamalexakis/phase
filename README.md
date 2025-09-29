@@ -13,7 +13,7 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 
 ## Examples
 
-### Hello world
+### Hello World
 ```
 entry {
     out("Hello world!")

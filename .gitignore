@@ -6,7 +6,6 @@
 # General directories
 build/
 tests/
-examples/
 
 # Generated files
 *.o
