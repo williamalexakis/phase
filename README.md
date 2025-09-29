@@ -14,7 +14,7 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 ## Examples
 
 ### Hello world
-```phase
+```
 entry {
     out("Hello world!")
 }
@@ -43,9 +43,9 @@ entry {
 entry {
 
     int num_1  -- Single declaration
-    int (num_2, num_3)  -- Grouped declaration
+    int num_2 = 100  -- Single initialization
 
-    int num_1 = 100  -- Single initialization
+    int (num_3, num_4)  -- Grouped declaration
 
     -- Grouped initializations
     int (x, y, z) = (1, 2, 3)
