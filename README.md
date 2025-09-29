@@ -18,8 +18,10 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 entry {
     out("Hello world!")
 }
+```
 
--- >> Hello world!
+```
+>> Hello world!
 ```
 
 ### Types
@@ -33,9 +35,11 @@ entry {
     out(string)
 
 }
+```
 
--- >> 10
--- >> Hello
+```
+>> 10
+>> Hello
 ```
 
 ### Declarations and Initializations
