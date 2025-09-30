@@ -1,6 +1,7 @@
 #include "parser.c"
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef enum {
 
@@ -15,7 +16,9 @@ typedef enum {
 typedef enum {
 
     VAL_STRING,
-    VAL_INTEGER
+    VAL_INTEGER,
+    VAL_FLOAT,
+    VAL_BOOLEAN
 
 } ValueType;
 
@@ -27,6 +30,8 @@ typedef struct {
 
         char *str;
         int integer;
+        float floating;
+        bool boolean;
 
     } as;
 
@@ -91,21 +96,13 @@ static void free_emitter(Emitter *emitter) {
 
     for (size_t i = 0; i < emitter->const_count; i++) {
 
-        if (emitter->constants[i].type == VAL_STRING) {
-
-            free(emitter->constants[i].as.str);
-
-        }
+        if (emitter->constants[i].type == VAL_STRING) free(emitter->constants[i].as.str);
 
     }
 
     free(emitter->constants);
 
-    for (size_t i = 0; i < emitter->var_count; i++) {
-
-        free(emitter->var_names[i]);
-
-    }
+    for (size_t i = 0; i < emitter->var_count; i++) free(emitter->var_names[i]);
 
     free(emitter->var_names);
     free(emitter->var_types);
@@ -202,15 +199,13 @@ static TokenType get_expression_type(Emitter *emitter, AstExpression *expression
 
         case EXP_STRING: return TOK_STRING_T;
         case EXP_INTEGER: return TOK_INTEGER_T;
+        case EXP_FLOAT: return TOK_FLOAT_T;
+        case EXP_BOOLEAN: return TOK_BOOLEAN_T;
         case EXP_VARIABLE: {
 
             size_t var_indx = find_variable(emitter, expression->variable.name);
 
-            if (var_indx == SIZE_MAX) {
-
-                error_undefined_var(expression->variable.name);
-
-            }
+            if (var_indx == SIZE_MAX) error_undefined_var(expression->variable.name);
 
             return get_variable_type(emitter, var_indx);
 
@@ -222,13 +217,15 @@ static TokenType get_expression_type(Emitter *emitter, AstExpression *expression
 
 }
 
-/* Convert a token type to its string representation for error messages */
+/* Convert a token type to its string representation for debugging */
 static const char *token_type_to_string(TokenType type) {
 
     switch (type) {
 
         case TOK_STRING_T: return "str";
         case TOK_INTEGER_T: return "int";
+        case TOK_FLOAT_T: return "float";
+        case TOK_BOOLEAN_T: return "bool";
         default: return "unknown";
 
     }
@@ -262,6 +259,22 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
                 .type = VAL_INTEGER,
                 .as.integer = expression->int_lit.value
+
+            };
+
+            size_t indx = add_constant(emitter, value);
+
+            emit_byte(emitter, OP_PUSH_CONST);
+            emit_u16(emitter, (uint16_t)indx);
+
+        } break;
+
+        case EXP_FLOAT: {
+
+            Value value = {
+
+                .type = VAL_FLOAT,
+                .as.floating = expression->float_lit.value
 
             };
 
@@ -370,11 +383,7 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 /* Emit bytecode for an AST block node */
 static void emit_block(Emitter *emitter, AstBlock *block) {
 
-    for (size_t i = 0; i < block->len; i++) {
-
-        emit_statement(emitter, block->statements[i]);
-
-    }
+    for (size_t i = 0; i < block->len; i++) emit_statement(emitter, block->statements[i]);
 
 }
 
@@ -385,11 +394,7 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
         case DEC_ENTRY: {
 
-            if (*entry_exists) {
-
-                error_multiple_entry();
-
-            }
+            if (*entry_exists) error_multiple_entry();
 
             emit_block(emitter, declare->entry.block);
 
@@ -525,6 +530,14 @@ static void interpret(VM *vm) {
                 } else if (value.type == VAL_INTEGER) {
 
                     printf("%d\n", value.as.integer);
+
+                } else if (value.type == VAL_FLOAT) {
+
+                    printf("%g\n", value.as.floating);
+
+                } else if (value.type == VAL_BOOLEAN) {
+
+                    printf("true\n") ? value.as.boolean : printf("false\n");
 
                 } else {
 

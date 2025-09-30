@@ -21,6 +21,13 @@ static void print_expression(AstExpression *expression, int ind) {
 
         } break;
 
+        case EXP_FLOAT: {
+
+            indent(ind);
+            printf("╰ EXPRESSION (%sFLOAT%s) [%s%g%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->float_lit.value, RESET);
+
+        } break;
+
         case EXP_VARIABLE: {
 
             indent(ind);
@@ -56,7 +63,7 @@ static void print_statement(AstStatement *statement, int ind) {
 
             indent(ind);
             printf("╰ STATEMENT (%sVAR DECLARATION%s) [%s%s%s", FG_CYAN, RESET,
-                   FG_PURPLE, statement->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET);
+                   FG_PURPLE, token_type_to_string(statement->var_decl.var_type), RESET);
 
             for (size_t i = 0; i < statement->var_decl.var_count; i++) {
 
@@ -113,7 +120,7 @@ static void print_declaration(AstDeclaration *declare, int ind) {
 
             indent(ind);
             printf("╰ DECLARATION (%sVAR%s) [%s%s%s", FG_CYAN, RESET,
-                   FG_PURPLE, declare->var_decl.var_type == TOK_INTEGER_T ? "int" : "str", RESET);
+                   FG_PURPLE, token_type_to_string(declare->var_decl.var_type), RESET);
 
             if (declare->var_decl.var_count == 0) {
 

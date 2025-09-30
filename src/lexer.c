@@ -14,14 +14,22 @@ typedef enum {
     TOK_COMMA,
     TOK_ENTRY,
     TOK_OUT,
-    TOK_TOINT,
-    TOK_TOSTR,
+    TOK_TOINT,        // WIP
+    TOK_TOSTR,        // WIP
     TOK_STRING_T,
     TOK_INTEGER_T,
+    TOK_FLOAT_T,      // WIP
+    TOK_BOOLEAN_T,    // WIP
     TOK_VARIABLE,
     TOK_ASSIGN,
+    TOK_ADD,          // WIP
+    TOK_SUBTRACT,     // WIP
+    TOK_MULTIPLY,     // WIP
+    TOK_DIVIDE,       // WIP
     TOK_STRING_LIT,
     TOK_INTEGER_LIT,
+    TOK_FLOAT_LIT,    // WIP
+    TOK_BOOLEAN_LIT,  // WIP
     TOK_UNKNOWN
 
 } TokenType;
@@ -135,11 +143,7 @@ static Token lex_ident_or_kw(Lexer *lexer) {
 
     char *lexeme = malloc(len + 1);
 
-    if (!lexeme) {
-
-        error_oom();
-
-    }
+    if (!lexeme) error_oom();
 
     memcpy(lexeme, lexer->src + start, len);
     lexeme[len] = '\0';
@@ -150,6 +154,10 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, true);
     if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line, true);
     if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line, true);
+    if (strcmp(lexeme, "float") == 0) return make_token(TOK_FLOAT_T, lexeme, line, true);
+    if (strcmp(lexeme, "bool") == 0) return make_token(TOK_BOOLEAN_T, lexeme, line, true);
+    if (strcmp(lexeme, "true") == 0) return make_token(TOK_BOOLEAN_LIT, lexeme, line, true);
+    if (strcmp(lexeme, "false") == 0) return make_token(TOK_BOOLEAN_LIT, lexeme, line, true);
 
     return make_token(TOK_VARIABLE, lexeme, line, true);
 
@@ -258,12 +266,22 @@ static Token lex_string(Lexer *lexer) {
 
 }
 
-static Token lex_int(Lexer *lexer) {
+static Token lex_number(Lexer *lexer) {
 
     int line = lexer->line;
     size_t start = lexer->pos;
+    bool is_float = false;
 
     while (is_digit(peek(lexer))) advance_lexer(lexer);
+
+    if (peek(lexer) == '.' && is_digit(peek_2(lexer))) {
+
+        is_float = true;
+        advance_lexer(lexer);
+
+        while (is_digit(peek(lexer))) advance_lexer(lexer);
+
+    }
 
     size_t end = lexer->pos;
     size_t len = end - start;
@@ -275,7 +293,8 @@ static Token lex_int(Lexer *lexer) {
     memcpy(lexeme, lexer->src + start, len);
     lexeme[len] = '\0';
 
-    return make_token(TOK_INTEGER_LIT, lexeme, line, true);
+    TokenType type = is_float ? TOK_FLOAT_LIT : TOK_INTEGER_LIT;
+    return make_token(type, lexeme, line, true);
 
 }
 
@@ -285,18 +304,26 @@ static Token next_token(Lexer *lexer) {
 
     char c = peek(lexer);
 
-    if (c == '\0') return make_token(TOK_EOF, NULL, lexer->line, false);
-    if (c == '\n') { advance_lexer(lexer); return make_token(TOK_NEWLINE, "\\n", lexer->line - 1, false); }
-    if (c == '{') { advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line, false); }
-    if (c == '}') { advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line, false); }
-    if (c == '(') { advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line, false); }
-    if (c == ')') { advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line, false); }
-    if (c == ',') { advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, false); }
-    if (c == '=') { advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, false); }
-    if (c == '"') return lex_string(lexer);
+    switch (c) {
+
+        case '\0': return make_token(TOK_EOF, NULL, lexer->line, false);
+        case '\n': advance_lexer(lexer); return make_token(TOK_NEWLINE, "\\n", lexer->line - 1, false);
+        case '{': advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line, false);
+        case '}': advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line, false);
+        case '(': advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line, false);
+        case ')': advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line, false);
+        case ',': advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, false);
+        case '=': advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, false);
+        case '+': advance_lexer(lexer); return make_token(TOK_ADD, "+", lexer->line, false);
+        case '-': advance_lexer(lexer); return make_token(TOK_SUBTRACT, "-", lexer->line, false);
+        case '*': advance_lexer(lexer); return make_token(TOK_MULTIPLY, "*", lexer->line, false);
+        case '/': advance_lexer(lexer); return make_token(TOK_DIVIDE, "/", lexer->line, false);
+        case '"': return lex_string(lexer);
+
+    }
 
     if (is_ident_start(c)) return lex_ident_or_kw(lexer);
-    if (is_digit(c)) return lex_int(lexer);
+    if (is_digit(c)) return lex_number(lexer);
 
     advance_lexer(lexer);
 
@@ -322,10 +349,18 @@ static const char *get_token_name(TokenType type) {
         [TOK_TOSTR] = "TOSTR",
         [TOK_STRING_T] = "STRING TYPE",
         [TOK_INTEGER_T] = "INTEGER TYPE",
+        [TOK_FLOAT_T] = "FLOAT TYPE",
+        [TOK_BOOLEAN_T] = "BOOLEAN TYPE",
         [TOK_VARIABLE] = "VARIABLE",
         [TOK_ASSIGN] = "ASSIGN",
+        [TOK_ADD] = "ADD",
+        [TOK_SUBTRACT] = "SUBTRACT",
+        [TOK_MULTIPLY] = "MULTIPLY",
+        [TOK_DIVIDE] = "DIVIDE",
         [TOK_STRING_LIT] = "STRING LITERAL",
         [TOK_INTEGER_LIT] = "INTEGER LITERAL",
+        [TOK_FLOAT_LIT] = "FLOAT LITERAL",
+        [TOK_BOOLEAN_LIT] = "BOOLEAN LITERAL",
         [TOK_UNKNOWN] = "UNKNOWN"
 
     };

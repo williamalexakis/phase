@@ -19,6 +19,8 @@ typedef enum {
 
     EXP_STRING,
     EXP_INTEGER,
+    EXP_FLOAT,
+    EXP_BOOLEAN,
     EXP_VARIABLE
 
 } ExpressionTag;
@@ -32,6 +34,7 @@ typedef struct {
 
         struct { char *value; } str_lit;
         struct { int value; } int_lit;
+        struct { float value; } float_lit;
         struct { char *name; } variable;
 
     };
@@ -48,11 +51,13 @@ typedef struct {
         struct { AstExpression *expression; } out;
         struct { char *var_name; AstExpression *expression; } assign;
         struct {
+
             char **var_names;
             size_t var_count;
             TokenType var_type;
             AstExpression **init_exprs;
             size_t init_count;
+
         } var_decl;
 
     };
@@ -75,9 +80,11 @@ typedef struct {
 
         struct { AstBlock *block; } entry;
         struct {
+
             char **var_names;
             size_t var_count;
             TokenType var_type;
+
         } var_decl;
 
     };
@@ -156,11 +163,7 @@ static bool match(Parser *parser, TokenType t_type) {
 /* Expect a specific token type and error if not found */
 static void expect(Parser *parser, TokenType t_type, const char *message) {
 
-    if (!match(parser, t_type)) {
-
-        error_expect_symbol(parser->look.line, message);
-
-    }
+    if (!match(parser, t_type)) error_expect_symbol(parser->look.line, message);
 
 }
 
@@ -191,6 +194,22 @@ static AstExpression *parse_expression(Parser *parser) {
         expression->tag = EXP_INTEGER;
         expression->line = parser->look.line;
         expression->int_lit.value = atoi(parser->look.lexeme ? parser->look.lexeme : "0");
+
+        advance_parser(parser);
+
+        return expression;
+
+    }
+
+    if (parser->look.type == TOK_FLOAT_LIT) {
+
+        AstExpression *expression = calloc(1, sizeof(*expression));
+
+        if (!expression) error_oom();
+
+        expression->tag = EXP_FLOAT;
+        expression->line = parser->look.line;
+        expression->float_lit.value = atof(parser->look.lexeme ? parser->look.lexeme : "0.0");
 
         advance_parser(parser);
 
@@ -273,7 +292,9 @@ static AstStatement *parse_statement(Parser *parser) {
 
     }
 
-    if (parser->look.type == TOK_INTEGER_T || parser->look.type == TOK_STRING_T) {
+    if (parser->look.type == TOK_INTEGER_T
+        || parser->look.type == TOK_STRING_T
+        || parser->look.type == TOK_FLOAT_T) {
 
         int line = parser->look.line;
         TokenType var_type = parser->look.type;
@@ -531,7 +552,9 @@ static AstProgram *parse_program(Parser *parser) {
 
             declaration = parse_entry_decl(parser);
 
-        } else if (parser->look.type == TOK_INTEGER_T || parser->look.type == TOK_STRING_T) {
+        } else if (parser->look.type == TOK_INTEGER_T
+            || parser->look.type == TOK_STRING_T
+            || parser->look.type == TOK_FLOAT_T) {
 
             declaration = parse_var_decl(parser);
 
@@ -559,6 +582,8 @@ static void free_expression(AstExpression *expression) {
 
         case EXP_STRING: free(expression->str_lit.value); break;
         case EXP_INTEGER: break;
+        case EXP_FLOAT: break;
+        case EXP_BOOLEAN: break;
         case EXP_VARIABLE: free(expression->variable.name); break;
 
     }
