@@ -35,15 +35,11 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 
 ### Usage
 
+To get started, use:
+
 ```bash
-./phase <input.phase>
+./phase --help
 ```
-
-### Command Options
-
-- `--help` : Display usage information (input file not required)
-- `--tokens` : Display the source file as tokens
-- `--ast` : Display the source file as an AST
 
 ## Syntax
 

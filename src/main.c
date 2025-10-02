@@ -196,11 +196,12 @@ static void display_tokens(Lexer *lexer) {
 
 static void help_flag() {
 
-    printf("Usage: %s./phase <input.phase> ...%s\n\n", FG_GREEN, RESET);
+    printf("Usage: %s./phase <input.phase>%s\n\n", FG_BLUE_BOLD, RESET);
     printf("Flags:\n");
-    printf("\t%s--help%s : Displays usage information (input file not required).\n", FG_GREEN, RESET);
-    printf("\t%s--tokens%s : Displays the source file as its tokens.\n", FG_GREEN, RESET);
-    printf("\t%s--ast%s : Displays the source file as the AST.\n", FG_GREEN, RESET);
+    printf("\t%s--help%s : Display usage information (input file not required)\n", FG_BLUE_BOLD, RESET);
+    printf("\t%s--tokens%s : Display the source file as tokens\n", FG_BLUE_BOLD, RESET);
+    printf("\t%s--ast%s : Display the source file as an AST\n", FG_BLUE_BOLD, RESET);
+    printf("\t%s--loud%s : Display a message upon program completion\n", FG_BLUE_BOLD, RESET);
     exit(0);
 
 }
@@ -209,18 +210,10 @@ int main(int argc, char **argv) {
 
     bool token_mode = false;
     bool ast_mode = false;
+    bool loud_mode = false;
 
-    if (argc < 2) {
-
-        error_no_args();
-
-    }
-
-    if (strcmp(argv[1], "--help") == 0) {
-
-        help_flag();
-
-    }
+    if (argc < 2) error_no_args();
+    if (strcmp(argv[1], "--help") == 0) help_flag();
 
     FILE *input_file = fopen(argv[1], "r");  // Open the input file
 
@@ -259,6 +252,10 @@ int main(int argc, char **argv) {
 
             ast_mode = true;
 
+        } else if (strcmp(argv[i], "--loud") == 0) {
+
+            loud_mode = true;
+
         } else {
 
             error_invalid_arg(argv[i]);
@@ -295,6 +292,7 @@ int main(int argc, char **argv) {
 
         VM vm = {0};
         init_vm(&vm, emitter.constants, emitter.const_count, emitter.code, emitter.code_len);
+
         interpret(&vm);
 
         free_vm(&vm);
@@ -303,7 +301,7 @@ int main(int argc, char **argv) {
         free_token(&parser.look);
         free(file_content);
 
-        printf("\n%sPROGRAM EXECUTED%s\n", FG_GREEN_BOLD, RESET);
+        if (loud_mode) printf("\n%sPROGRAM EXECUTED%s\n", FG_GREEN_BOLD, RESET);
 
     }
 
