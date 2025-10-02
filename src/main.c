@@ -28,6 +28,13 @@ static void print_expression(AstExpression *expression, int ind) {
 
         } break;
 
+        case EXP_BOOLEAN: {
+
+            indent(ind);
+            printf("╰ EXPRESSION (%sBOOLEAN%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->bool_lit.value ? "true" : "false", RESET);
+
+        } break;
+
         case EXP_VARIABLE: {
 
             indent(ind);

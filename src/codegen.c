@@ -285,6 +285,22 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
         } break;
 
+        case EXP_BOOLEAN: {
+
+            Value value = {
+
+                .type = VAL_BOOLEAN,
+                .as.boolean = expression->bool_lit.value
+
+            };
+
+            size_t indx = add_constant(emitter, value);
+
+            emit_byte(emitter, OP_PUSH_CONST);
+            emit_u16(emitter, (uint16_t)indx);
+
+        } break;
+
         case EXP_VARIABLE: {
 
             size_t var_indx = find_variable(emitter, expression->variable.name);
@@ -537,7 +553,7 @@ static void interpret(VM *vm) {
 
                 } else if (value.type == VAL_BOOLEAN) {
 
-                    printf("true\n") ? value.as.boolean : printf("false\n");
+                    value.as.boolean ? printf("true\n") : printf("false\n");
 
                 } else {
 

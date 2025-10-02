@@ -1,4 +1,5 @@
 #include "lexer.c"
+#include <stdio.h>
 
 typedef enum {
 
@@ -35,6 +36,7 @@ typedef struct {
         struct { char *value; } str_lit;
         struct { int value; } int_lit;
         struct { float value; } float_lit;
+        struct { bool value; } bool_lit;
         struct { char *name; } variable;
 
     };
@@ -217,6 +219,22 @@ static AstExpression *parse_expression(Parser *parser) {
 
     }
 
+    if (parser->look.type == TOK_BOOLEAN_LIT) {
+
+        AstExpression *expression = calloc(1, sizeof(*expression));
+
+        if (!expression) error_oom();
+
+        expression->tag = EXP_BOOLEAN;
+        expression->line = parser->look.line;
+        expression->bool_lit.value = strcmp(parser->look.lexeme, "true") == 0;
+
+        advance_parser(parser);
+
+        return expression;
+
+    }
+
     if (parser->look.type == TOK_VARIABLE) {
 
         AstExpression *expression = calloc(1, sizeof(*expression));
@@ -252,6 +270,7 @@ static AstStatement *parse_statement(Parser *parser) {
     if (parser->look.type == TOK_OUT) {
 
         int line = parser->look.line;
+
         advance_parser(parser);
 
         expect(parser, TOK_LPAREN, "'('");
@@ -294,16 +313,19 @@ static AstStatement *parse_statement(Parser *parser) {
 
     if (parser->look.type == TOK_INTEGER_T
         || parser->look.type == TOK_STRING_T
-        || parser->look.type == TOK_FLOAT_T) {
+        || parser->look.type == TOK_FLOAT_T
+        || parser->look.type == TOK_BOOLEAN_T) {
 
         int line = parser->look.line;
         TokenType var_type = parser->look.type;
+
         advance_parser(parser);
 
         char **var_names = NULL;
         size_t var_count = 0;
         size_t var_cap = 0;
 
+        // Grouped declaration
         if (parser->look.type == TOK_LPAREN) {
 
             advance_parser(parser);
@@ -334,6 +356,7 @@ static AstStatement *parse_statement(Parser *parser) {
 
             expect(parser, TOK_RPAREN, "')'");
 
+        // Single declaration
         } else if (parser->look.type == TOK_VARIABLE) {
 
             var_names = malloc(sizeof(char*));
@@ -357,6 +380,7 @@ static AstStatement *parse_statement(Parser *parser) {
 
         if (match(parser, TOK_ASSIGN)) {
 
+            // Grouped initialization
             if (parser->look.type == TOK_LPAREN) {
 
                 advance_parser(parser);
@@ -382,6 +406,7 @@ static AstStatement *parse_statement(Parser *parser) {
 
                 expect(parser, TOK_RPAREN, "')'");
 
+            // Single initialization
             } else {
 
                 init_exprs = malloc(sizeof(AstExpression*));
@@ -452,6 +477,7 @@ static AstBlock *parse_block(Parser *parser) {
 static AstDeclaration *parse_entry_decl(Parser *parser) {
 
     int line = parser->look.line;
+
     expect(parser, TOK_ENTRY, "'entry'");
 
     AstBlock *block = parse_block(parser);
@@ -469,12 +495,14 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
 
     int line = parser->look.line;
     TokenType var_type = parser->look.type;
+
     advance_parser(parser);
 
     char **var_names = NULL;
     size_t var_count = 0;
     size_t var_cap = 0;
 
+    // Grouped declaration
     if (parser->look.type == TOK_LPAREN) {
 
         advance_parser(parser);
@@ -491,7 +519,9 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
 
                 size_t new_cap = var_cap ? var_cap * 2 : 4;
                 var_names = realloc(var_names, new_cap * sizeof(char*));
+
                 if (!var_names) error_oom();
+
                 var_cap = new_cap;
 
             }
@@ -503,6 +533,7 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
 
         expect(parser, TOK_RPAREN, "')'");
 
+    // Single declaration
     } else if (parser->look.type == TOK_VARIABLE) {
 
         var_names = malloc(sizeof(char*));
@@ -554,7 +585,8 @@ static AstProgram *parse_program(Parser *parser) {
 
         } else if (parser->look.type == TOK_INTEGER_T
             || parser->look.type == TOK_STRING_T
-            || parser->look.type == TOK_FLOAT_T) {
+            || parser->look.type == TOK_FLOAT_T
+            || parser->look.type == TOK_BOOLEAN_T) {
 
             declaration = parse_var_decl(parser);
 
@@ -599,6 +631,7 @@ static void free_statement(AstStatement *statement) {
     switch (statement->tag) {
 
         case STM_OUT: free_expression(statement->out.expression); break;
+
         case STM_ASSIGN: {
 
             free(statement->assign.var_name);
@@ -650,6 +683,7 @@ static void free_declaration(AstDeclaration *declaration) {
     switch (declaration->tag) {
 
         case DEC_ENTRY: free_block(declaration->entry.block); break;
+
         case DEC_VAR: {
 
             for (size_t i = 0; i < declaration->var_decl.var_count; i++) {

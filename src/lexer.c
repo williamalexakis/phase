@@ -18,8 +18,8 @@ typedef enum {
     TOK_TOSTR,        // WIP
     TOK_STRING_T,
     TOK_INTEGER_T,
-    TOK_FLOAT_T,      // WIP
-    TOK_BOOLEAN_T,    // WIP
+    TOK_FLOAT_T,
+    TOK_BOOLEAN_T,
     TOK_VARIABLE,
     TOK_ASSIGN,
     TOK_ADD,          // WIP
@@ -28,8 +28,8 @@ typedef enum {
     TOK_DIVIDE,       // WIP
     TOK_STRING_LIT,
     TOK_INTEGER_LIT,
-    TOK_FLOAT_LIT,    // WIP
-    TOK_BOOLEAN_LIT,  // WIP
+    TOK_FLOAT_LIT,
+    TOK_BOOLEAN_LIT,
     TOK_UNKNOWN
 
 } TokenType;
@@ -63,6 +63,7 @@ static char peek(Lexer *lexer) { return lexer->src[lexer->pos]; }
 static char peek_2(Lexer *lexer) {
 
     char c = peek(lexer);
+
     return c ? lexer->src[lexer->pos + 1] : '\0';
 
 }
@@ -173,20 +174,13 @@ static Token lex_string(Lexer *lexer) {
     size_t lexeme_len = 0;
     size_t lexeme_cap = 64;
 
-    if (!lexeme) {
-        error_oom();
-    }
+    if (!lexeme) error_oom();
 
     for (;;) {
 
         char c = peek(lexer);
 
-        if (c == '\0') {
-
-            error_open_str(lexer->line);
-
-        }
-
+        if (c == '\0') error_open_str(lexer->line);
         if (c == '"') break;
 
         if (c == '\\') {
@@ -285,15 +279,15 @@ static Token lex_number(Lexer *lexer) {
 
     size_t end = lexer->pos;
     size_t len = end - start;
-
     char *lexeme = malloc(len + 1);
 
     if (!lexeme) error_oom();
 
     memcpy(lexeme, lexer->src + start, len);
-    lexeme[len] = '\0';
 
+    lexeme[len] = '\0';
     TokenType type = is_float ? TOK_FLOAT_LIT : TOK_INTEGER_LIT;
+
     return make_token(type, lexeme, line, true);
 
 }
