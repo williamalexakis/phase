@@ -1,4 +1,2 @@
 -- Hello world script
-entry {
-    out("Hello world!")
-}
+entry { out("Hello world!") }

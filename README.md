@@ -11,49 +11,108 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 - **Comprehensive error reporting** featuring helpful messages
 - **Debug modes** for viewing the source file as tokens or an AST
 
-## Examples
+## Installation
+
+### Prerequisites
+
+- CMake (3.20 or higher)
+- C compiler that supports C17
+
+### Building
+
+1. Clone the repo:
+   ```bash
+   git clone <repo-url>
+   cd phase
+   ```
+
+2. Build the project:
+   ```bash
+   mkdir build && cd build
+   cmake ..
+   cmake --build .
+   ```
+
+### Usage
+
+```bash
+./phase <input.phase>
+```
+
+### Command Options
+
+- `--help` : Display usage information (input file not required)
+- `--tokens` : Display the source file as tokens
+- `--ast` : Display the source file as an AST
+
+## Syntax
+
+### Entrypoint
+
+Every Phase program requires an `entry` block:
+
+```phase
+entry {
+    -- Your code here
+}
+```
 
 ### Hello World
-```
+
+```phase
 entry {
     out("Hello world!")
 }
 ```
 
+**Output:**
 ```
->> Hello world!
+Hello world!
 ```
 
-### Types
-```
+### Types and Variables
+
+Phase supports static typing with type safety:
+
+```phase
 entry {
-
-    int integer = 10
     str string = "Hello"
+    int integer = 10
+    float floating = 5.5
+    bool boolean = true
 
-    out(integer)
     out(string)
-
+    out(integer)
+    out(floating)
+    out(boolean)
 }
 ```
 
+**Output:**
 ```
->> 10
->> Hello
+Hello
+10
+5.5
+true
 ```
 
-### Declarations and Initializations
-```
+### Variable Declarations and Initializations
+
+Phase supports both single and grouped variable operations:
+
+```phase
 entry {
+    -- Single declaration
+    int num_1
 
-    int num_1  -- Single declaration
-    int num_2 = 100  -- Single initialization
+    -- Single initialization
+    int num_2 = 100
 
-    int (num_3, num_4)  -- Grouped declaration
+    -- Grouped declaration
+    int (num_3, num_4)
 
-    -- Grouped initializations
+    -- Grouped initialization
     int (x, y, z) = (1, 2, 3)
-    str (i, j, k) = ("Hello", "world", "!")
 
 }
 ```
