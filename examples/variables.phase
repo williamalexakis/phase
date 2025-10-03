@@ -1,24 +1,26 @@
 entry {
 
-    -- Grouped variable initializations
+    -- Grouped initializations
     int (a, b, c) = (5, 10, 15)
     str (x, y, z) = ("hello", "world", "!")
 
-    -- Declarations
-    str i
-    str j
-    str k
+    -- Grouped declarations
+    int (p, q, r)
+    str (i, j, k)
 
     -- Cross assignments
+    p = a
+    q = b
+    r = c
     i = x
     j = y
     k = z
 
     -- Print results
     out("a, b, c:")
-    out(a)
-    out(b)
-    out(c)
+    out(p)
+    out(q)
+    out(r)
     out("")
     out("x, y, z:")
     out(i)

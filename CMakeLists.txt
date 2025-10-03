@@ -27,7 +27,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wextra
 )
 
-# Set output directory
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )

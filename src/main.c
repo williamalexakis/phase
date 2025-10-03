@@ -185,7 +185,6 @@ static void display_tokens(Lexer *lexer) {
         printf("\n");
 
         if (token.lexeme && token.heap_allocated) free(token.lexeme);
-
         if (token.type == TOK_EOF) break;
 
     }
@@ -202,6 +201,7 @@ static void help_flag() {
     printf("\t%s--tokens%s : Display the source file as tokens\n", FG_BLUE_BOLD, RESET);
     printf("\t%s--ast%s : Display the source file as an AST\n", FG_BLUE_BOLD, RESET);
     printf("\t%s--loud%s : Display a message upon program completion\n", FG_BLUE_BOLD, RESET);
+
     exit(0);
 
 }
@@ -219,9 +219,10 @@ int main(int argc, char **argv) {
 
     if (!input_file) error_ifnf(argv[1]);
 
-    fseek(input_file, 0, SEEK_END);  // Move file ptr to end
+    // Move file ptr to end to determine size
+    fseek(input_file, 0, SEEK_END);
     size_t file_size = (size_t)ftell(input_file);
-    rewind(input_file);  // Return file ptr to start
+    rewind(input_file);  // Return to start
 
     char *file_content = malloc(file_size + 1);
 
@@ -234,7 +235,7 @@ int main(int argc, char **argv) {
 
     fread(file_content, sizeof(char), file_size, input_file);
 
-    file_content[file_size] = '\0';  // Append null terminator for str ops
+    file_content[file_size] = '\0';  // Null terminate the str
 
     fclose(input_file);  // Close input file
 
