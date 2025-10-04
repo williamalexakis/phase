@@ -4,12 +4,11 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 
 ## Features
 
-- **Clean syntax** for easy readability
-- **Static typing** for safety
-- **Type checking** at compile time
+- **Clean syntax** offering easy readability
+- **Static typing** for safety and consistency
 - **Bytecode compilation** with virtual machine execution
 - **Comprehensive error reporting** featuring helpful messages
-- **Debug modes** for viewing the source file as tokens or an AST
+- **Debug modes** for convenience
 
 ## Installation
 
