@@ -182,6 +182,7 @@ static Token lex_string(Lexer *lexer) {
 
         if (c == '\0') error_open_str(lexer->line);
         if (c == '"') break;
+        if (c == '\'') break;
 
         if (c == '\\') {
 
@@ -200,6 +201,7 @@ static Token lex_string(Lexer *lexer) {
                 case 'r': escaped_char = '\r'; break;
                 case '\\': escaped_char = '\\'; break;
                 case '"': escaped_char = '"'; break;
+                case '\'': escaped_char = '\''; break;
 
                 default:
 
@@ -313,6 +315,7 @@ static Token next_token(Lexer *lexer) {
         case '*': advance_lexer(lexer); return make_token(TOK_MULTIPLY, "*", lexer->line, false);
         case '/': advance_lexer(lexer); return make_token(TOK_DIVIDE, "/", lexer->line, false);
         case '"': return lex_string(lexer);
+        case '\'': return lex_string(lexer);
 
     }
 

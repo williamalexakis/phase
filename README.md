@@ -109,6 +109,5 @@ entry {
 
     -- Grouped initialization
     int (x, y, z) = (1, 2, 3)
-
 }
 ```
