@@ -196,11 +196,11 @@ static void display_tokens(Lexer *lexer) {
 static void help_flag() {
 
     printf("Usage: %s./phase <input.phase>%s\n\n", FG_BLUE_BOLD, RESET);
-    printf("Flags:\n");
-    printf("\t%s--help%s : Display usage information (input file not required)\n", FG_BLUE_BOLD, RESET);
-    printf("\t%s--tokens%s : Display the source file as tokens\n", FG_BLUE_BOLD, RESET);
-    printf("\t%s--ast%s : Display the source file as an AST\n", FG_BLUE_BOLD, RESET);
-    printf("\t%s--loud%s : Display a message upon program completion\n", FG_BLUE_BOLD, RESET);
+    printf("Options:\n");
+    printf("  %s--help, -h%s    Display usage information (input file not required)\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--tokens%s      Display the source file as tokens\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--ast%s         Display the source file as an AST\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--loud%s        Display a message upon program completion\n", FG_BLUE_BOLD, RESET);
 
     exit(0);
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
     bool loud_mode = false;
 
     if (argc < 2) error_no_args();
-    if (strcmp(argv[1], "--help") == 0) help_flag();
+    if ((strcmp(argv[1], "--help") == 0) || (strcmp(argv[1], "-h") == 0)) help_flag();
 
     FILE *input_file = fopen(argv[1], "r");  // Open the input file
 
@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
 
     for (int i = 2; i < argc; i++) {
 
-        if (strcmp(argv[i], "--help") == 0) {
+        if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-h") == 0)) {
 
             help_flag();
 
