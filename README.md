@@ -21,7 +21,7 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 
 1. Clone the repo:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/zchroma/phase.git
    cd phase
    ```
 
@@ -34,11 +34,7 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 
 ### Usage
 
-To get started, use:
-
-```bash
-./phase --help
-```
+To get started, run the `phase` executable with the `--help` flag.
 
 ## Syntax
 
