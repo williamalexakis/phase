@@ -21,7 +21,7 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/zchroma/phase.git
+   git clone https://github.com/williamalexakis/phase.git
    cd phase
    ```
 
