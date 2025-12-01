@@ -29,6 +29,10 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wall
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    _POSIX_C_SOURCE=200809L
+)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
