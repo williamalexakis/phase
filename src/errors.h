@@ -2,6 +2,7 @@
 #define ERRORS_H
 
 #include <stddef.h>
+#include <stdnoreturn.h>
 
 typedef enum {
 
@@ -29,23 +30,23 @@ typedef enum {
 
 } ErrorType;
 
-void error_oom(void);
-void error_open_str(int line);
-void error_expect_symbol(int line, const char *expected);
-void error_expect_expression(int line);
-void error_expect_statement(int line);
-void error_invalid_token(int line);
-void error_multiple_entry(void);
-void error_no_entry(void);
-void error_type_mismatch(const char *var_name, const char *expected_type, const char *actual_type);
-void error_invalid_opcode(int op);
-void error_invalid_var_index(size_t var_count);
-void error_invalid_const_index(size_t const_count);
-void error_vm_oob(void);
-void error_wrong_var_init(size_t var_count, size_t init_count);
-void error_undefined_var(const char *name);
-void error_no_args(void);
-void error_invalid_arg(const char *arg);
-void error_ifnf(const char *name);
+noreturn void error_oom(void);
+noreturn void error_open_str(int line);
+noreturn void error_expect_symbol(int line, const char *expected);
+noreturn void error_expect_expression(int line);
+noreturn void error_expect_statement(int line);
+noreturn void error_invalid_token(int line);
+noreturn void error_multiple_entry(void);
+noreturn void error_no_entry(void);
+noreturn void error_type_mismatch(const char *var_name, const char *expected_type, const char *actual_type);
+noreturn void error_invalid_opcode(int op);
+noreturn void error_invalid_var_index(size_t var_count);
+noreturn void error_invalid_const_index(size_t const_count);
+noreturn void error_vm_oob(void);
+noreturn void error_wrong_var_init(size_t var_count, size_t init_count);
+noreturn void error_undefined_var(const char *name);
+noreturn void error_no_args(void);
+noreturn void error_invalid_arg(const char *arg);
+noreturn void error_ifnf(const char *name);
 
 #endif
