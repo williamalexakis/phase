@@ -24,6 +24,7 @@ file(GLOB HDR_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.h")
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${HDR_FILES})
 
 target_compile_options(${PROJECT_NAME} PRIVATE
+    -O2
     -Wextra
 )
 

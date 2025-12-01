@@ -1,5 +1,4 @@
 entry {
-
     -- Grouped initializations
     int (a, b, c) = (5, 10, 15)
     str (x, y, z) = ("hello", "world", "!")
@@ -26,5 +25,4 @@ entry {
     out(i)
     out(j)
     out(k)
-
 }

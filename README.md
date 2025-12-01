@@ -1,21 +1,23 @@
 # Phase
 
-An interpreted, statically-typed language designed to bridge the gap between Python's expressiveness and C's explicitness.
+## Overview
+
+An interpreted, statically-typed programming language designed to bridge the gap between the expressiveness of dynamic, high-level languages and the explicitness of stricter, low-level languages.
 
 ## Features
 
-- **Clean syntax** offering easy readability
-- **Static typing** for safety and consistency
-- **Bytecode compilation** with virtual machine execution
-- **Comprehensive error reporting** featuring helpful messages
-- **Debug modes** for convenience
+- **Clean Semantics** – Syntax is clear, balanced, and predictable.
+- **Static Typing** – Type declarations are syntactically consistent and safety is ensured by compile-time checking.
+- **Bytecode Compilation** – Sourcecode is compiled into a portable instruction set executed by a handwritten VM.
+- **Error Reporting** – Errors are comprehensively handled, displaying helpful and verbose messages.
+- **Debug Modes** – View token streams and AST structure to effectively diagnose sourcecode.
 
 ## Installation
 
 ### Prerequisites
 
-- CMake (3.20 or higher)
-- C compiler that supports C17
+- CMake 3.20+
+- C compiler supporting C17
 
 ### Building
 
@@ -27,32 +29,35 @@ An interpreted, statically-typed language designed to bridge the gap between Pyt
 
 2. Build the project:
    ```bash
-   mkdir build && cd build
+   mkdir build
+   cd build
    cmake ..
    cmake --build .
    ```
 
 ### Usage
 
-To get started, run the `phase` executable with the `--help` flag.
+To get started, run the `phase` executable using the `--help` flag.
 
 ## Syntax
 
 ### Entrypoint
 
-Every Phase program requires an `entry` block:
+Every Phase program requires an `entry` block to signify its entrypoint:
 
-```phase
+```c
 entry {
     -- Your code here
 }
 ```
 
-### Hello World
+### Printing
 
-```phase
-entry {
-    out("Hello world!")
+Use the `out()` statement to print expressions and variables:
+
+```c
+entry { 
+    out("Hello world!") 
 }
 ```
 
@@ -61,46 +66,63 @@ entry {
 Hello world!
 ```
 
-### Types and Variables
+### Types
 
-Phase supports static typing with type safety:
+Phase supports strings (`str`), integers (`int`), floats (`float`), and booleans (`bool`):
 
-```phase
+```c
 entry {
     str string = "Hello"
     int integer = 10
     float floating = 5.5
     bool boolean = true
+}
+```
 
-    out(string)
-    out(integer)
-    out(floating)
-    out(boolean)
+Values are implicitly converted to `str` type when using `out()`:
+
+```c
+entry {
+    int num = 3
+    float decimal = 3.14
+    out(num)
+    out(decimal)
 }
 ```
 
 **Output:**
 ```
-Hello
-10
-5.5
-true
+3
+3.14
 ```
 
-### Variable Declarations and Initializations
+### Variables
 
-Phase supports both single and grouped variable operations:
+Variables can be declared or initialized:
 
-```phase
+```c
+entry { 
+    str var_1         -- (null)
+    str var_2 = "Hi"  -- hi
+}
+```
+
+And can be assigned/reassigned a value as expected:
+
+```c
 entry {
-    -- Single declaration
-    int num_1
+    int num    -- (null)
+    num = 3    -- 3
+    num = 300  -- 300
+}
+```
 
-    -- Single initialization
-    int num_2 = 100
+But Phase also supports grouped declarations and initializations:
 
+```c
+entry {
     -- Grouped declaration
-    int (num_3, num_4)
+    str (name, surname)
 
     -- Grouped initialization
     int (x, y, z) = (1, 2, 3)
