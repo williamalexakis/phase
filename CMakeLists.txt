@@ -26,6 +26,7 @@ add_executable(${PROJECT_NAME} ${SRC_FILES} ${HDR_FILES})
 target_compile_options(${PROJECT_NAME} PRIVATE
     -O2
     -Wextra
+    -Wall
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

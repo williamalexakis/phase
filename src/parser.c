@@ -157,6 +157,8 @@ static AstExpression *parse_expression(Parser *parser) {
     }
 
     error_expect_symbol(parser->look.line, "expression");
+    
+    return NULL;
 
 }
 
@@ -330,6 +332,8 @@ static AstStatement *parse_statement(Parser *parser) {
     }
 
     error_expect_symbol(parser->look.line, "statement or declaration");
+    
+    return NULL;
 
 }
 
