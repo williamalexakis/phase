@@ -1,0 +1,4 @@
+-- Type mismatch between var and initializer
+entry {
+    int x = true
+}

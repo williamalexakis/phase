@@ -32,3 +32,36 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+enable_testing()
+
+set(PHASE_EXE $<TARGET_FILE:${PROJECT_NAME}>)
+
+add_test(NAME tokens_helloworld
+    COMMAND ${PHASE_EXE} ${CMAKE_SOURCE_DIR}/examples/helloworld.phase --tokens
+)
+set_tests_properties(tokens_helloworld PROPERTIES
+    PASS_REGULAR_EXPRESSION "ENTRY"
+)
+
+add_test(NAME ast_helloworld
+    COMMAND ${PHASE_EXE} ${CMAKE_SOURCE_DIR}/examples/helloworld.phase --ast
+)
+set_tests_properties(ast_helloworld PROPERTIES
+    PASS_REGULAR_EXPRESSION "PROGRAM"
+)
+
+add_test(NAME run_helloworld
+    COMMAND ${PHASE_EXE} ${CMAKE_SOURCE_DIR}/examples/helloworld.phase
+)
+set_tests_properties(run_helloworld PROPERTIES
+    PASS_REGULAR_EXPRESSION "Hello world!"
+)
+
+add_test(NAME fail_no_entry
+    COMMAND /bin/sh -c "'${PHASE_EXE}' '${CMAKE_SOURCE_DIR}/tests/no_entry.phase' > '${CMAKE_BINARY_DIR}/ctest_no_entry.log' 2>&1; status=$?; grep -q \"No program entrypoint\" '${CMAKE_BINARY_DIR}/ctest_no_entry.log' && [ $status -ne 0 ]"
+)
+
+add_test(NAME fail_type_mismatch
+    COMMAND /bin/sh -c "'${PHASE_EXE}' '${CMAKE_SOURCE_DIR}/tests/type_mismatch.phase' > '${CMAKE_BINARY_DIR}/ctest_type_mismatch.log' 2>&1; status=$?; grep -q \"Type mismatch\" '${CMAKE_BINARY_DIR}/ctest_type_mismatch.log' && [ $status -ne 0 ]"
+)

@@ -5,7 +5,6 @@
 
 # General directories
 build/
-tests/
 
 # Generated files
 *.o
@@ -17,3 +16,4 @@ tests/
 # Project
 phase
 run
+test
