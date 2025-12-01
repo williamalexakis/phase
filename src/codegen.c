@@ -1,77 +1,7 @@
-#include "parser.c"
-#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
-typedef enum {
-
-    OP_PUSH_CONST,
-    OP_PRINT,
-    OP_SET_VAR,
-    OP_GET_VAR,
-    OP_HALT
-
-} Opcode;
-
-typedef enum {
-
-    VAL_STRING,
-    VAL_INTEGER,
-    VAL_FLOAT,
-    VAL_BOOLEAN
-
-} ValueType;
-
-typedef struct {
-
-    ValueType type;
-
-    union {
-
-        char *str;
-        int integer;
-        float floating;
-        bool boolean;
-
-    } as;
-
-} Value;
-
-typedef struct {
-
-    uint8_t *code;
-    size_t code_len;
-    size_t code_cap;
-
-    Value *constants;
-    size_t const_count;
-    size_t const_cap;
-
-    char **var_names;
-    TokenType *var_types;
-    size_t var_count;
-    size_t var_cap;
-
-} Emitter;
-
-typedef struct {
-
-    Value *stack;
-    size_t stack_count;
-    size_t stack_cap;
-
-    Value *constants;
-    size_t const_count;
-
-    uint8_t *code;
-    size_t code_len;
-
-    size_t pos;  // Instruction pointer (but I just call it position)
-
-    Value *variables;
-    size_t var_count;
-
-} VM;
+#include "codegen.h"
 
 static void init_emitter(Emitter *emitter) {
 
@@ -90,7 +20,7 @@ static void init_emitter(Emitter *emitter) {
 
 }
 
-static void free_emitter(Emitter *emitter) {
+void free_emitter(Emitter *emitter) {
 
     free(emitter->code);
 
@@ -218,7 +148,7 @@ static TokenType get_expression_type(Emitter *emitter, AstExpression *expression
 }
 
 /* Convert a token type to its string representation for debugging */
-static const char *token_type_to_string(TokenType type) {
+const char *token_type_to_string(TokenType type) {
 
     switch (type) {
 
@@ -432,7 +362,7 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 }
 
 /* Emit bytecode for an AST program node */
-static void emit_program(Emitter *emitter, AstProgram *program) {
+void emit_program(Emitter *emitter, AstProgram *program) {
 
     init_emitter(emitter);
 
@@ -450,7 +380,7 @@ static void emit_program(Emitter *emitter, AstProgram *program) {
 
 }
 
-static void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t code_len) {
+void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t code_len) {
 
     vm->stack = NULL;
     vm->stack_count = 0;
@@ -469,7 +399,7 @@ static void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code,
 
 }
 
-static void free_vm(VM *vm) {
+void free_vm(VM *vm) {
 
     free(vm->stack);
     free(vm->variables);
@@ -515,7 +445,7 @@ static uint16_t read_u16(VM *vm) {
 
 }
 
-static void interpret(VM *vm) {
+void interpret(VM *vm) {
 
     for (;;) {
 

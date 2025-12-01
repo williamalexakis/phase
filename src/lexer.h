@@ -1,0 +1,59 @@
+#ifndef LEXER_H
+#define LEXER_H
+
+#include <stdbool.h>
+#include <stddef.h>
+#include "errors.h"
+
+typedef enum {
+
+    TOK_EOF,
+    TOK_NEWLINE,
+    TOK_LBRACE,
+    TOK_RBRACE,
+    TOK_LPAREN,
+    TOK_RPAREN,
+    TOK_COMMA,
+    TOK_ENTRY,
+    TOK_OUT,
+    TOK_TOINT,
+    TOK_TOSTR,
+    TOK_STRING_T,
+    TOK_INTEGER_T,
+    TOK_FLOAT_T,
+    TOK_BOOLEAN_T,
+    TOK_VARIABLE,
+    TOK_ASSIGN,
+    TOK_ADD,
+    TOK_SUBTRACT,
+    TOK_MULTIPLY,
+    TOK_DIVIDE,
+    TOK_STRING_LIT,
+    TOK_INTEGER_LIT,
+    TOK_FLOAT_LIT,
+    TOK_BOOLEAN_LIT,
+    TOK_UNKNOWN
+
+} TokenType;
+
+typedef struct {
+
+    TokenType type;
+    char *lexeme;
+    int line;
+    bool heap_allocated;
+
+} Token;
+
+typedef struct {
+
+    const char *src;
+    size_t pos;
+    int line;
+
+} Lexer;
+
+Token next_token(Lexer *lexer);
+const char *get_token_name(TokenType type);
+
+#endif

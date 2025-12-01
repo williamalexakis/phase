@@ -1,4 +1,8 @@
-#include "codegen.c"
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "codegen.h"
 #include "colours.h"
 
 static void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }

@@ -1,55 +1,8 @@
-#include <stddef.h>
-#include <string.h>
 #include <stdbool.h>
-#include "errors.c"
-
-typedef enum {
-
-    TOK_EOF,
-    TOK_NEWLINE,
-    TOK_LBRACE,
-    TOK_RBRACE,
-    TOK_LPAREN,
-    TOK_RPAREN,
-    TOK_COMMA,
-    TOK_ENTRY,
-    TOK_OUT,
-    TOK_TOINT,        // WIP
-    TOK_TOSTR,        // WIP
-    TOK_STRING_T,
-    TOK_INTEGER_T,
-    TOK_FLOAT_T,
-    TOK_BOOLEAN_T,
-    TOK_VARIABLE,
-    TOK_ASSIGN,
-    TOK_ADD,          // WIP
-    TOK_SUBTRACT,     // WIP
-    TOK_MULTIPLY,     // WIP
-    TOK_DIVIDE,       // WIP
-    TOK_STRING_LIT,
-    TOK_INTEGER_LIT,
-    TOK_FLOAT_LIT,
-    TOK_BOOLEAN_LIT,
-    TOK_UNKNOWN
-
-} TokenType;
-
-typedef struct {
-
-    TokenType type;
-    char *lexeme;
-    int line;
-    bool heap_allocated;
-
-} Token;
-
-typedef struct {
-
-    const char *src;
-    size_t pos;
-    int line;
-
-} Lexer;
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include "lexer.h"
 
 /* Create a token with a type, lexeme, and line for error reporting */
 static Token make_token(TokenType type, char *lexeme, int line, bool heap_allocated) {
@@ -294,7 +247,7 @@ static Token lex_number(Lexer *lexer) {
 
 }
 
-static Token next_token(Lexer *lexer) {
+Token next_token(Lexer *lexer) {
 
     ignore_ws_or_comment(lexer);
 
@@ -329,7 +282,7 @@ static Token next_token(Lexer *lexer) {
 }
 
 /* Get token type name for displaying in token mode */
-static const char *get_token_name(TokenType type) {
+const char *get_token_name(TokenType type) {
 
     static const char *token_names[] = {
 
