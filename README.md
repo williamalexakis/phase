@@ -79,13 +79,13 @@ phase/
 
 ## Type System
 
-Phase currently supports `int`, `float`, `bool`, and `str`.
-Types are checked at compile-time, and all variables must explicitly declare their type.
+Phase currently supports `int`, `float`, `bool`, and `str`.<br/>
+Types are checked at compile-time, and all variables must explicitly declare their type.<br/>
 Type-checking ensures operands match expected types and prevents invalid operations before bytecode generation.
 
 ## Virtual Machine
 
-Phase compiles programs into a compact bytecode instruction set, executed by a handwritten stack-based VM.
+Phase compiles programs into a compact bytecode instruction set, executed by a handwritten stack-based VM.<br/>
 Each instruction operatoes on a shared stack and uses a small and predictable opcode set.
 
 **This source code**:
@@ -201,4 +201,5 @@ Contributions and suggestions are welcome. Please open an issue before submittin
 
 ## License
 
-Phase is released under the MIT License. See the LICENSE for full details.
+Phase is released under the MIT License.<br/>
+See the LICENSE for full details.
