@@ -105,7 +105,12 @@ phase/
     
 ## Usage
 
-
+| Command | Description |
+|--------|-------------|
+| `phase --help` | Display available commands and flags |
+| `phase <file.phase> --tokens` | Display token stream |
+| `phase <file.phase> --ast` | Display AST |
+| `phase <file.phase> --loud` | Display a success message when programs finish |
 
 ## Syntax Examples
 
