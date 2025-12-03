@@ -34,6 +34,8 @@ typedef struct {
 
     ExpressionTag tag;
     int line;
+    int column_start;
+    int column_end;
 
     union {
 
@@ -51,6 +53,8 @@ typedef struct {
 
     StatementTag tag;
     int line;
+    int column_start;
+    int column_end;
 
     union {
 
@@ -81,6 +85,8 @@ typedef struct {
 
     DeclarationTag tag;
     int line;
+    int column_start;
+    int column_end;
 
     union {
 

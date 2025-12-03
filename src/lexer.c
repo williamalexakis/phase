@@ -4,10 +4,10 @@
 #include <string.h>
 #include "lexer.h"
 
-/* Create a token with a type, lexeme, and line for error reporting */
-static Token make_token(TokenType type, char *lexeme, int line, bool heap_allocated) {
+/* Create a token with a type, lexeme, line, and column range for error reporting */
+static Token make_token(TokenType type, char *lexeme, int line, int col_start, int col_end, bool heap_allocated) {
 
-    return (Token) {.type = type, .lexeme = lexeme, .line = line, .heap_allocated = heap_allocated};
+    return (Token) {.type = type, .lexeme = lexeme, .line = line, .column_start = col_start, .column_end = col_end, .heap_allocated = heap_allocated};
 
 }
 
@@ -28,8 +28,14 @@ static char advance_lexer(Lexer *lexer) {
     if (c) {
 
         lexer->pos++;
+        lexer->column++;
 
-        if (c == '\n') lexer->line++;
+        if (c == '\n') {
+
+            lexer->line++;
+            lexer->column = 1;
+
+        }
 
     }
 
@@ -86,6 +92,7 @@ static bool is_digit(char c) {
 static Token lex_ident_or_kw(Lexer *lexer) {
 
     int line = lexer->line;
+    int col_start = lexer->column;
     size_t start = lexer->pos;
 
     advance_lexer(lexer);
@@ -94,6 +101,7 @@ static Token lex_ident_or_kw(Lexer *lexer) {
 
     size_t end = lexer->pos;
     size_t len = end - start;
+    int col_end = col_start + (int)len - 1;
 
     char *lexeme = malloc(len + 1);
 
@@ -102,24 +110,26 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     memcpy(lexeme, lexer->src + start, len);
     lexeme[len] = '\0';
 
-    if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line, true);
-    if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line, true);
-    if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, true);
-    if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, true);
-    if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line, true);
-    if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line, true);
-    if (strcmp(lexeme, "float") == 0) return make_token(TOK_FLOAT_T, lexeme, line, true);
-    if (strcmp(lexeme, "bool") == 0) return make_token(TOK_BOOLEAN_T, lexeme, line, true);
-    if (strcmp(lexeme, "true") == 0) return make_token(TOK_BOOLEAN_LIT, lexeme, line, true);
-    if (strcmp(lexeme, "false") == 0) return make_token(TOK_BOOLEAN_LIT, lexeme, line, true);
+    if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "float") == 0) return make_token(TOK_FLOAT_T, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "bool") == 0) return make_token(TOK_BOOLEAN_T, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "true") == 0) return make_token(TOK_BOOLEAN_LIT, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "false") == 0) return make_token(TOK_BOOLEAN_LIT, lexeme, line, col_start, col_end, true);
 
-    return make_token(TOK_VARIABLE, lexeme, line, true);
+    return make_token(TOK_VARIABLE, lexeme, line, col_start, col_end, true);
 
 }
 
 static Token lex_string(Lexer *lexer) {
 
     int line = lexer->line;
+    int col_start = lexer->column;
+    size_t start_pos = lexer->pos;
 
     advance_lexer(lexer);
 
@@ -133,7 +143,7 @@ static Token lex_string(Lexer *lexer) {
 
         char c = peek(lexer);
 
-        if (c == '\0') error_open_str(lexer->line);
+        if (c == '\0') error_open_str((ErrorLocation){ .file = lexer->file_path, .line = lexer->line, .col_start = col_start, .col_end = (int)(lexer->pos - start_pos) + col_start });
         if (c == '"') break;
         if (c == '\'') break;
 
@@ -143,7 +153,7 @@ static Token lex_string(Lexer *lexer) {
 
             char next_c = peek(lexer);
 
-            if (next_c == '\0') error_open_str(lexer->line);
+            if (next_c == '\0') error_open_str((ErrorLocation){ .file = lexer->file_path, .line = lexer->line, .col_start = col_start, .col_end = (int)(lexer->pos - start_pos) + col_start });
 
             char escaped_char;
 
@@ -211,13 +221,16 @@ static Token lex_string(Lexer *lexer) {
 
     advance_lexer(lexer);
 
-    return make_token(TOK_STRING_LIT, lexeme, line, true);
+    int col_end = col_start + (int)(lexer->pos - start_pos) - 1;
+
+    return make_token(TOK_STRING_LIT, lexeme, line, col_start, col_end, true);
 
 }
 
 static Token lex_number(Lexer *lexer) {
 
     int line = lexer->line;
+    int col_start = lexer->column;
     size_t start = lexer->pos;
     bool is_float = false;
 
@@ -234,6 +247,7 @@ static Token lex_number(Lexer *lexer) {
 
     size_t end = lexer->pos;
     size_t len = end - start;
+    int col_end = col_start + (int)len - 1;
     char *lexeme = malloc(len + 1);
 
     if (!lexeme) error_oom();
@@ -243,7 +257,7 @@ static Token lex_number(Lexer *lexer) {
     lexeme[len] = '\0';
     TokenType type = is_float ? TOK_FLOAT_LIT : TOK_INTEGER_LIT;
 
-    return make_token(type, lexeme, line, true);
+    return make_token(type, lexeme, line, col_start, col_end, true);
 
 }
 
@@ -255,18 +269,18 @@ Token next_token(Lexer *lexer) {
 
     switch (c) {
 
-        case '\0': return make_token(TOK_EOF, NULL, lexer->line, false);
-        case '\n': advance_lexer(lexer); return make_token(TOK_NEWLINE, "\\n", lexer->line - 1, false);
-        case '{': advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line, false);
-        case '}': advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line, false);
-        case '(': advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line, false);
-        case ')': advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line, false);
-        case ',': advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, false);
-        case '=': advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, false);
-        case '+': advance_lexer(lexer); return make_token(TOK_ADD, "+", lexer->line, false);
-        case '-': advance_lexer(lexer); return make_token(TOK_SUBTRACT, "-", lexer->line, false);
-        case '*': advance_lexer(lexer); return make_token(TOK_MULTIPLY, "*", lexer->line, false);
-        case '/': advance_lexer(lexer); return make_token(TOK_DIVIDE, "/", lexer->line, false);
+        case '\0': return make_token(TOK_EOF, NULL, lexer->line, lexer->column, lexer->column, false);
+        case '\n': { int line = lexer->line; int col = lexer->column; advance_lexer(lexer); return make_token(TOK_NEWLINE, "\\n", line, col, col, false); }
+        case '{': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_LBRACE, "{", lexer->line, col, col, false); }
+        case '}': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_RBRACE, "}", lexer->line, col, col, false); }
+        case '(': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line, col, col, false); }
+        case ')': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line, col, col, false); }
+        case ',': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, col, col, false); }
+        case '=': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, col, col, false); }
+        case '+': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_ADD, "+", lexer->line, col, col, false); }
+        case '-': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_SUBTRACT, "-", lexer->line, col, col, false); }
+        case '*': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_MULTIPLY, "*", lexer->line, col, col, false); }
+        case '/': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_DIVIDE, "/", lexer->line, col, col, false); }
         case '"': return lex_string(lexer);
         case '\'': return lex_string(lexer);
 
@@ -275,9 +289,10 @@ Token next_token(Lexer *lexer) {
     if (is_ident_start(c)) return lex_ident_or_kw(lexer);
     if (is_digit(c)) return lex_number(lexer);
 
+    int col = lexer->column;
     advance_lexer(lexer);
 
-    return make_token(TOK_UNKNOWN, NULL, lexer->line, false);
+    return make_token(TOK_UNKNOWN, NULL, lexer->line, col, col, false);
 
 }
 

@@ -217,6 +217,7 @@ int main(int argc, char **argv) {
     bool loud_mode = false;
 
     if (argc < 2) error_no_args();
+    error_set_source(argv[1]);
     if ((strcmp(argv[1], "--help") == 0) || (strcmp(argv[1], "-h") == 0)) help_flag();
 
     FILE *input_file = fopen(argv[1], "r");  // Open the input file
@@ -269,7 +270,7 @@ int main(int argc, char **argv) {
 
     }
 
-    Lexer lexer = { .src = file_content, .pos = 0, .line = 1 };
+    Lexer lexer = { .src = file_content, .pos = 0, .line = 1, .column = 1, .file_path = argv[1] };
 
     if (token_mode) {
 

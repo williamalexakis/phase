@@ -60,7 +60,12 @@ static bool match(Parser *parser, TokenType t_type) {
 /* Expect a specific token type and error if not found */
 static void expect(Parser *parser, TokenType t_type, const char *message) {
 
-    if (!match(parser, t_type)) error_expect_symbol(parser->look.line, message);
+    if (!match(parser, t_type)) {
+
+        ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+        error_expect_symbol(loc, message);
+
+    }
 
 }
 
@@ -74,6 +79,8 @@ static AstExpression *parse_expression(Parser *parser) {
 
         expression->tag = EXP_STRING;
         expression->line = parser->look.line;
+        expression->column_start = parser->look.column_start;
+        expression->column_end = parser->look.column_end;
         expression->str_lit.value = strdup(parser->look.lexeme ? parser->look.lexeme : "");
 
         advance_parser(parser);
@@ -90,6 +97,8 @@ static AstExpression *parse_expression(Parser *parser) {
 
         expression->tag = EXP_INTEGER;
         expression->line = parser->look.line;
+        expression->column_start = parser->look.column_start;
+        expression->column_end = parser->look.column_end;
         expression->int_lit.value = atoi(parser->look.lexeme ? parser->look.lexeme : "0");
 
         advance_parser(parser);
@@ -106,6 +115,8 @@ static AstExpression *parse_expression(Parser *parser) {
 
         expression->tag = EXP_FLOAT;
         expression->line = parser->look.line;
+        expression->column_start = parser->look.column_start;
+        expression->column_end = parser->look.column_end;
         expression->float_lit.value = atof(parser->look.lexeme ? parser->look.lexeme : "0.0");
 
         advance_parser(parser);
@@ -122,6 +133,8 @@ static AstExpression *parse_expression(Parser *parser) {
 
         expression->tag = EXP_BOOLEAN;
         expression->line = parser->look.line;
+        expression->column_start = parser->look.column_start;
+        expression->column_end = parser->look.column_end;
         expression->bool_lit.value = strcmp(parser->look.lexeme, "true") == 0;
 
         advance_parser(parser);
@@ -138,6 +151,8 @@ static AstExpression *parse_expression(Parser *parser) {
 
         expression->tag = EXP_VARIABLE;
         expression->line = parser->look.line;
+        expression->column_start = parser->look.column_start;
+        expression->column_end = parser->look.column_end;
         expression->variable.name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
 
         advance_parser(parser);
@@ -156,7 +171,8 @@ static AstExpression *parse_expression(Parser *parser) {
 
     }
 
-    error_expect_symbol(parser->look.line, "expression");
+    ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+    error_expect_symbol(loc, "expression");
     
     return NULL;
 
@@ -167,6 +183,8 @@ static AstStatement *parse_statement(Parser *parser) {
     if (parser->look.type == TOK_OUT) {
 
         int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        int col_end = parser->look.column_end;
 
         advance_parser(parser);
 
@@ -180,6 +198,8 @@ static AstStatement *parse_statement(Parser *parser) {
 
         statement->tag = STM_OUT;
         statement->line = line;
+        statement->column_start = col_start;
+        statement->column_end = col_end;
         statement->out.expression = expression;
 
         return statement;
@@ -189,6 +209,8 @@ static AstStatement *parse_statement(Parser *parser) {
     if (parser->look.type == TOK_VARIABLE) {
 
         int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        int col_end = parser->look.column_end;
         char *var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
         advance_parser(parser);
 
@@ -201,6 +223,8 @@ static AstStatement *parse_statement(Parser *parser) {
 
         statement->tag = STM_ASSIGN;
         statement->line = line;
+        statement->column_start = col_start;
+        statement->column_end = col_end;
         statement->assign.var_name = var_name;
         statement->assign.expression = expression;
 
@@ -214,6 +238,8 @@ static AstStatement *parse_statement(Parser *parser) {
         || parser->look.type == TOK_BOOLEAN_T) {
 
         int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        int col_end = parser->look.column_end;
         TokenType var_type = parser->look.type;
 
         advance_parser(parser);
@@ -231,7 +257,8 @@ static AstStatement *parse_statement(Parser *parser) {
 
                 if (parser->look.type != TOK_VARIABLE) {
 
-                    error_expect_symbol(parser->look.line, "variable name");
+                    ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+                    error_expect_symbol(loc, "variable name");
 
                 }
 
@@ -268,7 +295,8 @@ static AstStatement *parse_statement(Parser *parser) {
 
         } else {
 
-            error_expect_symbol(parser->look.line, "variable name or '('");
+            ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+            error_expect_symbol(loc, "variable name or '('");
 
         }
 
@@ -321,6 +349,8 @@ static AstStatement *parse_statement(Parser *parser) {
 
         statement->tag = STM_VAR_DECL;
         statement->line = line;
+        statement->column_start = col_start;
+        statement->column_end = col_end;
         statement->var_decl.var_names = var_names;
         statement->var_decl.var_count = var_count;
         statement->var_decl.var_type = var_type;
@@ -331,7 +361,8 @@ static AstStatement *parse_statement(Parser *parser) {
 
     }
 
-    error_expect_symbol(parser->look.line, "statement or declaration");
+    ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+    error_expect_symbol(loc, "statement or declaration");
     
     return NULL;
 
@@ -359,7 +390,8 @@ static AstBlock *parse_block(Parser *parser) {
 
             } else {
 
-                error_expect_symbol(parser->look.line, "newline or end of block");
+                ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+                error_expect_symbol(loc, "newline or end of block");
 
             }
 
@@ -376,6 +408,8 @@ static AstBlock *parse_block(Parser *parser) {
 static AstDeclaration *parse_entry_decl(Parser *parser) {
 
     int line = parser->look.line;
+    int col_start = parser->look.column_start;
+    int col_end = parser->look.column_end;
 
     expect(parser, TOK_ENTRY, "'entry'");
 
@@ -384,6 +418,8 @@ static AstDeclaration *parse_entry_decl(Parser *parser) {
 
     declaration->tag = DEC_ENTRY;
     declaration->line = line;
+    declaration->column_start = col_start;
+    declaration->column_end = col_end;
     declaration->entry.block = block;
 
     return declaration;
@@ -393,6 +429,8 @@ static AstDeclaration *parse_entry_decl(Parser *parser) {
 static AstDeclaration *parse_var_decl(Parser *parser) {
 
     int line = parser->look.line;
+    int col_start = parser->look.column_start;
+    int col_end = parser->look.column_end;
     TokenType var_type = parser->look.type;
 
     advance_parser(parser);
@@ -410,7 +448,8 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
 
             if (parser->look.type != TOK_VARIABLE) {
 
-                error_expect_symbol(parser->look.line, "variable name");
+                ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+                error_expect_symbol(loc, "variable name");
 
             }
 
@@ -456,6 +495,8 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
 
     declaration->tag = DEC_VAR;
     declaration->line = line;
+    declaration->column_start = col_start;
+    declaration->column_end = col_end;
     declaration->var_decl.var_names = var_names;
     declaration->var_decl.var_count = var_count;
     declaration->var_decl.var_type = var_type;
@@ -491,7 +532,8 @@ AstProgram *parse_program(Parser *parser) {
 
         } else {
 
-            error_invalid_token(parser->look.line);
+            ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+            error_invalid_token(loc);
 
         }
 

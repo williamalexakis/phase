@@ -135,7 +135,12 @@ static TokenType get_expression_type(Emitter *emitter, AstExpression *expression
 
             size_t var_indx = find_variable(emitter, expression->variable.name);
 
-            if (var_indx == SIZE_MAX) error_undefined_var(expression->variable.name);
+            if (var_indx == SIZE_MAX) {
+
+                ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                error_undefined_var(loc, expression->variable.name);
+
+            }
 
             return get_variable_type(emitter, var_indx);
 
@@ -237,7 +242,8 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
             if (var_indx == SIZE_MAX) {
 
-                error_undefined_var(expression->variable.name);
+                ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                error_undefined_var(loc, expression->variable.name);
 
             }
 
@@ -268,7 +274,8 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
             if (var_indx == SIZE_MAX) {
 
-                error_undefined_var(statement->assign.var_name);
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_undefined_var(loc, statement->assign.var_name);
 
             }
 
@@ -277,7 +284,9 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
             if (var_type != expr_type) {
 
-                error_type_mismatch(statement->assign.var_name,
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_type_mismatch(loc,
+                                   statement->assign.var_name,
                                    token_type_to_string(var_type),
                                    token_type_to_string(expr_type));
 
@@ -293,7 +302,8 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
             if (statement->var_decl.init_count > 0 && statement->var_decl.init_count != statement->var_decl.var_count) {
 
-                error_wrong_var_init(statement->var_decl.var_count, statement->var_decl.init_count);
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_wrong_var_init(loc, statement->var_decl.var_count, statement->var_decl.init_count);
 
             }
 
@@ -308,7 +318,9 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
                     if (var_type != expr_type) {
 
-                        error_type_mismatch(statement->var_decl.var_names[i],
+                        ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                        error_type_mismatch(loc,
+                            statement->var_decl.var_names[i],
                             token_type_to_string(var_type),
                             token_type_to_string(expr_type));
 
@@ -340,7 +352,12 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
         case DEC_ENTRY: {
 
-            if (*entry_exists) error_multiple_entry();
+            if (*entry_exists) {
+
+                ErrorLocation loc = { .line = declare->line, .col_start = declare->column_start, .col_end = declare->column_end };
+                error_multiple_entry(loc);
+
+            }
 
             emit_block(emitter, declare->entry.block);
 
@@ -449,7 +466,7 @@ void interpret(VM *vm) {
 
     for (;;) {
 
-        if (vm->pos >= vm->code_len) error_vm_oob();
+        if (vm->pos >= vm->code_len) error_vm_oob((ErrorLocation){0});
 
         Opcode operation = (Opcode)read_byte(vm);
 
@@ -459,7 +476,7 @@ void interpret(VM *vm) {
 
                 uint16_t indx = read_u16(vm);
 
-                if (indx >= vm->const_count) error_invalid_const_index(vm->const_count);
+                if (indx >= vm->const_count) error_invalid_const_index((ErrorLocation){0}, vm->const_count);
 
                 push(vm, vm->constants[indx]);
 
@@ -497,7 +514,7 @@ void interpret(VM *vm) {
 
                 uint16_t var_indx = read_u16(vm);
 
-                if (var_indx >= vm->var_count) error_invalid_var_index(vm->var_count);
+                if (var_indx >= vm->var_count) error_invalid_var_index((ErrorLocation){0}, vm->var_count);
 
                 vm->variables[var_indx] = pop(vm);
 
@@ -507,7 +524,7 @@ void interpret(VM *vm) {
 
                 uint16_t var_indx = read_u16(vm);
 
-                if (var_indx >= vm->var_count) error_invalid_var_index(vm->var_count);
+                if (var_indx >= vm->var_count) error_invalid_var_index((ErrorLocation){0}, vm->var_count);
 
                 push(vm, vm->variables[var_indx]);
 
@@ -515,7 +532,7 @@ void interpret(VM *vm) {
 
             case OP_HALT: return; break;
 
-            default: error_invalid_opcode(operation);
+            default: error_invalid_opcode((ErrorLocation){0}, operation);
 
         }
 

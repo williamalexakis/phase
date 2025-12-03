@@ -41,6 +41,8 @@ typedef struct {
     TokenType type;
     char *lexeme;
     int line;
+    int column_start;
+    int column_end;
     bool heap_allocated;
 
 } Token;
@@ -50,6 +52,8 @@ typedef struct {
     const char *src;
     size_t pos;
     int line;
+    int column;
+    const char *file_path;
 
 } Lexer;
 
