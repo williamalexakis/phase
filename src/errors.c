@@ -23,11 +23,12 @@ typedef struct {
 static char *suggest_insert_expected(const char *line_text, ErrorLocation loc, va_list args);
 static char *suggest_remove_span(const char *line_text, ErrorLocation loc, va_list args);
 static char *suggest_type_mismatch_fix(const char *line_text, ErrorLocation loc, va_list args);
+static char *suggest_close_string(const char *line_text, ErrorLocation loc, va_list args);
 
 static const ErrorInfo ERROR_TABLE[] = {
 
     { ERR_OOM, "Out of memory.", "Reduce memory usage or increase its capacity.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
-    { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_close_string },
     { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_insert_expected },
     { ERR_EXPECT_EXPRESSION, "Expected expression.", "Provide an expression at this position.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_EXPECT_STATEMENT, "Expected statement or declaration.", "Provide a statement or declaration here.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
@@ -307,6 +308,41 @@ static const char *placeholder_for_expected(const char *expected) {
     if (strcmp(expected, "bool") == 0 || strcmp(expected, "boolean") == 0) return "false";
 
     return "/* fix type */";
+
+}
+
+static char *suggest_close_string(const char *line_text, ErrorLocation loc, va_list args) {
+
+    (void)loc;
+    (void)args;
+
+    if (!line_text) return NULL;
+
+    size_t len = strlen(line_text);
+    size_t start = (loc.col_start > 0) ? (size_t)(loc.col_start - 1) : 0;
+    size_t insert_pos = len;
+
+    for (size_t i = start; i < len; i++) {
+
+        if (line_text[i] == ')' || line_text[i] == ',' || line_text[i] == ';') {
+
+            insert_pos = i;
+            break;
+
+        }
+
+    }
+
+    char *out = malloc(len + 2);
+
+    if (!out) return NULL;
+
+    memcpy(out, line_text, insert_pos);
+    out[insert_pos] = '"';
+    memcpy(out + insert_pos + 1, line_text + insert_pos, len - insert_pos);
+    out[len + 1] = '\0';
+
+    return out;
 
 }
 

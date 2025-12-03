@@ -143,7 +143,18 @@ static Token lex_string(Lexer *lexer) {
 
         char c = peek(lexer);
 
-        if (c == '\0') error_open_str((ErrorLocation){ .file = lexer->file_path, .line = lexer->line, .col_start = col_start, .col_end = (int)(lexer->pos - start_pos) + col_start });
+        if (c == '\0') {
+
+            int span_end = lexeme_len > 0 ? col_start + (int)lexeme_len - 1 : col_start;
+            error_open_str((ErrorLocation){ .file = lexer->file_path, .line = line, .col_start = col_start, .col_end = span_end });
+
+        }
+        if (c == '\n') {
+
+            int span_end = lexeme_len > 0 ? col_start + (int)lexeme_len - 1 : col_start;
+            error_open_str((ErrorLocation){ .file = lexer->file_path, .line = line, .col_start = col_start, .col_end = span_end });
+
+        }
         if (c == '"') break;
         if (c == '\'') break;
 
@@ -153,7 +164,18 @@ static Token lex_string(Lexer *lexer) {
 
             char next_c = peek(lexer);
 
-            if (next_c == '\0') error_open_str((ErrorLocation){ .file = lexer->file_path, .line = lexer->line, .col_start = col_start, .col_end = (int)(lexer->pos - start_pos) + col_start });
+            if (next_c == '\0') {
+
+                int span_end = lexeme_len > 0 ? col_start + (int)lexeme_len - 1 : col_start;
+                error_open_str((ErrorLocation){ .file = lexer->file_path, .line = line, .col_start = col_start, .col_end = span_end });
+
+            }
+            if (next_c == '\n') {
+
+                int span_end = lexeme_len > 0 ? col_start + (int)lexeme_len - 1 : col_start;
+                error_open_str((ErrorLocation){ .file = lexer->file_path, .line = line, .col_start = col_start, .col_end = span_end });
+
+            }
 
             char escaped_char;
 
