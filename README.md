@@ -11,6 +11,9 @@
     <img src="https://img.shields.io/github/v/tag/williamalexakis/phase?label=version">
 </div>
 
+> [!NOTE]
+> Phase is a functional prototype language. It is designed for clarity and experimentation rather than production deployment.
+
 ## Features
 
 - **Clean Semantics** – Syntax is clear, balanced, and predictable.
