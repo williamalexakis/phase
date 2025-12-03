@@ -7,120 +7,120 @@
 // Internal errors
 void error_oom(void) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Out of memory%s\n|\n", FG_RED_BOLD, ERR_OOM, RESET);
-    fprintf(stderr, "╰ %sNote:%s Reduce memory usage or increase its capacity.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]:%s Out of memory.\n", FG_RED_BOLD, ERR_OOM, RESET);
+    fprintf(stderr, "%s┃ Help:%s Reduce memory usage or increase its capacity.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_open_str(int line) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Unterminated string (line %d)%s\n|\n", FG_RED_BOLD, ERR_OPEN_STR, line, RESET);
-    fprintf(stderr, "╰ %sNote:%s Use a closing '\"' to end a string.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]:%s Unterminated string (line %d).\n", FG_RED_BOLD, ERR_OPEN_STR, RESET, line);
+    fprintf(stderr, "%s┃ Help:%s Use a closing '\"' to end a string.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_expect_symbol(int line, const char *expected) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Expected %s (line %d) %s\n|\n", FG_RED_BOLD, ERR_EXPECT_SYMBOL, expected, line, RESET);
-    fprintf(stderr, "╰ %sNote:%s Missing symbol is required.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]:%s Expected %s (line %d).\n", FG_RED_BOLD, ERR_EXPECT_SYMBOL, RESET, expected, line);
+    fprintf(stderr, "%s┃ Help:%s Implement the missing symbol.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_expect_expression(int line) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Expected expression (line %d)%s\n|\n", FG_RED_BOLD, ERR_EXPECT_EXPRESSION, line, RESET);
-    fprintf(stderr, "╰ %sNote:%s An expression is required following a statement.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Expected expression (line %d).\n", FG_RED_BOLD, ERR_EXPECT_EXPRESSION, line);
+    fprintf(stderr, "%s┃ Help:%s Implement an expression after a statement.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_expect_statement(int line) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Expected statement or declaration (line %d)%s\n|\n", FG_RED_BOLD, ERR_EXPECT_STATEMENT, line, RESET);
-    fprintf(stderr, "╰ %sNote:%s A statement or declaration is required.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Expected statement or declaration (line %d).\n", FG_RED_BOLD, ERR_EXPECT_STATEMENT, line);
+    fprintf(stderr, "%s┃ Help:%s Implement a statement or declaration.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_invalid_token(int line) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Unexpected token at global scope (line %d)%s\n|\n", FG_RED_BOLD, ERR_INVALID_TOK, line, RESET);
-    fprintf(stderr, "╰ %sNote:%s Only 'entry' block is permitted in global scope.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Unexpected token at global scope (line %d).\n", FG_RED_BOLD, ERR_INVALID_TOK, line);
+    fprintf(stderr, "%s┃ Help:%s Remove the invalid symbol; only 'entry' blocks are valid in global scope.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_multiple_entry(void) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Multiple program entrypoints found%s\n|\n", FG_RED_BOLD, ERR_MANY_ENTRY, RESET);
-    fprintf(stderr, "╰ %sNote:%s Only 1 'entry' block is permitted.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Multiple program entrypoints found.\n", FG_RED_BOLD, ERR_MANY_ENTRY);
+    fprintf(stderr, "%s┃ Help:%s Use only 1 'entry' block.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_no_entry(void) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: No program entrypoint found%s\n|\n", FG_RED_BOLD, ERR_NO_ENTRY, RESET);
-    fprintf(stderr, "╰ %sNote:%s An 'entry' block must be used.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: No program entrypoint found.\n", FG_RED_BOLD, ERR_NO_ENTRY);
+    fprintf(stderr, "%s┃ Help:%s You must have an 'entry' block to signify program entrypoint.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_type_mismatch(const char *var_name, const char *expected_type, const char *actual_type) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Type mismatch for variable '%s'%s\n|\n", FG_RED_BOLD, ERR_TYPE_MISMATCH, var_name, RESET);
-    fprintf(stderr, "╰ %sNote:%s Expected %s but recieved %s.\n", FG_BLUE_BOLD, RESET, expected_type, actual_type);
+    fprintf(stderr, "%s┃ ERROR [%d]: Type mismatch for variable '%s'.\n", FG_RED_BOLD, ERR_TYPE_MISMATCH, var_name);
+    fprintf(stderr, "%s┃ Help:%s Use %s instead of the current %s.\n", FG_BLUE_BOLD, RESET, expected_type, actual_type);
     exit(1);
 
 }
 
 void error_invalid_opcode(int op) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Opcode '%d' is unknown%s\n|\n", FG_RED_BOLD, ERR_INVALID_OPCODE, op, RESET);
-    fprintf(stderr, "╰ %sNote:%s Internal error.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Opcode '%d' is unknown.\n", FG_RED_BOLD, ERR_INVALID_OPCODE, op);
+    fprintf(stderr, "%s┃ Help:%s Unavailable (INTERNAL ERROR).\n", FG_PURPLE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_invalid_var_index(size_t var_count) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Invalid variable index%s\n|\n", FG_RED_BOLD, ERR_INVALID_VAR_INDEX, RESET);
-    fprintf(stderr, "╰ %sNote:%s Only up to %zu variables are allowed.\n", FG_BLUE_BOLD, RESET, var_count);
+    fprintf(stderr, "%s┃ ERROR [%d]: Invalid variable index.\n", FG_RED_BOLD, ERR_INVALID_VAR_INDEX);
+    fprintf(stderr, "%s┃ Help:%s Reduce total amount of variables; only up to %zu variables are allowed.\n", FG_BLUE_BOLD, RESET, var_count);
     exit(1);
 
 }
 
 void error_invalid_const_index(size_t const_count) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Invalid constant index%s\n|\n", FG_RED_BOLD, ERR_INVALID_CONST_INDEX, RESET);
-    fprintf(stderr, "╰ %sNote:%s Only up to %zu constants are allowed.\n", FG_BLUE_BOLD, RESET, const_count);
+    fprintf(stderr, "%s┃ ERROR [%d]: Invalid constant index.\n", FG_RED_BOLD, ERR_INVALID_CONST_INDEX);
+    fprintf(stderr, "%s┃ Help:%s Reduce total amount of constants; only up to %zu constants are allowed.\n", FG_BLUE_BOLD, RESET, const_count);
     exit(1);
 
 }
 
 void error_vm_oob(void) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: VM pointer out of bounds%s\n|\n", FG_RED_BOLD, ERR_VM_POS_OOB, RESET);
-    fprintf(stderr, "╰ %sNote:%s Internal error.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: VM pointer out of bounds.\n", FG_RED_BOLD, ERR_VM_POS_OOB);
+    fprintf(stderr, "%s┃ Help:%s Unavailable (INTERNAL ERROR).\n", FG_PURPLE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_wrong_var_init(size_t var_count, size_t init_count) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Variable initialization mismatch%s\n|\n", FG_RED_BOLD, ERR_WRONG_VAR_INIT, RESET);
-    fprintf(stderr, "╰ %sNote:%s %zu variables declared but %zu initializers exist.\n", FG_BLUE_BOLD, RESET, var_count, init_count);
+    fprintf(stderr, "%s┃ ERROR [%d]: Variable initialization mismatch.\n", FG_RED_BOLD, ERR_WRONG_VAR_INIT);
+    fprintf(stderr, "%s┃ Help:%s %zu variables declared but %zu initializers exist.\n", FG_BLUE_BOLD, RESET, var_count, init_count);
     exit(1);
 
 }
 
 void error_undefined_var(const char *name) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Variable '%s' is undefined%s\n|\n", FG_RED_BOLD, ERR_UNDEFINED_VAR, name, RESET);
-    fprintf(stderr, "╰ %sNote:%s Variables must be declared before use.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Variable '%s' is undefined.\n", FG_RED_BOLD, ERR_UNDEFINED_VAR, name);
+    fprintf(stderr, "%s┃ Help:%s Variables must be declared before use.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
@@ -128,24 +128,24 @@ void error_undefined_var(const char *name) {
 // CLI errors
 void error_no_args(void) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Insufficient arguments%s\n|\n", FG_RED_BOLD, ERR_NO_ARGS, RESET);
-    fprintf(stderr, "╰ %sNote:%s At least 1 argument required (<input_file.phase>).\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Insufficient arguments.\n", FG_RED_BOLD, ERR_NO_ARGS);
+    fprintf(stderr, "%s┃ Help:%s At least 1 argument is required (<input_file.phase>).\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_invalid_arg(const char *arg) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Argument '%s' is invalid%s\n|\n", FG_RED_BOLD, ERR_INVALID_ARG, arg, RESET);
-    fprintf(stderr, "╰ %sNote:%s See all valid arguments with 'phase --help'.\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Argument '%s' is invalid.\n", FG_RED_BOLD, ERR_INVALID_ARG, arg);
+    fprintf(stderr, "%s┃ Help:%s See all available arguments with 'phase --help'.\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
 
 void error_ifnf(const char *name) {
 
-    fprintf(stderr, "╭ %sERROR [%d]: Input file '%s' not found%s\n|\n", FG_RED_BOLD, ERR_NO_INPUT, name, RESET);
-    fprintf(stderr, "╰ %sNote:%s A valid input file path is required (e.g. path/to/file.phase).\n", FG_BLUE_BOLD, RESET);
+    fprintf(stderr, "%s┃ ERROR [%d]: Input file '%s' not found.\n", FG_RED_BOLD, ERR_NO_INPUT, name);
+    fprintf(stderr, "%s┃ Help:%s Use a valid input path (e.g. /path/to/file.phase).\n", FG_BLUE_BOLD, RESET);
     exit(1);
 
 }
