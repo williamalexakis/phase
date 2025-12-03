@@ -1,6 +1,5 @@
-# Phase
-
-## A statically-typed language bridging high-level clarity with low-level control
+<h1 align="center">Phase</h1>
+<h3 align="center">A statically-typed language bridging high-level clarity with low-level control</h3>
 
 <div align="center">
     <img src="assets/cut_phase_demo.gif" width="500"><br/><br/>
