@@ -2,9 +2,14 @@
 
 ## A statically-typed language bridging high-level clarity with low-level control
 
-<img src="assets/cut_phase_demo.gif" width="600">
+<img src="assets/cut_phase_demo.gif" width="500">
 
-![License](https://img.shields.io/github/license/williamalexakis/phase) ![Build](https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build) ![Language](https://img.shields.io/badge/language-C17-blue) ![VM](https://img.shields.io/badge/VM-bytecode%20interpreter-purple) ![Status](https://img.shields.io/badge/status-active-success) ![Version](https://img.shields.io/github/v/tag/williamalexakis/phase?label=version)
+![License](https://img.shields.io/github/license/williamalexakis/phase) &nbsp;&nbsp;
+![Build](https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build) &nbsp;&nbsp;
+![Language](https://img.shields.io/badge/language-C17-blue) &nbsp;&nbsp;
+![VM](https://img.shields.io/badge/VM-bytecode%20interpreter-purple) &nbsp;&nbsp;
+![Status](https://img.shields.io/badge/status-active-success) &nbsp;&nbsp;
+![Version](https://img.shields.io/github/v/tag/williamalexakis/phase?label=version)
 
 ## Features
 
@@ -17,12 +22,13 @@
 ## Motivation
 
 I created Phase to bridge a gap between high-level languages and low-level ones.
-High-level languages are expressive but obscure their mechanics, while low-level languages are explicit but heavy. I wanted a middleground that's clear, predictable, and simple.
+High-level languages are expressive but obscure their mechanics, while low-level languages are explicit but heavy; I wanted a middleground that's clear, predictable, and simple.
 
 I also spent time designing an error system that tells you exactly what you need to know – without excessive noise or missing context. I think that good diagnostics are as important as good semantics, and I wanted Phase to reflect that.
 
-## Interpreter Pipeline
+## Architecture
 
+### Interpreter Pipeline
 ```mermaid
 flowchart LR
     A(Source Code) --> B(Lexer)
@@ -30,6 +36,39 @@ flowchart LR
     C --> D(Type Checker)
     D --> E(Bytecode Generator)
     E --> F(Virtual Machine)
+```
+
+### Project Structure
+```txt
+phase/
+  ├─ src/
+  │   ├─ lexer.c
+  │   ├─ lexer.h
+  │   ├─ parser.c
+  │   ├─ parser.h
+  │   ├─ codegen.c
+  │   ├─ codegen.h
+  │   ├─ errors.c
+  │   ├─ errors.h
+  │   ├─ main.c
+  │   └─ colours.h
+  ├─ examples/
+  │   ├─ helloworld.phase
+  │   └─ variables.phase
+  ├─ tests/
+  │   ├─ invalid_token_global.phase
+  │   ├─ missing_expression.phase
+  │   ├─ missing_paren.phase
+  │   ├─ multiple_entry.phase
+  │   ├─ no_entry.phase
+  │   ├─ open_string.phase
+  │   ├─ type_mismatch.phase
+  │   ├─ undefined_var.phase
+  │   └─ wrong_var_init_count.phase
+  ├─ CMakeLists.txt
+  ├─ build.sh
+  ├─ LICENSE
+  └─ README.md
 ```
 
 ## Installation
@@ -47,9 +86,9 @@ flowchart LR
     cd phase
     ```
 
-2. **Run the Automated Build Script**:
+2. **Run the Automated Build Script (Recommended)**:
     
-    Quick Build (Recommended)
+    Quick Build
     ```bash
     ./build.sh
     ```
@@ -63,6 +102,10 @@ flowchart LR
     cmake ..
     cmake --build .
     ```
+    
+## Usage
+
+
 
 ## Syntax Examples
 
@@ -117,7 +160,10 @@ entry {
 - [ ] Conditionals
 - [ ] Basic loops
 
+## Contributing
+
+Contributions and suggestions are welcome. Please open an issue before submitting large changes.
+
 ## License
 
-Phase is released under the MIT License.
-See the LICENSE for full details.
+Phase is released under the MIT License. See the LICENSE for full details.
