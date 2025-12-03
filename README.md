@@ -2,9 +2,9 @@
 
 ## A statically-typed language bridging high-level clarity with low-level control
 
-<img src="assets/phase_demo.gif" width="500">
+<img src="assets/phase_program_demo.gif" width="500">
 
-![License](https://img.shields.io/github/license/williamalexakis/phase) ![Build](https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build) ![Language](https://img.shields.io/badge/language-C17-blue) ![VM](https://img.shields.io/badge/VM-bytecode%20interpreter-purple) ![Status](https://img.shields.io/badge/status-active-success) ![Version](https://img.shields.io/github/v/tag/williamalexakis/phase?label=version)
+![License](https://img.shields.io/github/license/williamalexakis/phase)  ![Build](https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build)  ![Language](https://img.shields.io/badge/language-C17-blue)  ![VM](https://img.shields.io/badge/VM-bytecode%20interpreter-purple)  ![Status](https://img.shields.io/badge/status-active-success)  ![Version](https://img.shields.io/github/v/tag/williamalexakis/phase?label=version)
 
 ## Features
 
