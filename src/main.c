@@ -206,10 +206,10 @@ static void help_flag() {
 
     printf("Usage: %s./phase <input.phase>%s\n\n", FG_BLUE_BOLD, RESET);
     printf("Options:\n");
-    printf("  %s--help, -h%s    Display usage information (input file not required)\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--tokens%s      Display the source file as tokens\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--ast%s         Display the source file as an AST\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--loud%s        Display a message upon program completion\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--help, -h%s    Display this message.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--tokens%s      Display the token stream of a sourec file.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--ast%s         Display the AST structure of a source file.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--loud%s        Display a proud message upon program completion.\n", FG_BLUE_BOLD, RESET);
 
     exit_phase(2);
 

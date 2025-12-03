@@ -22,21 +22,21 @@ static const ErrorInfo ERROR_TABLE[] = {
 
     { ERR_OOM, "Out of memory.", "Reduce memory usage or increase its capacity.", FG_RED_BOLD, FG_BLUE_BOLD },
     { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_EXPECT_SYMBOL, "Expected %s.", "Implement the missing symbol.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_EXPECT_EXPRESSION, "Expected expression.", "Implement an expression after a statement.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_EXPECT_STATEMENT, "Expected statement or declaration.", "Implement a statement or declaration.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Remove the invalid symbol; only 'entry' blocks are valid in global scope.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_MANY_ENTRY, "Multiple program entrypoints found.", "Use only 1 'entry' block.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_NO_ENTRY, "No program entrypoint found.", "You must have an 'entry' block to signify program entrypoint.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_TYPE_MISMATCH, "Type mismatch for variable '%s'.", "Use %s instead of the current %s.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_OPCODE, "Opcode '%d' is unknown.", "Unavailable (INTERNAL ERROR).", FG_RED_BOLD, FG_PURPLE_BOLD },
-    { ERR_INVALID_VAR_INDEX, "Invalid variable index.", "Reduce total amount of variables; only up to %zu variables are allowed.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_CONST_INDEX, "Invalid constant index.", "Reduce total amount of constants; only up to %zu constants are allowed.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_VM_POS_OOB, "VM pointer out of bounds.", "Unavailable (INTERNAL ERROR).", FG_RED_BOLD, FG_PURPLE_BOLD },
+    { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_EXPECT_EXPRESSION, "Expected expression.", "Provide an expression at this position.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_EXPECT_STATEMENT, "Expected statement or declaration.", "Provide a statement or declaration here.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Only an 'entry' block is valid at global scope; remove this token.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_MANY_ENTRY, "Duplicate entry block.", "Only one 'entry' block is allowed.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_NO_ENTRY, "Missing entry block.", "Add an 'entry' block to define the program entrypoint.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_TYPE_MISMATCH, "Type mismatch.", "Variable '%s' expects %s but got %s.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_INVALID_OPCODE, "Unknown opcode '%d'.", "Unavailable (Internal Error).", FG_RED_BOLD, FG_PURPLE_BOLD },
+    { ERR_INVALID_VAR_INDEX, "Invalid variable index.", "Index out of range; maximum is %zu variables.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_INVALID_CONST_INDEX, "Invalid constant index.", "Index out of range; maximum is %zu constants.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_VM_POS_OOB, "VM pointer out of bounds.", "Unavailable (Internal Error).", FG_RED_BOLD, FG_PURPLE_BOLD },
     { ERR_UNDEFINED_VAR, "Variable '%s' is undefined.", "Variables must be declared before use.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_WRONG_VAR_INIT, "Variable initialization mismatch.", "%zu variables declared but %zu initializers exist.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_NO_ARGS, "Insufficient arguments.", "At least 1 argument is required (<input_file.phase>).", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_ARG, "Argument '%s' is invalid.", "See all available arguments with 'phase --help'.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_WRONG_VAR_INIT, "Variable initialization mismatch.", "Declared %zu variables but found %zu initializers.", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_NO_ARGS, "Missing input file.", "Pass an input file path (<input_file.phase>).", FG_RED_BOLD, FG_BLUE_BOLD },
+    { ERR_INVALID_ARG, "Unknown argument '%s'.", "See all available arguments with 'phase --help'.", FG_RED_BOLD, FG_BLUE_BOLD },
     { ERR_NO_INPUT, "Input file '%s' not found.", "Use a valid input path (e.g. /path/to/file.phase).", FG_RED_BOLD, FG_BLUE_BOLD }
 
 };
@@ -45,11 +45,11 @@ static const char *g_error_file = NULL;
 
 noreturn void exit_phase(unsigned int code) {
     if (code == 0) {
-        fprintf(stderr, "\nProcess successfully exited with code %d.\n", code);
+        fprintf(stderr, "\nProcess successfully exited with code %d.\n", code);  // Loud success exit
     } else if (code == 1) {
-        fprintf(stderr, "\nProcess exited with code %d.\n", code);
+        fprintf(stderr, "\nProcess exited with code %d.\n", code);  // Loud failure exit
     } else if (code == 2) {
-        exit(0);
+        exit(0);  // Quiet success exit
     }
     exit(code);
 }
@@ -80,6 +80,112 @@ static ErrorLocation normalize_location(ErrorLocation loc) {
     if (loc.col_end < loc.col_start && loc.col_end != 0) loc.col_end = loc.col_start;
 
     return loc;
+
+}
+
+static char *load_line_from_file(const char *path, int target_line) {
+
+    if (!path || target_line <= 0) return NULL;
+
+    FILE *file = fopen(path, "r");
+
+    if (!file) return NULL;
+
+    size_t cap = 256;
+    size_t len = 0;
+    char *buffer = malloc(cap);
+    int current_line = 1;
+    int ch;
+
+    if (!buffer) {
+
+        fclose(file);
+        return NULL;
+
+    }
+
+    while ((ch = fgetc(file)) != EOF) {
+
+        if (current_line == target_line) {
+
+            if (ch == '\n') {
+
+                buffer[len] = '\0';
+                fclose(file);
+                return buffer;
+
+            }
+
+            if (len + 1 >= cap) {
+
+                cap *= 2;
+                char *new_buf = realloc(buffer, cap);
+
+                if (!new_buf) {
+
+                    free(buffer);
+                    fclose(file);
+                    return NULL;
+
+                }
+
+                buffer = new_buf;
+
+            }
+
+            buffer[len++] = (char)ch;
+
+        }
+
+        if (ch == '\n') {
+
+            if (current_line == target_line) break;
+            current_line++;
+
+            if (current_line > target_line) break;
+
+        }
+
+    }
+
+    fclose(file);
+
+    if (current_line == target_line) {
+
+        buffer[len] = '\0';
+        return buffer;
+
+    }
+
+    free(buffer);
+    return NULL;
+
+}
+
+static void print_source_snippet(ErrorLocation loc, const char *bar_side) {
+
+    char *line_text = load_line_from_file(loc.file, loc.line);
+
+    if (!line_text) return;
+
+    int line_no = loc.line > 0 ? loc.line : 0;
+    int col_start = loc.col_start > 0 ? loc.col_start : 1;
+    int col_end = loc.col_end >= col_start ? loc.col_end : col_start;
+
+    char num_buf[32];
+    int width = snprintf(num_buf, sizeof(num_buf), "%d", line_no);
+
+    fprintf(stderr, "%s%s%s\n", FG_RED_BOLD, bar_side, RESET);
+    fprintf(stderr, "%s%s %*d | %s%s\n", FG_RED_BOLD, bar_side, width, line_no, RESET, line_text);
+    fprintf(stderr, "%s%s %*s | %s", FG_RED_BOLD, bar_side, width, "", RESET);
+
+    for (int i = 1; i < col_start; i++) fputc(' ', stderr);
+    for (int i = col_start; i <= col_end; i++) fputc('^', stderr);
+
+    fputc('\n', stderr);
+    fprintf(stderr, "%s%s%s\n", FG_RED_BOLD, bar_side, RESET);
+
+    free(line_text);
 
 }
 
@@ -154,6 +260,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     int col_end = loc.col_end > 0 ? loc.col_end : col_start;
 
     fprintf(stderr, "%s%s -->%s %s:%d:%d-%d%s\n", FG_RED_BOLD, bar_side, RESET, file, line, col_start, col_end, RESET);
+    print_source_snippet(loc, bar_side);
 
     va_list args_help;
     va_copy(args_help, args);
