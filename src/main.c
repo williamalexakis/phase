@@ -176,7 +176,7 @@ static void print_program(AstProgram *program) {
 
     for (size_t i = 0; i < program->len; i++) print_declaration(program->declarations[i], 6);
 
-    exit(0);
+    exit_phase(2);
 
 }
 
@@ -198,7 +198,7 @@ static void display_tokens(Lexer *lexer) {
 
     }
 
-    exit(0);
+    exit_phase(2);
 
 }
 
@@ -211,7 +211,7 @@ static void help_flag() {
     printf("  %s--ast%s         Display the source file as an AST\n", FG_BLUE_BOLD, RESET);
     printf("  %s--loud%s        Display a message upon program completion\n", FG_BLUE_BOLD, RESET);
 
-    exit(0);
+    exit_phase(2);
 
 }
 
@@ -314,7 +314,8 @@ int main(int argc, char **argv) {
         free(file_content);
 
         if (loud_mode) printf("\n%sPROGRAM EXECUTED%s\n", FG_GREEN_BOLD, RESET);
-
+        
+        exit_phase(0);
     }
 
     return 0;

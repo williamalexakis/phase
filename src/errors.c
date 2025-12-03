@@ -43,6 +43,17 @@ static const ErrorInfo ERROR_TABLE[] = {
 
 static const char *g_error_file = NULL;
 
+void exit_phase(unsigned int code) {
+    if (code == 0) {
+        fprintf(stderr, "\nProcess successfully exited with code %d.\n", code);
+    } else if (code == 1) {
+        fprintf(stderr, "\nProcess exited with code %d.\n", code);
+    } else if (code == 2) {
+        exit(0);
+    }
+    exit(code);
+}
+
 void error_set_source(const char *file) {
 
     g_error_file = file;
@@ -119,7 +130,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
 
         fprintf(stderr, "%s%s Fatal Error [%d]:%s Unknown error.\n", FG_RED_BOLD, bar_main, code, RESET);
         fprintf(stderr, "%s%s Help:%s Unavailable (Internal Error).\n", FG_PURPLE_BOLD, bar_sub, RESET);
-        exit(1);
+        exit_phase(1);
 
     }
 
@@ -154,8 +165,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     va_end(args_help);
     va_end(args);
 
-    exit(1);
-    
+    exit_phase(1);
 }
 
 // Internal errors
