@@ -173,7 +173,7 @@ entry {
 
 #### See `examples/` for more
 
-## Output Examples
+## Diagnostics Examples
 
 ### Error Reporting
 <img src="assets/phase_error.png" width="400">
