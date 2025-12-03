@@ -43,7 +43,7 @@ static const ErrorInfo ERROR_TABLE[] = {
 
 static const char *g_error_file = NULL;
 
-void exit_phase(unsigned int code) {
+noreturn void exit_phase(unsigned int code) {
     if (code == 0) {
         fprintf(stderr, "\nProcess successfully exited with code %d.\n", code);
     } else if (code == 1) {

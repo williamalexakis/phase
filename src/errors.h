@@ -60,6 +60,6 @@ noreturn void error_invalid_arg(const char *arg);
 noreturn void error_ifnf(const char *name);
 void error_set_source(const char *file);
 bool unicode_available(void);
-void exit_phase(unsigned int code);
+noreturn void exit_phase(unsigned int code);
 
 #endif
