@@ -471,7 +471,15 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     }
 
     loc = normalize_location(loc);
-    char *line_text = load_line_from_file(loc.file, loc.line);
+
+    const char *file = loc.file ? loc.file : "<unknown>";
+    int line = loc.line > 0 ? loc.line : 0;
+    int col_start = loc.col_start > 0 ? loc.col_start : 1;
+    int col_end = loc.col_end > 0 ? loc.col_end : col_start;
+    bool has_location = line > 0;
+
+    char *line_text = NULL;
+    if (has_location) line_text = load_line_from_file(loc.file, loc.line);
 
     va_list args;
     va_start(args, code);
@@ -485,13 +493,12 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
 
     va_end(args_msg);
 
-    const char *file = loc.file ? loc.file : "<unknown>";
-    int line = loc.line > 0 ? loc.line : 0;
-    int col_start = loc.col_start > 0 ? loc.col_start : 1;
-    int col_end = loc.col_end > 0 ? loc.col_end : col_start;
+    if (has_location) {
 
-    fprintf(stderr, "%s%s -->%s %s:%d:%d-%d%s\n", FG_RED_BOLD, bar_side, RESET, file, line, col_start, col_end, RESET);
-    print_source_snippet(line_text, loc, bar_side);
+        fprintf(stderr, "%s%s -->%s %s:%d:%d-%d%s\n", FG_RED_BOLD, bar_side, RESET, file, line, col_start, col_end, RESET);
+        print_source_snippet(line_text, loc, bar_side);
+
+    }
 
     va_list args_help;
     va_copy(args_help, args);
@@ -504,7 +511,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
 
     char *suggested_line = NULL;
 
-    if (info->suggest && line_text) {
+    if (has_location && info->suggest && line_text) {
 
         va_list args_suggest;
         va_copy(args_suggest, args);
