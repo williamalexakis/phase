@@ -2,14 +2,15 @@
 
 ## A statically-typed language bridging high-level clarity with low-level control
 
-<img src="assets/cut_phase_demo.gif" width="500">
-
-![License](https://img.shields.io/github/license/williamalexakis/phase) &nbsp;&nbsp;
-![Build](https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build) &nbsp;&nbsp;
-![Language](https://img.shields.io/badge/language-C17-blue) &nbsp;&nbsp;
-![VM](https://img.shields.io/badge/VM-bytecode%20interpreter-purple) &nbsp;&nbsp;
-![Status](https://img.shields.io/badge/status-active-success) &nbsp;&nbsp;
-![Version](https://img.shields.io/github/v/tag/williamalexakis/phase?label=version)
+<div align="center">
+    <img src="assets/cut_phase_demo.gif" width="500"><br/>
+    <img src="https://img.shields.io/github/license/williamalexakis/phase">&nbsp;&nbsp;
+    <img src="https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build">&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/language-C17-blue">&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/VM-bytecode%20interpreter-purple">&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/status-active-success">&nbsp;&nbsp;
+    <img src="https://img.shields.io/github/v/tag/williamalexakis/phase?label=version">
+</div>
 
 ## Features
 
