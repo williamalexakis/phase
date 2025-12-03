@@ -63,7 +63,7 @@ set_tests_properties(run_helloworld PROPERTIES
 )
 
 add_test(NAME fail_no_entry
-    COMMAND /bin/sh -c "'${PHASE_EXE}' '${CMAKE_SOURCE_DIR}/tests/no_entry.phase' > '${CMAKE_BINARY_DIR}/ctest_no_entry.log' 2>&1; status=$?; grep -q \"No program entrypoint\" '${CMAKE_BINARY_DIR}/ctest_no_entry.log' && [ $status -ne 0 ]"
+    COMMAND /bin/sh -c "'${PHASE_EXE}' '${CMAKE_SOURCE_DIR}/tests/no_entry.phase' > '${CMAKE_BINARY_DIR}/ctest_no_entry.log' 2>&1; status=$?; grep -q \"Missing entry block\" '${CMAKE_BINARY_DIR}/ctest_no_entry.log' && [ $status -ne 0 ]"
 )
 
 add_test(NAME fail_type_mismatch
