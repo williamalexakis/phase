@@ -33,6 +33,7 @@ I also spent time designing an error system that tells you exactly what you need
 ## Architecture
 
 ### Interpreter Pipeline
+
 ```mermaid
 flowchart LR
     A(Source Code) --> B(Lexer)
@@ -43,6 +44,7 @@ flowchart LR
 ```
 
 ### Project Structure
+
 ```txt
 phase/
   ├─ src/
@@ -73,6 +75,30 @@ phase/
   ├─ build.sh
   ├─ LICENSE
   └─ README.md
+```
+
+## Type System
+
+Phase currently supports `int`, `float`, `bool`, and `str`.
+Types are checked at compile-time, and all variables must explicitly declare their type.
+Type-checking ensures operands match expected types and prevents invalid operations before bytecode generation.
+
+## Virtual Machine
+
+Phase compiles programs into a compact bytecode instruction set, executed by a handwritten stack-based VM.
+Each instruction operatoes on a shared stack and uses a small and predictable opcode set.
+
+**This source code**:
+```c
+entry {
+    out("Hello world!")
+}
+```
+**Compiles into this bytecode**:
+```c
+00 00 00   ; OP_PUSH_CONST 0
+01         ; OP_PRINT
+04         ; OP_HALT
 ```
 
 ## Installation
