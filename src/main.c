@@ -4,8 +4,13 @@
 #include <string.h>
 #include "codegen.h"
 #include "colours.h"
+#include "errors.h"
 
 static void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
+
+static const char *branch_glyph = "╰";
+
+static void set_branch_glyph(bool unicode) { branch_glyph = unicode ? "╰" : ">"; }
 
 static void print_expression(AstExpression *expression, int ind) {
 
@@ -14,35 +19,35 @@ static void print_expression(AstExpression *expression, int ind) {
         case EXP_STRING: {
 
             indent(ind);
-            printf("╰ EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->str_lit.value, RESET);
+            printf("%s EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->str_lit.value, RESET);
 
         } break;
 
         case EXP_INTEGER: {
 
             indent(ind);
-            printf("╰ EXPRESSION (%sINTEGER%s) [%s%d%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->int_lit.value, RESET);
+            printf("%s EXPRESSION (%sINTEGER%s) [%s%d%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->int_lit.value, RESET);
 
         } break;
 
         case EXP_FLOAT: {
 
             indent(ind);
-            printf("╰ EXPRESSION (%sFLOAT%s) [%s%g%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->float_lit.value, RESET);
+            printf("%s EXPRESSION (%sFLOAT%s) [%s%g%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->float_lit.value, RESET);
 
         } break;
 
         case EXP_BOOLEAN: {
 
             indent(ind);
-            printf("╰ EXPRESSION (%sBOOLEAN%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->bool_lit.value ? "true" : "false", RESET);
+            printf("%s EXPRESSION (%sBOOLEAN%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->bool_lit.value ? "true" : "false", RESET);
 
         } break;
 
         case EXP_VARIABLE: {
 
             indent(ind);
-            printf("╰ EXPRESSION (%sVARIABLE%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, expression->variable.name, RESET);
+            printf("%s EXPRESSION (%sVARIABLE%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->variable.name, RESET);
 
         } break;
 
@@ -57,7 +62,7 @@ static void print_statement(AstStatement *statement, int ind) {
         case STM_OUT: {
 
             indent(ind);
-            printf("╰ STATEMENT (%sOUT%s)\n", FG_CYAN, RESET);
+            printf("%s STATEMENT (%sOUT%s)\n", branch_glyph, FG_CYAN, RESET);
             print_expression(statement->out.expression, ind + 6);
 
         } break;
@@ -65,7 +70,7 @@ static void print_statement(AstStatement *statement, int ind) {
         case STM_ASSIGN: {
 
             indent(ind);
-            printf("╰ STATEMENT (%sASSIGNMENT%s) [%s%s%s]\n", FG_CYAN, RESET, FG_PURPLE, statement->assign.var_name, RESET);
+            printf("%s STATEMENT (%sASSIGNMENT%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, statement->assign.var_name, RESET);
             print_expression(statement->assign.expression, ind + 6);
 
         } break;
@@ -73,7 +78,7 @@ static void print_statement(AstStatement *statement, int ind) {
         case STM_VAR_DECL: {
 
             indent(ind);
-            printf("╰ STATEMENT (%sVAR DECLARATION%s) [%s%s%s", FG_CYAN, RESET,
+            printf("%s STATEMENT (%sVAR DECLARATION%s) [%s%s%s", branch_glyph, FG_CYAN, RESET,
                    FG_PURPLE, token_type_to_string(statement->var_decl.var_type), RESET);
 
             for (size_t i = 0; i < statement->var_decl.var_count; i++) {
@@ -109,7 +114,7 @@ static void print_statement(AstStatement *statement, int ind) {
 static void print_block(AstBlock *block, int ind) {
 
     indent(ind);
-    printf("╰ BLOCK\n");
+    printf("%s BLOCK\n", branch_glyph);
 
     for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 6);
 
@@ -122,7 +127,7 @@ static void print_declaration(AstDeclaration *declare, int ind) {
         case DEC_ENTRY: {
 
             indent(ind);
-            printf("╰ DECLARATION (%sENTRY%s)\n", FG_CYAN, RESET);
+            printf("%s DECLARATION (%sENTRY%s)\n", branch_glyph, FG_CYAN, RESET);
             print_block(declare->entry.block, ind + 6);
 
         } break;
@@ -130,7 +135,7 @@ static void print_declaration(AstDeclaration *declare, int ind) {
         case DEC_VAR: {
 
             indent(ind);
-            printf("╰ DECLARATION (%sVAR%s) [%s%s%s", FG_CYAN, RESET,
+            printf("%s DECLARATION (%sVAR%s) [%s%s%s", branch_glyph, FG_CYAN, RESET,
                    FG_PURPLE, token_type_to_string(declare->var_decl.var_type), RESET);
 
             if (declare->var_decl.var_count == 0) {
@@ -215,6 +220,7 @@ int main(int argc, char **argv) {
     bool token_mode = false;
     bool ast_mode = false;
     bool loud_mode = false;
+    set_branch_glyph(unicode_available());
 
     if (argc < 2) error_no_args();
     error_set_source(argv[1]);

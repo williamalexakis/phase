@@ -2,6 +2,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <locale.h>
 #include "colours.h"
 #include "errors.h"
 
@@ -69,14 +72,53 @@ static ErrorLocation normalize_location(ErrorLocation loc) {
 
 }
 
-static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
+/* Check if we can use unicode glyphs in errors */
+bool unicode_available(void) {
 
+    const char *term = getenv("TERM");
+
+    if (term) {
+
+        if (strcmp(term, "dumb") == 0) return false;
+        if (strstr(term, "vt100") != NULL) return false;
+        if (strstr(term, "ansi") != NULL) return false;
+
+    }
+
+    const char *loc = setlocale(LC_CTYPE, NULL);
+    const char *env_ct = getenv("LC_CTYPE");
+    const char *env_lang = getenv("LANG");
+    const char *candidates[] = { loc, env_ct, env_lang };
+
+    for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
+
+        const char *val = candidates[i];
+
+        if (!val) continue;
+        if (strstr(val, "UTF-8")) return true;
+        if (strstr(val, "utf-8")) return true;
+        if (strstr(val, "utf8")) return true;
+        if (strstr(val, "UTF8")) return true;
+
+    }
+
+    // Default to true unless we explicitly detect an incompatible TERM
+    return true;
+
+}
+
+static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
+    
+    bool unicode = unicode_available();
+    const char *bar_main = unicode ? "┏" : ">";
+    const char *bar_sub = unicode ? "┣" : ">";
+    const char *bar_side = unicode ? "┃" : "|";
     const ErrorInfo *info = find_error_info(code);
 
     if (!info) {
 
-        fprintf(stderr, "%s┏ Fatal Error [%d]:%s Unknown error.\n", FG_RED_BOLD, code, RESET);
-        fprintf(stderr, "%s┣ Help:%s Unavailable (INTERNAL ERROR).\n", FG_PURPLE_BOLD, RESET);
+        fprintf(stderr, "%s%s Fatal Error [%d]:%s Unknown error.\n", FG_RED_BOLD, bar_main, code, RESET);
+        fprintf(stderr, "%s%s Help:%s Unavailable (Internal Error).\n", FG_PURPLE_BOLD, bar_sub, RESET);
         exit(1);
 
     }
@@ -89,7 +131,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     va_list args_msg;
     va_copy(args_msg, args);
 
-    fprintf(stderr, "%s┏ Fatal Error [%d]:%s ", info->error_colour, info->code, RESET);
+    fprintf(stderr, "%s%s Fatal Error [%d]:%s ", info->error_colour, bar_main, info->code, RESET);
     vfprintf(stderr, info->message_fmt, args_msg);
     fprintf(stderr, "\n");
 
@@ -100,12 +142,12 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     int col_start = loc.col_start > 0 ? loc.col_start : 1;
     int col_end = loc.col_end > 0 ? loc.col_end : col_start;
 
-    fprintf(stderr, "%s┃ -->%s %s:%d:%d-%d%s\n", FG_RED_BOLD, RESET, file, line, col_start, col_end, RESET);
+    fprintf(stderr, "%s%s -->%s %s:%d:%d-%d%s\n", FG_RED_BOLD, bar_side, RESET, file, line, col_start, col_end, RESET);
 
     va_list args_help;
     va_copy(args_help, args);
 
-    fprintf(stderr, "%s┣ Help:%s ", info->help_colour, RESET);
+    fprintf(stderr, "%s%s Help:%s ", info->help_colour, bar_sub, RESET);
     vfprintf(stderr, info->help_fmt, args_help);
     fprintf(stderr, "\n");
 
