@@ -206,10 +206,10 @@ static void help_flag() {
 
     printf("Usage: %s./phase <input.phase>%s\n\n", FG_BLUE_BOLD, RESET);
     printf("Options:\n");
-    printf("  %s--help, -h%s    Display this message.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--tokens%s      Display the token stream of a sourec file.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--ast%s         Display the AST structure of a source file.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--loud%s        Display a proud message upon program completion.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--help,   -h%s        Display this message.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--tokens, -t%s        Display the token stream of a source file.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--ast,    -a%s        Display the AST structure of a source file.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--loud,   -l%s        Display a proud message upon program completion.\n", FG_BLUE_BOLD, RESET);
 
     exit_phase(2);
 
@@ -256,15 +256,15 @@ int main(int argc, char **argv) {
 
             help_flag();
 
-        } else if (strcmp(argv[i], "--tokens") == 0) {
+        } else if ((strcmp(argv[i], "--tokens") == 0) || (strcmp(argv[i], "-t") == 0)) {
 
             token_mode = true;
 
-        } else if (strcmp(argv[i], "--ast") == 0) {
+        } else if ((strcmp(argv[i], "--ast") == 0) || (strcmp(argv[i], "-a") == 0)) {
 
             ast_mode = true;
 
-        } else if (strcmp(argv[i], "--loud") == 0) {
+        } else if ((strcmp(argv[i], "--loud") == 0) || (strcmp(argv[i], "-l") == 0)) {
 
             loud_mode = true;
 
