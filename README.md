@@ -89,7 +89,7 @@ Type-checking ensures operands match expected types and prevents invalid operati
 
 Phase compiles programs into a compact bytecode instruction set, executed by a handwritten stack-based VM.
 
-Each instruction operatoes on a shared stack and uses a small and predictable opcode set.
+Each instruction operates on a shared stack and uses a small and predictable opcode set.
 
 **This source code**:
 ```c
