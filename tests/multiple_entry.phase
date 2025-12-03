@@ -1,0 +1,8 @@
+entry {
+    out("first")
+}
+
+entry {
+    out("second")
+}
+

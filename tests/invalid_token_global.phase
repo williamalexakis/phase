@@ -1,0 +1,3 @@
+entryf {
+    out("hi")
+}

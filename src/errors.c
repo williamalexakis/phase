@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <locale.h>
+#include <ctype.h>
 #include "colours.h"
 #include "errors.h"
 
@@ -15,29 +16,34 @@ typedef struct {
     const char *help_fmt;
     const char *error_colour;
     const char *help_colour;
+    char *(*suggest)(const char *line_text, ErrorLocation loc, va_list args);
 
 } ErrorInfo;
 
+static char *suggest_insert_expected(const char *line_text, ErrorLocation loc, va_list args);
+static char *suggest_remove_span(const char *line_text, ErrorLocation loc, va_list args);
+static char *suggest_type_mismatch_fix(const char *line_text, ErrorLocation loc, va_list args);
+
 static const ErrorInfo ERROR_TABLE[] = {
 
-    { ERR_OOM, "Out of memory.", "Reduce memory usage or increase its capacity.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_EXPECT_EXPRESSION, "Expected expression.", "Provide an expression at this position.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_EXPECT_STATEMENT, "Expected statement or declaration.", "Provide a statement or declaration here.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Only an 'entry' block is valid at global scope; remove this token.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_MANY_ENTRY, "Duplicate entry block.", "Only one 'entry' block is allowed.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_NO_ENTRY, "Missing entry block.", "Add an 'entry' block to define the program entrypoint.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_TYPE_MISMATCH, "Type mismatch.", "Variable '%s' expects %s but got %s.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_OPCODE, "Unknown opcode '%d'.", "Unavailable (Internal Error).", FG_RED_BOLD, FG_PURPLE_BOLD },
-    { ERR_INVALID_VAR_INDEX, "Invalid variable index.", "Index out of range; maximum is %zu variables.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_CONST_INDEX, "Invalid constant index.", "Index out of range; maximum is %zu constants.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_VM_POS_OOB, "VM pointer out of bounds.", "Unavailable (Internal Error).", FG_RED_BOLD, FG_PURPLE_BOLD },
-    { ERR_UNDEFINED_VAR, "Variable '%s' is undefined.", "Variables must be declared before use.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_WRONG_VAR_INIT, "Variable initialization mismatch.", "Declared %zu variables but found %zu initializers.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_NO_ARGS, "Missing input file.", "Pass an input file path (<input_file.phase>).", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_INVALID_ARG, "Unknown argument '%s'.", "See all available arguments with 'phase --help'.", FG_RED_BOLD, FG_BLUE_BOLD },
-    { ERR_NO_INPUT, "Input file '%s' not found.", "Use a valid input path (e.g. /path/to/file.phase).", FG_RED_BOLD, FG_BLUE_BOLD }
+    { ERR_OOM, "Out of memory.", "Reduce memory usage or increase its capacity.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_insert_expected },
+    { ERR_EXPECT_EXPRESSION, "Expected expression.", "Provide an expression at this position.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_EXPECT_STATEMENT, "Expected statement or declaration.", "Provide a statement or declaration here.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Only an 'entry' block is valid at global scope; remove this token.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_remove_span },
+    { ERR_MANY_ENTRY, "Duplicate entry block.", "Only one 'entry' block is allowed.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_NO_ENTRY, "Missing entry block.", "Add an 'entry' block to define the program entrypoint.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_TYPE_MISMATCH, "Type mismatch.", "Variable '%s' expects %s but got %s.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_type_mismatch_fix },
+    { ERR_INVALID_OPCODE, "Unknown opcode '%d'.", "Unavailable (INTERNAL ERROR).", FG_RED_BOLD, FG_PURPLE_BOLD, NULL },
+    { ERR_INVALID_VAR_INDEX, "Invalid variable index.", "Index out of range; maximum is %zu variables.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_INVALID_CONST_INDEX, "Invalid constant index.", "Index out of range; maximum is %zu constants.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_VM_POS_OOB, "VM pointer out of bounds.", "Unavailable (INTERNAL ERROR).", FG_RED_BOLD, FG_PURPLE_BOLD, NULL },
+    { ERR_UNDEFINED_VAR, "Variable '%s' is undefined.", "Variables must be declared before use.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_WRONG_VAR_INIT, "Variable initialization mismatch.", "Declared %zu variables but found %zu initializers.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_NO_ARGS, "Missing input file.", "Pass an input file path (<input_file.phase>).", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_INVALID_ARG, "Unknown argument '%s'.", "See all available arguments with 'phase --help'.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_NO_INPUT, "Input file '%s' not found.", "Use a valid input path (e.g. /path/to/file.phase).", FG_RED_BOLD, FG_BLUE_BOLD, NULL }
 
 };
 
@@ -45,11 +51,11 @@ static const char *g_error_file = NULL;
 
 noreturn void exit_phase(unsigned int code) {
     if (code == 0) {
-        fprintf(stderr, "\nProcess successfully exited with code %d.\n", code);  // Loud success exit
+        fprintf(stderr, "\nProcess successfully exited with code %d.\n", code);
     } else if (code == 1) {
-        fprintf(stderr, "\nProcess exited with code %d.\n", code);  // Loud failure exit
+        fprintf(stderr, "\nProcess exited with code %d.\n", code);
     } else if (code == 2) {
-        exit(0);  // Quiet success exit
+        exit(0);
     }
     exit(code);
 }
@@ -162,9 +168,7 @@ static char *load_line_from_file(const char *path, int target_line) {
 
 }
 
-static void print_source_snippet(ErrorLocation loc, const char *bar_side) {
-
-    char *line_text = load_line_from_file(loc.file, loc.line);
+static void print_source_snippet(const char *line_text, ErrorLocation loc, const char *bar_side) {
 
     if (!line_text) return;
 
@@ -185,7 +189,198 @@ static void print_source_snippet(ErrorLocation loc, const char *bar_side) {
     fputc('\n', stderr);
     fprintf(stderr, "%s%s%s\n", FG_RED_BOLD, bar_side, RESET);
 
-    free(line_text);
+}
+
+static char *trim_expected_token(const char *expected) {
+
+    if (!expected) return NULL;
+
+    while (*expected == ' ' || *expected == '\t') expected++;
+
+    size_t len = strlen(expected);
+
+    while (len > 0 && (expected[len - 1] == ' ' || expected[len - 1] == '\t')) len--;
+
+    if (len == 0) return NULL;
+
+    if (len >= 2 && ((expected[0] == '\'' && expected[len - 1] == '\'') || (expected[0] == '"' && expected[len - 1] == '"'))) {
+
+        expected++;
+        len -= 2;
+
+    }
+
+    char *clean = malloc(len + 1);
+
+    if (!clean) return NULL;
+
+    memcpy(clean, expected, len);
+    clean[len] = '\0';
+
+    return clean;
+
+}
+
+static char *suggest_insert_expected(const char *line_text, ErrorLocation loc, va_list args) {
+
+    if (!line_text) return NULL;
+
+    const char *expected = va_arg(args, const char *);
+    char *token = trim_expected_token(expected);
+
+    if (!token) return NULL;
+
+    for (size_t i = 0; token[i]; i++) {
+
+        if (isalnum((unsigned char)token[i])) {
+
+            free(token);
+            return NULL;
+
+        }
+
+    }
+
+    size_t line_len = strlen(line_text);
+    size_t insert_len = strlen(token);
+    size_t pos = (loc.col_start > 0) ? (size_t)(loc.col_start - 1) : 0;
+
+    if (pos > line_len) pos = line_len;
+
+    char *out = malloc(line_len + insert_len + 1);
+
+    if (!out) {
+
+        free(token);
+        return NULL;
+
+    }
+
+    memcpy(out, line_text, pos);
+    memcpy(out + pos, token, insert_len);
+    memcpy(out + pos + insert_len, line_text + pos, line_len - pos);
+    out[line_len + insert_len] = '\0';
+
+    free(token);
+
+    return out;
+
+}
+
+static char *suggest_remove_span(const char *line_text, ErrorLocation loc, va_list args) {
+
+    (void)args;
+
+    if (!line_text) return NULL;
+
+    size_t line_len = strlen(line_text);
+    size_t start = (loc.col_start > 0) ? (size_t)(loc.col_start - 1) : 0;
+    size_t end = (loc.col_end > 0) ? (size_t)(loc.col_end - 1) : start;
+
+    if (start > line_len) start = line_len;
+    if (end >= line_len) end = line_len ? line_len - 1 : 0;
+    if (end < start) end = start;
+
+    size_t remove_len = (end >= start) ? (end - start + 1) : 0;
+    if (remove_len > line_len) remove_len = line_len;
+
+    size_t new_len = line_len - remove_len;
+    char *out = malloc(new_len + 1);
+
+    if (!out) return NULL;
+
+    memcpy(out, line_text, start);
+    memcpy(out + start, line_text + end + 1, line_len - end - 1);
+    out[new_len] = '\0';
+
+    return out;
+
+}
+
+static const char *placeholder_for_expected(const char *expected) {
+
+    if (!expected) return "/* fix type */";
+
+    if (strcmp(expected, "int") == 0) return "0";
+    if (strcmp(expected, "float") == 0) return "0.0";
+    if (strcmp(expected, "str") == 0 || strcmp(expected, "string") == 0) return "\"\"";
+    if (strcmp(expected, "bool") == 0 || strcmp(expected, "boolean") == 0) return "false";
+
+    return "/* fix type */";
+
+}
+
+static char *suggest_type_mismatch_fix(const char *line_text, ErrorLocation loc, va_list args) {
+
+    (void)loc;
+
+    const char *var_name = va_arg(args, const char *);
+    const char *expected = va_arg(args, const char *);
+    const char *actual = va_arg(args, const char *);
+
+    if (!line_text || !var_name || !expected || !actual) return NULL;
+
+    size_t indent_len = 0;
+
+    while (line_text[indent_len] == ' ' || line_text[indent_len] == '\t') indent_len++;
+
+    const char *type_start = line_text + indent_len;
+    const char *type_keywords[] = { "int", "float", "str", "bool" };
+    size_t matched_len = 0;
+
+    for (size_t i = 0; i < sizeof(type_keywords) / sizeof(type_keywords[0]); i++) {
+
+        size_t len = strlen(type_keywords[i]);
+
+        if (strncmp(type_start, type_keywords[i], len) == 0) {
+
+            matched_len = len;
+            break;
+
+        }
+
+    }
+
+    if (matched_len > 0) {
+
+        size_t prefix_len = indent_len;
+        size_t suffix_len = strlen(type_start + matched_len);
+        size_t actual_len = strlen(actual);
+
+        char *out = malloc(prefix_len + actual_len + suffix_len + 1);
+
+        if (!out) return NULL;
+
+        memcpy(out, line_text, prefix_len);
+        memcpy(out + prefix_len, actual, actual_len);
+        memcpy(out + prefix_len + actual_len, type_start + matched_len, suffix_len);
+        out[prefix_len + actual_len + suffix_len] = '\0';
+
+        return out;
+
+    }
+
+    const char *placeholder = placeholder_for_expected(expected);
+
+    size_t line_len = strlen(line_text);
+    size_t var_len = strlen(var_name);
+    size_t placeholder_len = strlen(placeholder);
+    size_t out_len = indent_len + var_len + 3 + placeholder_len;
+
+    char *out = malloc(out_len + 1);
+
+    if (!out) return NULL;
+
+    memcpy(out, line_text, indent_len);
+    memcpy(out + indent_len, var_name, var_len);
+    memcpy(out + indent_len + var_len, " = ", 3);
+    memcpy(out + indent_len + var_len + 3, placeholder, placeholder_len);
+
+    out[out_len] = '\0';
+
+    (void)line_len;
+
+    return out;
 
 }
 
@@ -219,7 +414,6 @@ bool unicode_available(void) {
 
     }
 
-    // Default to true unless we explicitly detect an incompatible TERM
     return true;
 
 }
@@ -235,12 +429,13 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     if (!info) {
 
         fprintf(stderr, "%s%s Fatal Error [%d]:%s Unknown error.\n", FG_RED_BOLD, bar_main, code, RESET);
-        fprintf(stderr, "%s%s Help:%s Unavailable (Internal Error).\n", FG_PURPLE_BOLD, bar_sub, RESET);
+        fprintf(stderr, "%s%s Help:%s Unavailable (INTERNAL ERROR).\n", FG_PURPLE_BOLD, bar_sub, RESET);
         exit_phase(1);
 
     }
 
     loc = normalize_location(loc);
+    char *line_text = load_line_from_file(loc.file, loc.line);
 
     va_list args;
     va_start(args, code);
@@ -260,7 +455,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     int col_end = loc.col_end > 0 ? loc.col_end : col_start;
 
     fprintf(stderr, "%s%s -->%s %s:%d:%d-%d%s\n", FG_RED_BOLD, bar_side, RESET, file, line, col_start, col_end, RESET);
-    print_source_snippet(loc, bar_side);
+    print_source_snippet(line_text, loc, bar_side);
 
     va_list args_help;
     va_copy(args_help, args);
@@ -270,7 +465,29 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
     fprintf(stderr, "\n");
 
     va_end(args_help);
+
+    char *suggested_line = NULL;
+
+    if (info->suggest && line_text) {
+
+        va_list args_suggest;
+        va_copy(args_suggest, args);
+        suggested_line = info->suggest(line_text, loc, args_suggest);
+        va_end(args_suggest);
+
+        if (suggested_line) {
+
+            fprintf(stderr, "%s%s Suggestion:%s\n", info->help_colour, bar_side, RESET);
+            fprintf(stderr, "%s%s%s %s- %s%s\n", FG_BLUE_BOLD, bar_side, RESET, FG_RED, line_text, RESET);
+            fprintf(stderr, "%s%s%s %s+ %s%s\n", FG_BLUE_BOLD, bar_side, RESET, FG_GREEN, suggested_line, RESET);
+
+        }
+
+    }
+
     va_end(args);
+    if (suggested_line) free(suggested_line);
+    if (line_text) free(line_text);
 
     exit_phase(1);
 }
