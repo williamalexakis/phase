@@ -7,7 +7,7 @@
     <img src="https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build">&nbsp;&nbsp;
     <img src="https://img.shields.io/badge/language-C17-blue">&nbsp;&nbsp;
     <img src="https://img.shields.io/badge/VM-bytecode%20interpreter-purple">&nbsp;&nbsp;
-    <img src="https://img.shields.io/badge/status-active-success">&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/status-finished-blue">&nbsp;&nbsp;
     <img src="https://img.shields.io/github/v/tag/williamalexakis/phase?label=version">
 </div>
 <br/>
