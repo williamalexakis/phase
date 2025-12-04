@@ -83,6 +83,16 @@ static void print_expression(AstExpression *expression, int ind) {
 
         } break;
 
+        case EXP_UNARY: {
+
+            indent(ind);
+            printf("%s EXPRESSION (%sUNARY%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE,
+                   expression->unary.op == TOK_BANG || expression->unary.op == TOK_NOT ? "!" : "-",
+                   RESET);
+            print_expression(expression->unary.expr, ind + 6);
+
+        } break;
+
     }
 
 }

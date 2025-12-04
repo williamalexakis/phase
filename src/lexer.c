@@ -117,6 +117,10 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     if (strcmp(lexeme, "if") == 0) return make_token(TOK_IF, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "else") == 0) return make_token(TOK_ELSE, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "while") == 0) return make_token(TOK_WHILE, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "and") == 0) return make_token(TOK_AND, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "or") == 0) return make_token(TOK_OR, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "not") == 0) return make_token(TOK_NOT, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "while") == 0) return make_token(TOK_WHILE, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "let") == 0) return make_token(TOK_LET, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, col_start, col_end, true);
@@ -305,7 +309,12 @@ Token next_token(Lexer *lexer) {
         case ')': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line, col, col, false); }
         case ',': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, col, col, false); }
         case ':': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_COLON, ":", lexer->line, col, col, false); }
-        case '=': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, col, col, false); }
+        case '=': {
+            int col = lexer->column;
+            advance_lexer(lexer);
+            if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_EQUAL_EQUAL, "==", lexer->line, col, col + 1, false); }
+            return make_token(TOK_ASSIGN, "=", lexer->line, col, col, false);
+        }
         case '+': {
             int col = lexer->column;
             advance_lexer(lexer);
@@ -329,6 +338,19 @@ Token next_token(Lexer *lexer) {
             advance_lexer(lexer);
             if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_SLASH_EQ, "/=", lexer->line, col, col + 1, false); }
             return make_token(TOK_DIVIDE, "/", lexer->line, col, col, false);
+        }
+        case '!': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_BANG, "!", lexer->line, col, col, false); }
+        case '<': {
+            int col = lexer->column;
+            advance_lexer(lexer);
+            if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_LESS_EQUAL, "<=", lexer->line, col, col + 1, false); }
+            return make_token(TOK_LESS, "<", lexer->line, col, col, false);
+        }
+        case '>': {
+            int col = lexer->column;
+            advance_lexer(lexer);
+            if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_GREATER_EQUAL, ">=", lexer->line, col, col + 1, false); }
+            return make_token(TOK_GREATER, ">", lexer->line, col, col, false);
         }
         case '"': return lex_string(lexer);
         case '\'': return lex_string(lexer);
@@ -358,10 +380,19 @@ const char *get_token_name(TokenType type) {
         [TOK_RPAREN] = "RIGHT PAREN",
         [TOK_COMMA] = "COMMA",
         [TOK_COLON] = "COLON",
+        [TOK_BANG] = "BANG",
+        [TOK_EQUAL_EQUAL] = "EQUAL EQUAL",
+        [TOK_LESS] = "LESS",
+        [TOK_GREATER] = "GREATER",
+        [TOK_LESS_EQUAL] = "LESS EQUAL",
+        [TOK_GREATER_EQUAL] = "GREATER EQUAL",
         [TOK_ENTRY] = "ENTRY",
         [TOK_OUT] = "OUT",
         [TOK_WHILE] = "WHILE",
         [TOK_LET] = "LET",
+        [TOK_AND] = "AND",
+        [TOK_OR] = "OR",
+        [TOK_NOT] = "NOT",
         [TOK_TOINT] = "TOINT",
         [TOK_TOSTR] = "TOSTR",
         [TOK_IF] = "IF",

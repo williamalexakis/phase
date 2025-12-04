@@ -1,0 +1,16 @@
+entry {
+    let a: bool = true
+    let b: bool = false
+
+    if a and not b {
+        out("passed")
+    }
+
+    if 2 < 3 {
+        out("lt")
+    }
+
+    if 3 == 3 {
+        out("eq")
+    }
+}

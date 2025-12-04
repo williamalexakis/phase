@@ -33,7 +33,8 @@ typedef enum {
     EXP_BOOLEAN,
     EXP_VARIABLE,
     EXP_CALL,
-    EXP_BINARY
+    EXP_BINARY,
+    EXP_UNARY
 
 } ExpressionTag;
 
@@ -63,6 +64,10 @@ typedef struct AstExpression {
             struct AstExpression *right;
             TokenType op;
         } binary;
+        struct {
+            struct AstExpression *expr;
+            TokenType op;
+        } unary;
 
     };
 

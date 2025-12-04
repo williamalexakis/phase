@@ -1,8 +1,9 @@
 entry {
-    let keep_going: bool = true
+    let num: int = 5
+    let counter: int = 0
 
-    while keep_going {
-        out("looping")
-        keep_going = false
+    while num >= counter {
+        out(counter)
+        counter += 1
     }
 }

@@ -361,6 +361,38 @@ static TokenType get_expression_type(Emitter *emitter, FunctionDef *current_fn, 
 
         }
 
+        case EXP_UNARY: {
+
+            TokenType inner = get_expression_type(emitter, current_fn, expression->unary.expr);
+
+            if (expression->unary.op == TOK_BANG || expression->unary.op == TOK_NOT) {
+
+                if (inner != TOK_BOOLEAN_T) {
+
+                    ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                    error_type_mismatch(loc, "not", "bool", token_type_to_string(inner));
+
+                }
+
+                return TOK_BOOLEAN_T;
+
+            } else if (expression->unary.op == TOK_SUBTRACT) {
+
+                if (inner != TOK_INTEGER_T && inner != TOK_FLOAT_T) {
+
+                    ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                    error_type_mismatch(loc, "negation", "number", token_type_to_string(inner));
+
+                }
+
+                return inner;
+
+            }
+
+            return TOK_UNKNOWN;
+
+        }
+
         case EXP_BINARY: {
 
             TokenType left_type = get_expression_type(emitter, current_fn, expression->binary.left);
@@ -370,6 +402,41 @@ static TokenType get_expression_type(Emitter *emitter, FunctionDef *current_fn, 
 
                 ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
                 error_type_mismatch(loc, "binary op", token_type_to_string(left_type), token_type_to_string(right_type));
+
+            }
+
+            // Logical
+            if (expression->binary.op == TOK_AND || expression->binary.op == TOK_OR) {
+
+                if (left_type != TOK_BOOLEAN_T) {
+
+                    ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                    error_type_mismatch(loc, "logical op", "bool", token_type_to_string(left_type));
+
+                }
+
+                return TOK_BOOLEAN_T;
+
+            }
+
+            // Equality
+            if (expression->binary.op == TOK_EQUAL_EQUAL) {
+
+                return TOK_BOOLEAN_T;
+
+            }
+
+            // Comparison
+            if (expression->binary.op == TOK_LESS || expression->binary.op == TOK_GREATER || expression->binary.op == TOK_LESS_EQUAL || expression->binary.op == TOK_GREATER_EQUAL) {
+
+                if (left_type != TOK_INTEGER_T && left_type != TOK_FLOAT_T) {
+
+                    ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                    error_type_mismatch(loc, "comparison", "number", token_type_to_string(left_type));
+
+                }
+
+                return TOK_BOOLEAN_T;
 
             }
 
@@ -737,6 +804,26 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
 
         } break;
 
+        case EXP_UNARY: {
+
+            emit_expression(emitter, current_fn, expression->unary.expr);
+
+            if (expression->unary.op == TOK_BANG || expression->unary.op == TOK_NOT) {
+
+                emit_byte(emitter, OP_NOT);
+
+            } else if (expression->unary.op == TOK_SUBTRACT) {
+
+                emit_byte(emitter, OP_NEG);
+
+            } else {
+
+                error_invalid_opcode((ErrorLocation){0}, expression->unary.op);
+
+            }
+
+        } break;
+
         case EXP_BINARY: {
 
             emit_expression(emitter, current_fn, expression->binary.left);
@@ -748,6 +835,13 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
                 case TOK_SUBTRACT: emit_byte(emitter, OP_SUB); break;
                 case TOK_MULTIPLY: emit_byte(emitter, OP_MUL); break;
                 case TOK_DIVIDE: emit_byte(emitter, OP_DIV); break;
+                case TOK_AND: emit_byte(emitter, OP_AND); break;
+                case TOK_OR: emit_byte(emitter, OP_OR); break;
+                case TOK_EQUAL_EQUAL: emit_byte(emitter, OP_EQUAL); break;
+                case TOK_LESS: emit_byte(emitter, OP_LESS); break;
+                case TOK_GREATER: emit_byte(emitter, OP_GREATER); break;
+                case TOK_LESS_EQUAL: emit_byte(emitter, OP_LESS_EQUAL); break;
+                case TOK_GREATER_EQUAL: emit_byte(emitter, OP_GREATER_EQUAL); break;
                 default: error_invalid_opcode((ErrorLocation){0}, expression->binary.op);
 
             }
@@ -1152,6 +1246,126 @@ void interpret(VM *vm) {
 
                     vm->pos = target;
 
+                }
+
+            } break;
+
+            case OP_NOT: {
+
+                Value v = pop(vm);
+                if (v.type != VAL_BOOLEAN) error_invalid_opcode((ErrorLocation){0}, OP_NOT);
+                push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = !v.as.boolean });
+
+            } break;
+
+            case OP_AND: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (a.type != VAL_BOOLEAN || b.type != VAL_BOOLEAN) error_invalid_opcode((ErrorLocation){0}, OP_AND);
+                push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.boolean && b.as.boolean });
+
+            } break;
+
+            case OP_OR: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+                if (a.type != VAL_BOOLEAN || b.type != VAL_BOOLEAN) error_invalid_opcode((ErrorLocation){0}, OP_OR);
+                push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.boolean || b.as.boolean });
+
+            } break;
+
+            case OP_EQUAL: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+                bool result = false;
+
+                if (a.type == b.type) {
+
+                    if (a.type == VAL_INTEGER) result = a.as.integer == b.as.integer;
+                    else if (a.type == VAL_FLOAT) result = a.as.floating == b.as.floating;
+                    else if (a.type == VAL_BOOLEAN) result = a.as.boolean == b.as.boolean;
+                    else if (a.type == VAL_STRING) result = strcmp(a.as.str, b.as.str) == 0;
+                } else {
+                    error_invalid_opcode((ErrorLocation){0}, OP_EQUAL);
+                }
+
+                push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = result });
+
+            } break;
+
+            case OP_LESS: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+                
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.integer < b.as.integer });
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.floating < b.as.floating });
+                } else {
+                    error_invalid_opcode((ErrorLocation){0}, OP_LESS);
+                }
+
+            } break;
+
+            case OP_GREATER: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+                
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.integer > b.as.integer });
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.floating > b.as.floating });
+                } else {
+                    error_invalid_opcode((ErrorLocation){0}, OP_GREATER);
+                }
+
+            } break;
+
+            case OP_LESS_EQUAL: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+                
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.integer <= b.as.integer });
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.floating <= b.as.floating });
+                } else {
+                    error_invalid_opcode((ErrorLocation){0}, OP_LESS_EQUAL);
+                }
+
+            } break;
+
+            case OP_GREATER_EQUAL: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+                
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.integer >= b.as.integer });
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+                    push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.floating >= b.as.floating });
+                } else {
+                    error_invalid_opcode((ErrorLocation){0}, OP_GREATER_EQUAL);
+                }
+
+            } break;
+
+            case OP_NEG: {
+
+                Value v = pop(vm);
+                
+                if (v.type == VAL_INTEGER) {
+                    push(vm, (Value){ .type = VAL_INTEGER, .as.integer = -v.as.integer });
+                } else if (v.type == VAL_FLOAT) {
+                    push(vm, (Value){ .type = VAL_FLOAT, .as.floating = -v.as.floating });
+                } else {
+                    error_invalid_opcode((ErrorLocation){0}, OP_NEG);
                 }
 
             } break;

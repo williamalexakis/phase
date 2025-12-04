@@ -100,12 +100,17 @@ static TokenType parse_type_annotation(Parser *parser, bool allow_void, int *col
 }
 
 static AstExpression *parse_primary(Parser *parser);
+static AstExpression *parse_unary(Parser *parser);
 static AstExpression *parse_factor(Parser *parser);
 static AstExpression *parse_term(Parser *parser);
+static AstExpression *parse_comparison(Parser *parser);
+static AstExpression *parse_equality(Parser *parser);
+static AstExpression *parse_logic_and(Parser *parser);
+static AstExpression *parse_logic_or(Parser *parser);
 
 static AstExpression *parse_expression(Parser *parser) {
 
-    return parse_term(parser);
+    return parse_logic_or(parser);
 
 }
 
@@ -278,9 +283,37 @@ static AstExpression *parse_primary(Parser *parser) {
 
 }
 
+static AstExpression *parse_unary(Parser *parser) {
+
+    if (parser->look.type == TOK_BANG || parser->look.type == TOK_NOT || parser->look.type == TOK_SUBTRACT) {
+
+        TokenType op = parser->look.type;
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        advance_parser(parser);
+        AstExpression *operand = parse_unary(parser);
+
+        AstExpression *un = calloc(1, sizeof(*un));
+
+        if (!un) error_oom();
+
+        un->tag = EXP_UNARY;
+        un->line = line;
+        un->column_start = col_start;
+        un->column_end = operand->column_end;
+        un->unary.expr = operand;
+        un->unary.op = op;
+
+        return un;
+
+    }
+
+    return parse_primary(parser);
+
+}
 static AstExpression *parse_factor(Parser *parser) {
 
-    AstExpression *left = parse_primary(parser);
+    AstExpression *left = parse_unary(parser);
 
     while (parser->look.type == TOK_MULTIPLY || parser->look.type == TOK_DIVIDE) {
 
@@ -288,7 +321,7 @@ static AstExpression *parse_factor(Parser *parser) {
         int line = parser->look.line;
         int col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression *right = parse_primary(parser);
+        AstExpression *right = parse_unary(parser);
 
         AstExpression *bin = calloc(1, sizeof(*bin));
 
@@ -321,6 +354,134 @@ static AstExpression *parse_term(Parser *parser) {
         int col_start = parser->look.column_start;
         advance_parser(parser);
         AstExpression *right = parse_factor(parser);
+
+        AstExpression *bin = calloc(1, sizeof(*bin));
+
+        if (!bin) error_oom();
+
+        bin->tag = EXP_BINARY;
+        bin->line = line;
+        bin->column_start = col_start;
+        bin->column_end = right->column_end;
+        bin->binary.left = left;
+        bin->binary.right = right;
+        bin->binary.op = op;
+
+        left = bin;
+
+    }
+
+    return left;
+
+}
+
+static AstExpression *parse_comparison(Parser *parser) {
+
+    AstExpression *left = parse_term(parser);
+
+    while (parser->look.type == TOK_LESS || parser->look.type == TOK_GREATER || parser->look.type == TOK_LESS_EQUAL || parser->look.type == TOK_GREATER_EQUAL) {
+
+        TokenType op = parser->look.type;
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        advance_parser(parser);
+        AstExpression *right = parse_term(parser);
+
+        AstExpression *bin = calloc(1, sizeof(*bin));
+
+        if (!bin) error_oom();
+
+        bin->tag = EXP_BINARY;
+        bin->line = line;
+        bin->column_start = col_start;
+        bin->column_end = right->column_end;
+        bin->binary.left = left;
+        bin->binary.right = right;
+        bin->binary.op = op;
+
+        left = bin;
+
+    }
+
+    return left;
+
+}
+
+static AstExpression *parse_equality(Parser *parser) {
+
+    AstExpression *left = parse_comparison(parser);
+
+    while (parser->look.type == TOK_EQUAL_EQUAL) {
+
+        TokenType op = parser->look.type;
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        advance_parser(parser);
+        AstExpression *right = parse_comparison(parser);
+
+        AstExpression *bin = calloc(1, sizeof(*bin));
+
+        if (!bin) error_oom();
+
+        bin->tag = EXP_BINARY;
+        bin->line = line;
+        bin->column_start = col_start;
+        bin->column_end = right->column_end;
+        bin->binary.left = left;
+        bin->binary.right = right;
+        bin->binary.op = op;
+
+        left = bin;
+
+    }
+
+    return left;
+
+}
+
+static AstExpression *parse_logic_and(Parser *parser) {
+
+    AstExpression *left = parse_equality(parser);
+
+    while (parser->look.type == TOK_AND) {
+
+        TokenType op = parser->look.type;
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        advance_parser(parser);
+        AstExpression *right = parse_equality(parser);
+
+        AstExpression *bin = calloc(1, sizeof(*bin));
+
+        if (!bin) error_oom();
+
+        bin->tag = EXP_BINARY;
+        bin->line = line;
+        bin->column_start = col_start;
+        bin->column_end = right->column_end;
+        bin->binary.left = left;
+        bin->binary.right = right;
+        bin->binary.op = op;
+
+        left = bin;
+
+    }
+
+    return left;
+
+}
+
+static AstExpression *parse_logic_or(Parser *parser) {
+
+    AstExpression *left = parse_logic_and(parser);
+
+    while (parser->look.type == TOK_OR) {
+
+        TokenType op = parser->look.type;
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        advance_parser(parser);
+        AstExpression *right = parse_logic_and(parser);
 
         AstExpression *bin = calloc(1, sizeof(*bin));
 
@@ -1079,6 +1240,12 @@ static void free_expression(AstExpression *expression) {
 
             free_expression(expression->binary.left);
             free_expression(expression->binary.right);
+
+        } break;
+
+        case EXP_UNARY: {
+
+            free_expression(expression->unary.expr);
 
         } break;
 
