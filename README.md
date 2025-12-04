@@ -193,10 +193,11 @@ entry {
 - [x] Token and AST diagnostics
 - [x] Floats and booleans
 - [x] Error manager
-- [ ] Arena allocator
+- [ ] Declaration keywords & annotations
 - [ ] Functions
 - [ ] Conditionals
 - [ ] Basic loops
+- [ ] Arena allocator
 
 ## Contributing
 
