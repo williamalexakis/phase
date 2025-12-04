@@ -1,0 +1,8 @@
+entry {
+    let keep: bool = true
+
+    while keep {
+        out("once")
+        keep = false
+    }
+}

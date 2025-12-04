@@ -22,6 +22,7 @@ typedef enum {
     TOK_TOSTR,
     TOK_IF,
     TOK_ELSE,
+    TOK_WHILE,
     TOK_STRING_T,
     TOK_INTEGER_T,
     TOK_FLOAT_T,

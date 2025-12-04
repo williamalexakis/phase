@@ -555,6 +555,31 @@ static void emit_statement(Emitter *emitter, FunctionDef *current_fn, AstStateme
 
         } break;
 
+        case STM_WHILE: {
+
+            size_t loop_start = emitter->code_len;
+
+            TokenType cond_type = get_expression_type(emitter, current_fn, statement->if_stmt.condition);
+
+            if (cond_type != TOK_BOOLEAN_T) {
+
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_type_mismatch(loc, "condition", "bool", token_type_to_string(cond_type));
+
+            }
+
+            emit_expression(emitter, current_fn, statement->if_stmt.condition);
+            size_t exit_jump = emit_jump(emitter, OP_JUMP_IF_FALSE);
+
+            emit_block(emitter, current_fn, statement->if_stmt.then_block);
+
+            emit_byte(emitter, OP_JUMP);
+            emit_u16(emitter, (uint16_t)loop_start);
+
+            patch_jump(emitter, exit_jump);
+
+        } break;
+
     }
 
 }

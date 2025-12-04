@@ -160,6 +160,17 @@ static void print_statement(AstStatement *statement, int ind) {
 
         } break;
 
+        case STM_WHILE: {
+
+            indent(ind);
+            printf("%s STATEMENT (%sWHILE%s)\n", branch_glyph, FG_CYAN, RESET);
+            print_expression(statement->if_stmt.condition, ind + 6);
+            indent(ind + 6);
+            printf("%s BODY\n", branch_glyph);
+            print_block(statement->if_stmt.then_block, ind + 6);
+
+        } break;
+
     }
 
 }

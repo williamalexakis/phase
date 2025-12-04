@@ -116,6 +116,7 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "if") == 0) return make_token(TOK_IF, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "else") == 0) return make_token(TOK_ELSE, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "while") == 0) return make_token(TOK_WHILE, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "let") == 0) return make_token(TOK_LET, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, col_start, col_end, true);
@@ -339,6 +340,7 @@ const char *get_token_name(TokenType type) {
         [TOK_COLON] = "COLON",
         [TOK_ENTRY] = "ENTRY",
         [TOK_OUT] = "OUT",
+        [TOK_WHILE] = "WHILE",
         [TOK_LET] = "LET",
         [TOK_TOINT] = "TOINT",
         [TOK_TOSTR] = "TOSTR",

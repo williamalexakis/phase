@@ -202,6 +202,18 @@ entry {
 }
 ```
 
+### Loops (while)
+```c
+entry {
+    let keep: bool = true
+
+    while keep {
+        out("Looping once")
+        keep = false
+    }
+}
+```
+
 #### See `examples/` for more
 
 ## Diagnostics Examples
@@ -227,7 +239,7 @@ entry {
 - [x] Declaration keywords & annotations
 - [x] Functions
 - [x] Conditionals
-- [ ] Basic loops
+- [x] Basic loops
 
 ## Contributing
 

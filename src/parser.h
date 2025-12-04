@@ -20,7 +20,8 @@ typedef enum {
     STM_VAR_DECL,
     STM_RETURN,
     STM_EXPR,
-    STM_IF
+    STM_IF,
+    STM_WHILE
 
 } StatementTag;
 

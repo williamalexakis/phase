@@ -1,0 +1,8 @@
+entry {
+    let keep_going: bool = true
+
+    while keep_going {
+        out("looping")
+        keep_going = false
+    }
+}

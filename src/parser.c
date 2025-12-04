@@ -354,6 +354,34 @@ static AstStatement *parse_statement(Parser *parser) {
 
     }
 
+    if (parser->look.type == TOK_WHILE) {
+
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+
+        advance_parser(parser);
+
+        AstExpression *condition = parse_expression(parser);
+        AstBlock *body = parse_block(parser);
+
+        int col_end = body && body->len > 0 ? body->statements[body->len - 1]->column_end : col_start;
+
+        AstStatement *statement = calloc(1, sizeof(*statement));
+
+        if (!statement) error_oom();
+
+        statement->tag = STM_WHILE;
+        statement->line = line;
+        statement->column_start = col_start;
+        statement->column_end = col_end;
+        statement->if_stmt.condition = condition;
+        statement->if_stmt.then_block = body;
+        statement->if_stmt.else_block = NULL;
+
+        return statement;
+
+    }
+
     if (parser->look.type == TOK_RETURN) {
 
         int line = parser->look.line;
@@ -972,6 +1000,12 @@ static void free_statement(AstStatement *statement) {
             free_expression(statement->if_stmt.condition);
             free_block(statement->if_stmt.then_block);
             free_block(statement->if_stmt.else_block);
+
+        } break;
+        case STM_WHILE: {
+
+            free_expression(statement->if_stmt.condition);
+            free_block(statement->if_stmt.then_block);
 
         } break;
 
