@@ -1,28 +1,34 @@
 entry {
-    -- Grouped initializations
-    let (a, b, c): int = (5, 10, 15)
-    let (x, y, z): str = ("hello", "world", "!")
+    -- Basic declarations with initializers
+    let (first, last): str = ("Alora", "Brooks")
+    let age: int = 34
+    let salary: float = 125000.50
+    let active: bool = true
 
-    -- Grouped declarations
-    let (p, q, r): int
-    let (i, j, k): str
+    -- Reassignments
+    age = 38
+    active = false
 
-    -- Cross assignments
-    p = a
-    q = b
-    r = c
-    i = x
-    j = y
-    k = z
+    -- Grouped declarations without initializers
+    let (pens, papers): int
+    pens = 5
+    papers = 7
 
-    -- Print results
-    out("a, b, c:")
-    out(p)
-    out(q)
-    out(r)
-    out("")
-    out("x, y, z:")
-    out(i)
-    out(j)
-    out(k)
+    -- Output summary
+    out("Name:")
+    out(first)
+    out(last)
+
+    out("\nAge:")
+    out(age)
+
+    out("\nSalary:")
+    out(salary)
+
+    out("\nActive:")
+    out(active)
+
+    out("\nInventory:")
+    out(pens)
+    out(papers)
 }

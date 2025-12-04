@@ -238,7 +238,23 @@ static AstStatement *parse_statement(Parser *parser) {
         char *var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
         advance_parser(parser);
 
-        expect(parser, TOK_ASSIGN, "'='");
+        if (parser->look.type != TOK_ASSIGN) {
+
+            ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+
+            if (parser->look.type == TOK_COLON) {
+
+                error_expect_symbol(loc, "assignment '=' (use 'let' for declarations)");
+
+            } else {
+
+                error_unexpected_ident(loc, var_name);
+
+            }
+
+        }
+
+        advance_parser(parser);
 
         AstExpression *expression = parse_expression(parser);
         AstStatement *statement = calloc(1, sizeof(*statement));

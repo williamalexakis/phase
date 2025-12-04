@@ -32,7 +32,7 @@ static const ErrorInfo ERROR_TABLE[] = {
     { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_insert_expected },
     { ERR_EXPECT_EXPRESSION, "Expected expression.", "Provide an expression at this position.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_EXPECT_STATEMENT, "Expected statement or declaration.", "Provide a statement or declaration here.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
-    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Only an 'entry' block is valid at global scope; remove this token.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_remove_span },
+    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Only 'entry' blocks or 'let' declarations are valid at global scope; remove or rewrite this token.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_remove_span },
     { ERR_MANY_ENTRY, "Duplicate entry block.", "Only one 'entry' block is allowed.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_NO_ENTRY, "Missing entry block.", "Add an 'entry' block to define the program entrypoint.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_TYPE_MISMATCH, "Type mismatch.", "Variable '%s' expects %s but got %s.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_type_mismatch_fix },
@@ -41,6 +41,7 @@ static const ErrorInfo ERROR_TABLE[] = {
     { ERR_INVALID_CONST_INDEX, "Invalid constant index.", "Index out of range; maximum is %zu constants.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_VM_POS_OOB, "VM pointer out of bounds.", "Unavailable (Internal Error).", FG_RED_BOLD, FG_PURPLE_BOLD, NULL },
     { ERR_UNDEFINED_VAR, "Variable '%s' is undefined.", "Variables must be declared before use.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_UNEXPECTED_IDENT, "Unexpected identifier '%s'.", "Use 'let %s: <type>' to declare or '%s = <expr>' to assign.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_WRONG_VAR_INIT, "Variable initialization mismatch.", "Declared %zu variables but found %zu initializers.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_NO_ARGS, "Missing input file.", "Pass an input file path (<input_file.phase>).", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_INVALID_ARG, "Unknown argument '%s'.", "See all available arguments with 'phase --help'.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
@@ -554,6 +555,7 @@ void error_invalid_const_index(ErrorLocation loc, size_t const_count) { error_em
 void error_vm_oob(ErrorLocation loc) { error_emit(loc, ERR_VM_POS_OOB); }
 void error_wrong_var_init(ErrorLocation loc, size_t var_count, size_t init_count) { error_emit(loc, ERR_WRONG_VAR_INIT, var_count, init_count); }
 void error_undefined_var(ErrorLocation loc, const char *name) { error_emit(loc, ERR_UNDEFINED_VAR, name); }
+void error_unexpected_ident(ErrorLocation loc, const char *name) { error_emit(loc, ERR_UNEXPECTED_IDENT, name, name); }
 
 // CLI errors
 void error_no_args(void) { error_emit((ErrorLocation){0}, ERR_NO_ARGS); }
