@@ -1,0 +1,12 @@
+entry {
+    let sunny: bool = true
+    let warm: bool = false
+
+    if sunny {
+        out("It's sunny!")
+    } else if warm {
+        out("It's warm enough.")
+    } else {
+        out("It's freezing!")
+    }
+}

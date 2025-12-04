@@ -1,0 +1,9 @@
+entry {
+    let ready: bool = true
+
+    if ready {
+        out("ready")
+    } else {
+        out("not ready")
+    }
+}

@@ -20,6 +20,8 @@ typedef enum {
     TOK_LET,
     TOK_TOINT,
     TOK_TOSTR,
+    TOK_IF,
+    TOK_ELSE,
     TOK_STRING_T,
     TOK_INTEGER_T,
     TOK_FLOAT_T,

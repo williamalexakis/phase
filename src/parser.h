@@ -19,7 +19,8 @@ typedef enum {
     STM_ASSIGN,
     STM_VAR_DECL,
     STM_RETURN,
-    STM_EXPR
+    STM_EXPR,
+    STM_IF
 
 } StatementTag;
 
@@ -33,6 +34,8 @@ typedef enum {
     EXP_CALL
 
 } ExpressionTag;
+
+typedef struct AstBlock AstBlock;
 
 typedef struct AstExpression {
 
@@ -90,17 +93,22 @@ typedef struct {
         } var_decl;
         struct { AstExpression *expression; } ret;
         struct { AstExpression *expression; } expr;
+        struct {
+            AstExpression *condition;
+            AstBlock *then_block;
+            AstBlock *else_block;
+        } if_stmt;
 
     };
 
 } AstStatement;
 
-typedef struct {
+struct AstBlock {
 
     AstStatement **statements;
     size_t len, cap;
 
-} AstBlock;
+};
 
 typedef struct {
 

@@ -16,6 +16,8 @@ typedef enum {
     OP_GET_LOCAL,
     OP_CALL,
     OP_RET,
+    OP_JUMP,
+    OP_JUMP_IF_FALSE,
     OP_POP,
     OP_HALT
 

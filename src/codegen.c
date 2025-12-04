@@ -151,6 +151,25 @@ static void emit_u16(Emitter *emitter, uint16_t value) {
 
 }
 
+static size_t emit_jump(Emitter *emitter, Opcode op) {
+
+    emit_byte(emitter, op);
+    size_t jump_pos = emitter->code_len;
+    emit_u16(emitter, 0);  // Placeholder
+    return jump_pos;
+
+}
+
+static void patch_jump(Emitter *emitter, size_t jump_pos) {
+
+    size_t target = emitter->code_len;
+    emitter->code[jump_pos] = (target >> 8) & 0xFF;
+    emitter->code[jump_pos + 1] = target & 0xFF;
+
+}
+
+static void emit_block(Emitter *emitter, FunctionDef *current_fn, AstBlock *block);
+
 static size_t add_constant(Emitter *emitter, Value value) {
 
     if (emitter->const_count + 1 > emitter->const_cap) {
@@ -500,6 +519,37 @@ static void emit_statement(Emitter *emitter, FunctionDef *current_fn, AstStateme
             if (expr_type != TOK_VOID_T) {
 
                 emit_byte(emitter, OP_POP);
+
+            }
+
+        } break;
+
+        case STM_IF: {
+
+            TokenType cond_type = get_expression_type(emitter, current_fn, statement->if_stmt.condition);
+
+            if (cond_type != TOK_BOOLEAN_T) {
+
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_type_mismatch(loc, "condition", "bool", token_type_to_string(cond_type));
+
+            }
+
+            emit_expression(emitter, current_fn, statement->if_stmt.condition);
+            size_t jump_false = emit_jump(emitter, OP_JUMP_IF_FALSE);
+
+            emit_block(emitter, current_fn, statement->if_stmt.then_block);
+
+            if (statement->if_stmt.else_block) {
+
+                size_t jump_end = emit_jump(emitter, OP_JUMP);
+                patch_jump(emitter, jump_false);
+                emit_block(emitter, current_fn, statement->if_stmt.else_block);
+                patch_jump(emitter, jump_end);
+
+            } else {
+
+                patch_jump(emitter, jump_false);
 
             }
 
@@ -1018,6 +1068,26 @@ void interpret(VM *vm) {
             case OP_POP: {
 
                 pop(vm);
+
+            } break;
+
+            case OP_JUMP: {
+
+                uint16_t target = read_u16(vm);
+                vm->pos = target;
+
+            } break;
+
+            case OP_JUMP_IF_FALSE: {
+
+                uint16_t target = read_u16(vm);
+                Value cond = pop(vm);
+
+                if (cond.type == VAL_BOOLEAN && !cond.as.boolean) {
+
+                    vm->pos = target;
+
+                }
 
             } break;
 

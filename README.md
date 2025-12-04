@@ -180,12 +180,25 @@ func hello(name: str): str {
 }
 
 func announce(): void {
-    out("Welcome...")
+    out("Welcome,")
 }
 
 entry {
-    out(hello("Alora"))
     announce()
+    out(hello("Alora"))
+}
+```
+
+### Conditionals
+```c
+entry {
+    let employment: bool = false
+
+    if employment {
+        out("Go to work!")
+    } else {
+        out("Get a job!")
+    }
 }
 ```
 
@@ -213,7 +226,7 @@ entry {
 - [x] Error manager
 - [x] Declaration keywords & annotations
 - [x] Functions
-- [ ] Conditionals
+- [x] Conditionals
 - [ ] Basic loops
 
 ## Contributing

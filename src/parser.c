@@ -28,6 +28,11 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
 
 }
 
+static AstBlock *parse_block(Parser *parser);
+static AstExpression *parse_expression(Parser *parser);
+static AstStatement *parse_statement(Parser *parser);
+static void free_block(AstBlock *block);
+
 void free_token(Token *token) {
 
     if (token->lexeme && token->heap_allocated) free(token->lexeme);
@@ -286,6 +291,64 @@ static AstStatement *parse_statement(Parser *parser) {
         statement->column_start = col_start;
         statement->column_end = col_end;
         statement->out.expression = expression;
+
+        return statement;
+
+    }
+
+    if (parser->look.type == TOK_IF) {
+
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+
+        advance_parser(parser);
+
+        AstExpression *condition = parse_expression(parser);
+        AstBlock *then_block = parse_block(parser);
+
+        AstBlock *else_block = NULL;
+
+        if (parser->look.type == TOK_ELSE) {
+
+            advance_parser(parser);
+
+            if (parser->look.type == TOK_IF) {
+
+                AstStatement *nested_if = parse_statement(parser);
+
+                else_block = calloc(1, sizeof(*else_block));
+
+                if (!else_block) error_oom();
+
+                else_block->statements = malloc(sizeof(AstStatement*));
+
+                if (!else_block->statements) error_oom();
+
+                else_block->statements[0] = nested_if;
+                else_block->len = 1;
+                else_block->cap = 1;
+
+            } else {
+
+                else_block = parse_block(parser);
+
+            }
+
+        }
+
+        int col_end = then_block ? then_block->len > 0 ? then_block->statements[then_block->len - 1]->column_end : col_start : col_start;
+
+        AstStatement *statement = calloc(1, sizeof(*statement));
+
+        if (!statement) error_oom();
+
+        statement->tag = STM_IF;
+        statement->line = line;
+        statement->column_start = col_start;
+        statement->column_end = col_end;
+        statement->if_stmt.condition = condition;
+        statement->if_stmt.then_block = then_block;
+        statement->if_stmt.else_block = else_block;
 
         return statement;
 
@@ -904,6 +967,13 @@ static void free_statement(AstStatement *statement) {
 
         case STM_RETURN: free_expression(statement->ret.expression); break;
         case STM_EXPR: free_expression(statement->expr.expression); break;
+        case STM_IF: {
+
+            free_expression(statement->if_stmt.condition);
+            free_block(statement->if_stmt.then_block);
+            free_block(statement->if_stmt.else_block);
+
+        } break;
 
     }
 

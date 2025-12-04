@@ -12,6 +12,11 @@ static const char *branch_glyph = "╰";
 
 static void set_branch_glyph(bool unicode) { branch_glyph = unicode ? "╰" : ">"; }
 
+static void print_block(AstBlock *block, int ind);
+static void print_expression(AstExpression *expression, int ind);
+static void print_statement(AstStatement *statement, int ind);
+static void print_declaration(AstDeclaration *declare, int ind);
+
 static void print_expression(AstExpression *expression, int ind) {
 
     switch (expression->tag) {
@@ -133,6 +138,25 @@ static void print_statement(AstStatement *statement, int ind) {
             indent(ind);
             printf("%s STATEMENT (%sEXPR%s)\n", branch_glyph, FG_CYAN, RESET);
             print_expression(statement->expr.expression, ind + 6);
+
+        } break;
+
+        case STM_IF: {
+
+            indent(ind);
+            printf("%s STATEMENT (%sIF%s)\n", branch_glyph, FG_CYAN, RESET);
+            print_expression(statement->if_stmt.condition, ind + 6);
+            indent(ind + 6);
+            printf("%s THEN\n", branch_glyph);
+            print_block(statement->if_stmt.then_block, ind + 6);
+
+            if (statement->if_stmt.else_block) {
+
+                indent(ind + 6);
+                printf("%s ELSE\n", branch_glyph);
+                print_block(statement->if_stmt.else_block, ind + 6);
+
+            }
 
         } break;
 

@@ -114,6 +114,8 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     if (strcmp(lexeme, "func") == 0) return make_token(TOK_FUNC, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "return") == 0) return make_token(TOK_RETURN, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "if") == 0) return make_token(TOK_IF, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "else") == 0) return make_token(TOK_ELSE, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "let") == 0) return make_token(TOK_LET, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, col_start, col_end, true);
@@ -134,6 +136,7 @@ static Token lex_string(Lexer *lexer) {
     int line = lexer->line;
     int col_start = lexer->column;
     size_t start_pos = lexer->pos;
+    char quote = lexer->src[start_pos];
 
     advance_lexer(lexer);
 
@@ -160,8 +163,7 @@ static Token lex_string(Lexer *lexer) {
 
         }
         
-        if (c == '"') break;
-        if (c == '\'') break;
+        if (c == quote) break;
 
         if (c == '\\') {
 
@@ -340,6 +342,8 @@ const char *get_token_name(TokenType type) {
         [TOK_LET] = "LET",
         [TOK_TOINT] = "TOINT",
         [TOK_TOSTR] = "TOSTR",
+        [TOK_IF] = "IF",
+        [TOK_ELSE] = "ELSE",
         [TOK_STRING_T] = "STRING TYPE",
         [TOK_INTEGER_T] = "INTEGER TYPE",
         [TOK_FLOAT_T] = "FLOAT TYPE",
