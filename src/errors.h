@@ -33,6 +33,8 @@ typedef enum {
     ERR_UNDEFINED_VAR,
     ERR_WRONG_VAR_INIT,
     ERR_UNEXPECTED_IDENT,
+    ERR_MISSING_RETURN,
+    ERR_UNDEFINED_FUNC,
 
     // CLI errors
     ERR_NO_ARGS = 200,
@@ -57,6 +59,8 @@ noreturn void error_vm_oob(ErrorLocation loc);
 noreturn void error_wrong_var_init(ErrorLocation loc, size_t var_count, size_t init_count);
 noreturn void error_undefined_var(ErrorLocation loc, const char *name);
 noreturn void error_unexpected_ident(ErrorLocation loc, const char *name);
+noreturn void error_missing_return(ErrorLocation loc, const char *name);
+noreturn void error_undefined_func(ErrorLocation loc, const char *name);
 noreturn void error_no_args(void);
 noreturn void error_invalid_arg(const char *arg);
 noreturn void error_ifnf(const char *name);

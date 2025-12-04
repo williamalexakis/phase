@@ -173,6 +173,22 @@ entry {
 }
 ```
 
+### Functions
+```c
+func hello(name: str): str {
+    return name
+}
+
+func announce(): void {
+    out("Welcome...")
+}
+
+entry {
+    out(hello("Alora"))
+    announce()
+}
+```
+
 #### See `examples/` for more
 
 ## Diagnostics Examples
@@ -196,10 +212,9 @@ entry {
 - [x] Floats and booleans
 - [x] Error manager
 - [x] Declaration keywords & annotations
-- [ ] Functions
+- [x] Functions
 - [ ] Conditionals
 - [ ] Basic loops
-- [ ] Arena allocator
 
 ## Contributing
 

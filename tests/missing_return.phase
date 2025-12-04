@@ -1,0 +1,8 @@
+-- Function with non-void return missing a return statement
+func bad(x: int): int {
+    let y: int = x
+}
+
+entry {
+    out(1)
+}

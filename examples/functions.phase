@@ -1,0 +1,17 @@
+func hello(name: str): str {
+    return name
+}
+
+func announce(activity: str): void {
+    out("\nActive:")
+    out(activity)
+}
+
+entry {
+    let user: str = "Hayes Miller"
+
+    out("Hello,")
+    out(hello(user))
+
+    announce("Yes")
+}

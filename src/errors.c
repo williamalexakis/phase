@@ -43,6 +43,8 @@ static const ErrorInfo ERROR_TABLE[] = {
     { ERR_UNDEFINED_VAR, "Variable '%s' is undefined.", "Variables must be declared before use.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_UNEXPECTED_IDENT, "Unexpected identifier '%s'.", "Use 'let %s: <type>' to declare or '%s = <expr>' to assign.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_WRONG_VAR_INIT, "Variable initialization mismatch.", "Declared %zu variables but found %zu initializers.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_MISSING_RETURN, "Missing return in function '%s'.", "Add a 'return' statement that matches the function's return type.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_UNDEFINED_FUNC, "Function '%s' is undefined.", "Declare the function before calling it.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_NO_ARGS, "Missing input file.", "Pass an input file path (<input_file.phase>).", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_INVALID_ARG, "Unknown argument '%s'.", "See all available arguments with 'phase --help'.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_NO_INPUT, "Input file '%s' not found.", "Use a valid input path (e.g. /path/to/file.phase).", FG_RED_BOLD, FG_BLUE_BOLD, NULL }
@@ -556,6 +558,8 @@ void error_vm_oob(ErrorLocation loc) { error_emit(loc, ERR_VM_POS_OOB); }
 void error_wrong_var_init(ErrorLocation loc, size_t var_count, size_t init_count) { error_emit(loc, ERR_WRONG_VAR_INIT, var_count, init_count); }
 void error_undefined_var(ErrorLocation loc, const char *name) { error_emit(loc, ERR_UNDEFINED_VAR, name); }
 void error_unexpected_ident(ErrorLocation loc, const char *name) { error_emit(loc, ERR_UNEXPECTED_IDENT, name, name); }
+void error_missing_return(ErrorLocation loc, const char *name) { error_emit(loc, ERR_MISSING_RETURN, name); }
+void error_undefined_func(ErrorLocation loc, const char *name) { error_emit(loc, ERR_UNDEFINED_FUNC, name); }
 
 // CLI errors
 void error_no_args(void) { error_emit((ErrorLocation){0}, ERR_NO_ARGS); }

@@ -69,12 +69,13 @@ static void expect(Parser *parser, TokenType t_type, const char *message) {
 
 }
 
-static TokenType parse_type_annotation(Parser *parser, int *col_end_out) {
+static TokenType parse_type_annotation(Parser *parser, bool allow_void, int *col_end_out) {
 
     if (parser->look.type == TOK_INTEGER_T
         || parser->look.type == TOK_STRING_T
         || parser->look.type == TOK_FLOAT_T
-        || parser->look.type == TOK_BOOLEAN_T) {
+        || parser->look.type == TOK_BOOLEAN_T
+        || (allow_void && parser->look.type == TOK_VOID_T)) {
 
         TokenType var_type = parser->look.type;
 
@@ -169,17 +170,77 @@ static AstExpression *parse_expression(Parser *parser) {
 
     if (parser->look.type == TOK_VARIABLE) {
 
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        int name_col_end = parser->look.column_end;
+        char *name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+
+        advance_parser(parser);
+
+        if (parser->look.type == TOK_LPAREN) {
+
+            advance_parser(parser);
+
+            AstExpression **args = NULL;
+            size_t arg_count = 0;
+            size_t arg_cap = 0;
+
+            if (parser->look.type != TOK_RPAREN) {
+
+                do {
+
+                    if (arg_count + 1 > arg_cap) {
+
+                        size_t new_cap = arg_cap ? arg_cap * 2 : 4;
+                        args = realloc(args, new_cap * sizeof(AstExpression*));
+
+                        if (!args) error_oom();
+
+                        arg_cap = new_cap;
+
+                    }
+
+                    args[arg_count++] = parse_expression(parser);
+
+                } while (match(parser, TOK_COMMA));
+
+            }
+
+            if (parser->look.type != TOK_RPAREN) {
+
+                ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+                error_expect_symbol(loc, "')'");
+
+            }
+
+            int col_end = parser->look.column_end;
+            expect(parser, TOK_RPAREN, "')'");
+
+            AstExpression *expression = calloc(1, sizeof(*expression));
+
+            if (!expression) error_oom();
+
+            expression->tag = EXP_CALL;
+            expression->line = line;
+            expression->column_start = col_start;
+            expression->column_end = col_end;
+            expression->call.func_name = name;
+            expression->call.args = args;
+            expression->call.arg_count = arg_count;
+
+            return expression;
+
+        }
+
         AstExpression *expression = calloc(1, sizeof(*expression));
 
         if (!expression) error_oom();
 
         expression->tag = EXP_VARIABLE;
-        expression->line = parser->look.line;
-        expression->column_start = parser->look.column_start;
-        expression->column_end = parser->look.column_end;
-        expression->variable.name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
-
-        advance_parser(parser);
+        expression->line = line;
+        expression->column_start = col_start;
+        expression->column_end = name_col_end;
+        expression->variable.name = name;
 
         return expression;
 
@@ -230,6 +291,37 @@ static AstStatement *parse_statement(Parser *parser) {
 
     }
 
+    if (parser->look.type == TOK_RETURN) {
+
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        int col_end = parser->look.column_end;
+
+        advance_parser(parser);
+
+        AstExpression *expression = NULL;
+
+        if (parser->look.type != TOK_NEWLINE && parser->look.type != TOK_RBRACE && parser->look.type != TOK_EOF) {
+
+            expression = parse_expression(parser);
+            col_end = expression->column_end;
+
+        }
+
+        AstStatement *statement = calloc(1, sizeof(*statement));
+
+        if (!statement) error_oom();
+
+        statement->tag = STM_RETURN;
+        statement->line = line;
+        statement->column_start = col_start;
+        statement->column_end = col_end;
+        statement->ret.expression = expression;
+
+        return statement;
+
+    }
+
     if (parser->look.type == TOK_VARIABLE) {
 
         int line = parser->look.line;
@@ -237,6 +329,72 @@ static AstStatement *parse_statement(Parser *parser) {
         int col_end = parser->look.column_end;
         char *var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
         advance_parser(parser);
+
+        if (parser->look.type == TOK_LPAREN) {
+
+            // Treat as call expression statement
+            advance_parser(parser);
+
+            AstExpression **args = NULL;
+            size_t arg_count = 0;
+            size_t arg_cap = 0;
+
+            if (parser->look.type != TOK_RPAREN) {
+
+                do {
+
+                    if (arg_count + 1 > arg_cap) {
+
+                        size_t new_cap = arg_cap ? arg_cap * 2 : 4;
+                        args = realloc(args, new_cap * sizeof(AstExpression*));
+
+                        if (!args) error_oom();
+
+                        arg_cap = new_cap;
+
+                    }
+
+                    args[arg_count++] = parse_expression(parser);
+
+                } while (match(parser, TOK_COMMA));
+
+            }
+
+            if (parser->look.type != TOK_RPAREN) {
+
+                ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+                error_expect_symbol(loc, "')'");
+
+            }
+
+            col_end = parser->look.column_end;
+            expect(parser, TOK_RPAREN, "')'");
+
+            AstExpression *expr = calloc(1, sizeof(*expr));
+
+            if (!expr) error_oom();
+
+            expr->tag = EXP_CALL;
+            expr->line = line;
+            expr->column_start = col_start;
+            expr->column_end = col_end;
+            expr->call.func_name = var_name;
+            expr->call.args = args;
+            expr->call.arg_count = arg_count;
+
+            AstStatement *statement = calloc(1, sizeof(*statement));
+
+            if (!statement) error_oom();
+
+            statement->tag = STM_EXPR;
+            statement->line = line;
+            statement->column_start = col_start;
+            statement->column_end = col_end;
+            statement->expr.expression = expr;
+
+            return statement;
+
+        }
 
         if (parser->look.type != TOK_ASSIGN) {
 
@@ -338,7 +496,7 @@ static AstStatement *parse_statement(Parser *parser) {
 
         expect(parser, TOK_COLON, "':'");
 
-        TokenType var_type = parse_type_annotation(parser, &col_end);
+        TokenType var_type = parse_type_annotation(parser, false, &col_end);
 
         AstExpression **init_exprs = NULL;
         size_t init_count = 0;
@@ -466,6 +624,94 @@ static AstDeclaration *parse_entry_decl(Parser *parser) {
 
 }
 
+static AstDeclaration *parse_func_decl(Parser *parser) {
+
+    int line = parser->look.line;
+    int col_start = parser->look.column_start;
+    int col_end = parser->look.column_end;
+
+    expect(parser, TOK_FUNC, "'func'");
+
+    if (parser->look.type != TOK_VARIABLE) {
+
+        ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+        error_expect_symbol(loc, "function name");
+
+    }
+
+    char *name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+    advance_parser(parser);
+
+    expect(parser, TOK_LPAREN, "'('");
+
+    AstParam *params = NULL;
+    size_t param_count = 0;
+    size_t param_cap = 0;
+
+    if (parser->look.type != TOK_RPAREN) {
+
+        do {
+
+            if (parser->look.type != TOK_VARIABLE) {
+
+                ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+                error_expect_symbol(loc, "parameter name");
+
+            }
+
+            if (param_count + 1 > param_cap) {
+
+                size_t new_cap = param_cap ? param_cap * 2 : 4;
+                params = realloc(params, new_cap * sizeof(AstParam));
+
+                if (!params) error_oom();
+
+                param_cap = new_cap;
+
+            }
+
+            params[param_count].name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+            params[param_count].line = parser->look.line;
+            params[param_count].column_start = parser->look.column_start;
+            params[param_count].column_end = parser->look.column_end;
+
+            advance_parser(parser);
+
+            expect(parser, TOK_COLON, "':'");
+
+            params[param_count].type = parse_type_annotation(parser, false, &params[param_count].column_end);
+
+            param_count++;
+
+        } while (match(parser, TOK_COMMA));
+
+    }
+
+    expect(parser, TOK_RPAREN, "')'");
+    expect(parser, TOK_COLON, "':'");
+
+    TokenType return_type = parse_type_annotation(parser, true, &col_end);
+
+    AstBlock *body = parse_block(parser);
+
+    AstDeclaration *declaration = calloc(1, sizeof(*declaration));
+
+    if (!declaration) error_oom();
+
+    declaration->tag = DEC_FUNC;
+    declaration->line = line;
+    declaration->column_start = col_start;
+    declaration->column_end = col_end;
+    declaration->func.name = name;
+    declaration->func.params = params;
+    declaration->func.param_count = param_count;
+    declaration->func.return_type = return_type;
+    declaration->func.body = body;
+
+    return declaration;
+
+}
+
 static AstDeclaration *parse_var_decl(Parser *parser) {
 
     int line = parser->look.line;
@@ -532,7 +778,7 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
 
     expect(parser, TOK_COLON, "':'");
 
-    TokenType var_type = parse_type_annotation(parser, &col_end);
+    TokenType var_type = parse_type_annotation(parser, false, &col_end);
 
     AstDeclaration *declaration = calloc(1, sizeof(*declaration));
 
@@ -570,6 +816,10 @@ AstProgram *parse_program(Parser *parser) {
 
             declaration = parse_var_decl(parser);
 
+        } else if (parser->look.type == TOK_FUNC) {
+
+            declaration = parse_func_decl(parser);
+
         } else {
 
             ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
@@ -598,6 +848,18 @@ static void free_expression(AstExpression *expression) {
         case EXP_FLOAT: break;
         case EXP_BOOLEAN: break;
         case EXP_VARIABLE: free(expression->variable.name); break;
+        case EXP_CALL: {
+
+            for (size_t i = 0; i < expression->call.arg_count; i++) {
+
+                free_expression(expression->call.args[i]);
+
+            }
+
+            free(expression->call.args);
+            free(expression->call.func_name);
+
+        } break;
 
     }
 
@@ -640,6 +902,9 @@ static void free_statement(AstStatement *statement) {
 
         } break;
 
+        case STM_RETURN: free_expression(statement->ret.expression); break;
+        case STM_EXPR: free_expression(statement->expr.expression); break;
+
     }
 
     free(statement);
@@ -674,6 +939,20 @@ static void free_declaration(AstDeclaration *declaration) {
             }
 
             free(declaration->var_decl.var_names);
+
+        } break;
+        case DEC_FUNC: {
+
+            free(declaration->func.name);
+
+            for (size_t i = 0; i < declaration->func.param_count; i++) {
+
+                free(declaration->func.params[i].name);
+
+            }
+
+            free(declaration->func.params);
+            free_block(declaration->func.body);
 
         } break;
 

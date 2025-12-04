@@ -111,10 +111,13 @@ static Token lex_ident_or_kw(Lexer *lexer) {
     lexeme[len] = '\0';
 
     if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "func") == 0) return make_token(TOK_FUNC, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "return") == 0) return make_token(TOK_RETURN, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "let") == 0) return make_token(TOK_LET, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "void") == 0) return make_token(TOK_VOID_T, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "str") == 0) return make_token(TOK_STRING_T, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "float") == 0) return make_token(TOK_FLOAT_T, lexeme, line, col_start, col_end, true);
@@ -347,6 +350,9 @@ const char *get_token_name(TokenType type) {
         [TOK_SUBTRACT] = "SUBTRACT",
         [TOK_MULTIPLY] = "MULTIPLY",
         [TOK_DIVIDE] = "DIVIDE",
+        [TOK_FUNC] = "FUNC",
+        [TOK_RETURN] = "RETURN",
+        [TOK_VOID_T] = "VOID TYPE",
         [TOK_STRING_LIT] = "STRING LITERAL",
         [TOK_INTEGER_LIT] = "INTEGER LITERAL",
         [TOK_FLOAT_LIT] = "FLOAT LITERAL",

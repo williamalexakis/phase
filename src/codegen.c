@@ -3,6 +3,61 @@
 #include <string.h>
 #include "codegen.h"
 
+typedef struct {
+
+    char **names;
+    TokenType *types;
+    size_t count;
+    size_t cap;
+
+} VarTable;
+
+typedef struct CallFrame {
+
+    FunctionDef *fn;
+    Value *locals;
+    size_t return_ip;
+
+} CallFrame;
+
+static void zero_locals(Value *locals, size_t count) {
+
+    for (size_t i = 0; i < count; i++) locals[i].type = VAL_VOID;
+
+}
+static size_t add_to_var_table(VarTable *table, const char *name, TokenType type) {
+
+    if (table->count + 1 > table->cap) {
+
+        size_t new_cap = table->cap ? table->cap * 2 : 8;
+        table->names = realloc(table->names, new_cap * sizeof(char*));
+        table->types = realloc(table->types, new_cap * sizeof(TokenType));
+
+        if (!table->names || !table->types) error_oom();
+
+        table->cap = new_cap;
+
+    }
+
+    table->names[table->count] = strdup(name);
+    table->types[table->count] = type;
+
+    return table->count++;
+
+}
+
+static size_t find_in_table(VarTable *table, const char *name) {
+
+    for (size_t i = 0; i < table->count; i++) {
+
+        if (strcmp(table->names[i], name) == 0) return i;
+
+    }
+
+    return SIZE_MAX;
+
+}
+
 static void init_emitter(Emitter *emitter) {
 
     emitter->code = NULL;
@@ -13,10 +68,37 @@ static void init_emitter(Emitter *emitter) {
     emitter->const_count = 0;
     emitter->const_cap = 0;
 
-    emitter->var_names = NULL;
-    emitter->var_types = NULL;
-    emitter->var_count = 0;
-    emitter->var_cap = 0;
+    emitter->global_names = NULL;
+    emitter->global_types = NULL;
+    emitter->global_count = 0;
+    emitter->global_cap = 0;
+
+    emitter->functions = NULL;
+    emitter->func_count = 0;
+    emitter->func_cap = 0;
+
+    emitter->entry.name = strdup("entry");
+    emitter->entry.return_type = TOK_VOID_T;
+    emitter->entry.param_types = NULL;
+    emitter->entry.param_count = 0;
+    emitter->entry.has_return = false;
+    emitter->entry.local_names = NULL;
+    emitter->entry.local_types = NULL;
+    emitter->entry.local_count = 0;
+    emitter->entry.local_cap = 0;
+    emitter->entry.start_ip = 0;
+
+}
+
+static void free_function(FunctionDef *fn) {
+
+    if (!fn) return;
+
+    free(fn->name);
+    free(fn->param_types);
+    for (size_t i = 0; i < fn->local_count; i++) free(fn->local_names[i]);
+    free(fn->local_names);
+    free(fn->local_types);
 
 }
 
@@ -32,10 +114,16 @@ void free_emitter(Emitter *emitter) {
 
     free(emitter->constants);
 
-    for (size_t i = 0; i < emitter->var_count; i++) free(emitter->var_names[i]);
+    for (size_t i = 0; i < emitter->global_count; i++) free(emitter->global_names[i]);
 
-    free(emitter->var_names);
-    free(emitter->var_types);
+    free(emitter->global_names);
+    free(emitter->global_types);
+
+    free_function(&emitter->entry);
+
+    for (size_t i = 0; i < emitter->func_count; i++) free_function(&emitter->functions[i]);
+
+    free(emitter->functions);
 
 }
 
@@ -82,32 +170,32 @@ static size_t add_constant(Emitter *emitter, Value value) {
 
 }
 
-static size_t add_variable(Emitter *emitter, const char *name, TokenType type) {
+static size_t add_global(Emitter *emitter, const char *name, TokenType type) {
 
-    if (emitter->var_count + 1 > emitter->var_cap) {
+    if (emitter->global_count + 1 > emitter->global_cap) {
 
-        size_t new_cap = emitter->var_cap ? emitter->var_cap * 2 : 8;
-        emitter->var_names = realloc(emitter->var_names, new_cap * sizeof(char*));
-        emitter->var_types = realloc(emitter->var_types, new_cap * sizeof(TokenType));
+        size_t new_cap = emitter->global_cap ? emitter->global_cap * 2 : 8;
+        emitter->global_names = realloc(emitter->global_names, new_cap * sizeof(char*));
+        emitter->global_types = realloc(emitter->global_types, new_cap * sizeof(TokenType));
 
-        if (!emitter->var_names || !emitter->var_types) error_oom();
+        if (!emitter->global_names || !emitter->global_types) error_oom();
 
-        emitter->var_cap = new_cap;
+        emitter->global_cap = new_cap;
 
     }
 
-    emitter->var_names[emitter->var_count] = strdup(name);
-    emitter->var_types[emitter->var_count] = type;
+    emitter->global_names[emitter->global_count] = strdup(name);
+    emitter->global_types[emitter->global_count] = type;
 
-    return emitter->var_count++;
+    return emitter->global_count++;
 
 }
 
-static size_t find_variable(Emitter *emitter, const char *name) {
+static size_t find_global(Emitter *emitter, const char *name) {
 
-    for (size_t i = 0; i < emitter->var_count; i++) {
+    for (size_t i = 0; i < emitter->global_count; i++) {
 
-        if (strcmp(emitter->var_names[i], name) == 0) return i;
+        if (strcmp(emitter->global_names[i], name) == 0) return i;
 
     }
 
@@ -115,15 +203,107 @@ static size_t find_variable(Emitter *emitter, const char *name) {
 
 }
 
-static TokenType get_variable_type(Emitter *emitter, size_t var_indx) {
+static FunctionDef *find_function(Emitter *emitter, const char *name) {
 
-    if (var_indx >= emitter->var_count) return TOK_UNKNOWN;
+    for (size_t i = 0; i < emitter->func_count; i++) {
 
-    return emitter->var_types[var_indx];
+        if (strcmp(emitter->functions[i].name, name) == 0) return &emitter->functions[i];
+
+    }
+
+    return NULL;
 
 }
 
-static TokenType get_expression_type(Emitter *emitter, AstExpression *expression) {
+static FunctionDef *register_function(Emitter *emitter, const char *name, TokenType return_type, AstParam *params, size_t param_count) {
+
+    if (find_function(emitter, name)) {
+
+        ErrorLocation loc = {0};
+        error_invalid_token(loc);
+
+    }
+
+    if (emitter->func_count + 1 > emitter->func_cap) {
+
+        size_t new_cap = emitter->func_cap ? emitter->func_cap * 2 : 4;
+        emitter->functions = realloc(emitter->functions, new_cap * sizeof(FunctionDef));
+
+        if (!emitter->functions) error_oom();
+
+        emitter->func_cap = new_cap;
+
+    }
+
+    FunctionDef *fn = &emitter->functions[emitter->func_count++];
+
+    fn->name = strdup(name);
+    fn->return_type = return_type;
+    fn->param_count = param_count;
+    fn->param_types = calloc(param_count, sizeof(TokenType));
+    fn->has_return = false;
+    fn->local_names = NULL;
+    fn->local_types = NULL;
+    fn->local_count = 0;
+    fn->local_cap = 0;
+    fn->start_ip = 0;
+
+    if (param_count && !fn->param_types) error_oom();
+
+    for (size_t i = 0; i < param_count; i++) fn->param_types[i] = params[i].type;
+
+    return fn;
+
+}
+
+static size_t add_local(FunctionDef *fn, const char *name, TokenType type) {
+
+    VarTable table = { .names = fn->local_names, .types = fn->local_types, .count = fn->local_count, .cap = fn->local_cap };
+    size_t idx = add_to_var_table(&table, name, type);
+    fn->local_names = table.names;
+    fn->local_types = table.types;
+    fn->local_count = table.count;
+    fn->local_cap = table.cap;
+    return idx;
+
+}
+
+static size_t find_local(FunctionDef *fn, const char *name) {
+
+    VarTable table = { .names = fn->local_names, .types = fn->local_types, .count = fn->local_count };
+    return find_in_table(&table, name);
+
+}
+
+static TokenType get_variable_type(Emitter *emitter, FunctionDef *current_fn, const char *name, bool *is_local_out, size_t *index_out) {
+
+    size_t local_idx = find_local(current_fn, name);
+
+    if (local_idx != SIZE_MAX) {
+
+        if (is_local_out) *is_local_out = true;
+        if (index_out) *index_out = local_idx;
+
+        return current_fn->local_types[local_idx];
+
+    }
+
+    size_t global_idx = find_global(emitter, name);
+
+    if (global_idx != SIZE_MAX) {
+
+        if (is_local_out) *is_local_out = false;
+        if (index_out) *index_out = global_idx;
+
+        return emitter->global_types[global_idx];
+
+    }
+
+    return TOK_UNKNOWN;
+
+}
+
+static TokenType get_expression_type(Emitter *emitter, FunctionDef *current_fn, AstExpression *expression) {
 
     switch (expression->tag) {
 
@@ -133,16 +313,32 @@ static TokenType get_expression_type(Emitter *emitter, AstExpression *expression
         case EXP_BOOLEAN: return TOK_BOOLEAN_T;
         case EXP_VARIABLE: {
 
-            size_t var_indx = find_variable(emitter, expression->variable.name);
+            bool is_local = false;
+            size_t idx = 0;
+            TokenType t = get_variable_type(emitter, current_fn, expression->variable.name, &is_local, &idx);
 
-            if (var_indx == SIZE_MAX) {
+            if (t == TOK_UNKNOWN) {
 
                 ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
                 error_undefined_var(loc, expression->variable.name);
 
             }
 
-            return get_variable_type(emitter, var_indx);
+            return t;
+
+        }
+        case EXP_CALL: {
+
+            FunctionDef *fn = find_function(emitter, expression->call.func_name);
+
+            if (!fn) {
+
+                ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                error_undefined_func(loc, expression->call.func_name);
+
+            }
+
+            return fn->return_type;
 
         }
 
@@ -152,7 +348,6 @@ static TokenType get_expression_type(Emitter *emitter, AstExpression *expression
 
 }
 
-/* Convert a token type to its string representation for debugging */
 const char *token_type_to_string(TokenType type) {
 
     switch (type) {
@@ -161,14 +356,160 @@ const char *token_type_to_string(TokenType type) {
         case TOK_INTEGER_T: return "int";
         case TOK_FLOAT_T: return "float";
         case TOK_BOOLEAN_T: return "bool";
+        case TOK_VOID_T: return "void";
         default: return "unknown";
 
     }
 
 }
 
-/* Emit bytecode for an AST expression node */
-static void emit_expression(Emitter *emitter, AstExpression *expression) {
+static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpression *expression);
+
+static void emit_statement(Emitter *emitter, FunctionDef *current_fn, AstStatement *statement) {
+
+    switch (statement->tag) {
+
+        case STM_OUT: {
+
+            emit_expression(emitter, current_fn, statement->out.expression);
+            emit_byte(emitter, OP_PRINT);
+
+        } break;
+
+        case STM_ASSIGN: {
+
+            bool is_local = false;
+            size_t var_indx = 0;
+            TokenType var_type = get_variable_type(emitter, current_fn, statement->assign.var_name, &is_local, &var_indx);
+
+            if (var_type == TOK_UNKNOWN) {
+
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_undefined_var(loc, statement->assign.var_name);
+
+            }
+
+            TokenType expr_type = get_expression_type(emitter, current_fn, statement->assign.expression);
+
+            if (var_type != expr_type) {
+
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_type_mismatch(loc,
+                                    statement->assign.var_name,
+                                    token_type_to_string(var_type),
+                                    token_type_to_string(expr_type));
+
+            }
+
+            emit_expression(emitter, current_fn, statement->assign.expression);
+
+            if (is_local) {
+
+                emit_byte(emitter, OP_SET_LOCAL);
+
+            } else {
+
+                emit_byte(emitter, OP_SET_GLOBAL);
+
+            }
+
+            emit_u16(emitter, (uint16_t)var_indx);
+
+        } break;
+
+        case STM_VAR_DECL: {
+
+            if (statement->var_decl.init_count > 0 && statement->var_decl.init_count != statement->var_decl.var_count) {
+
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_wrong_var_init(loc, statement->var_decl.var_count, statement->var_decl.init_count);
+
+            }
+
+            for (size_t i = 0; i < statement->var_decl.var_count; i++) {
+
+                size_t var_indx = add_local(current_fn, statement->var_decl.var_names[i], statement->var_decl.var_type);
+
+                if (i < statement->var_decl.init_count) {
+
+                    TokenType var_type = statement->var_decl.var_type;
+                    TokenType expr_type = get_expression_type(emitter, current_fn, statement->var_decl.init_exprs[i]);
+
+                    if (var_type != expr_type) {
+
+                        ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                        error_type_mismatch(loc,
+                            statement->var_decl.var_names[i],
+                            token_type_to_string(var_type),
+                            token_type_to_string(expr_type));
+
+                    }
+
+                    emit_expression(emitter, current_fn, statement->var_decl.init_exprs[i]);
+                    emit_byte(emitter, OP_SET_LOCAL);
+                    emit_u16(emitter, (uint16_t)var_indx);
+                }
+            }
+
+        } break;
+
+        case STM_RETURN: {
+
+            if (current_fn->return_type == TOK_VOID_T) {
+
+                if (statement->ret.expression) {
+
+                    ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                    error_type_mismatch(loc, "return", "void", "non-void");
+
+                }
+
+                emit_byte(emitter, OP_RET);
+                current_fn->has_return = true;
+                break;
+
+            }
+
+            if (!statement->ret.expression) {
+
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_expect_symbol(loc, "return value");
+
+            }
+
+            TokenType expr_type = get_expression_type(emitter, current_fn, statement->ret.expression);
+
+            if (expr_type != current_fn->return_type) {
+
+                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
+                error_type_mismatch(loc, "return", token_type_to_string(current_fn->return_type), token_type_to_string(expr_type));
+
+            }
+
+            emit_expression(emitter, current_fn, statement->ret.expression);
+            emit_byte(emitter, OP_RET);
+            current_fn->has_return = true;
+
+        } break;
+
+        case STM_EXPR: {
+
+            TokenType expr_type = get_expression_type(emitter, current_fn, statement->expr.expression);
+            emit_expression(emitter, current_fn, statement->expr.expression);
+
+            if (expr_type != TOK_VOID_T) {
+
+                emit_byte(emitter, OP_POP);
+
+            }
+
+        } break;
+
+    }
+
+}
+
+static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpression *expression) {
 
     switch (expression->tag) {
 
@@ -238,99 +579,63 @@ static void emit_expression(Emitter *emitter, AstExpression *expression) {
 
         case EXP_VARIABLE: {
 
-            size_t var_indx = find_variable(emitter, expression->variable.name);
+            bool is_local = false;
+            size_t var_indx = 0;
+            TokenType t = get_variable_type(emitter, current_fn, expression->variable.name, &is_local, &var_indx);
 
-            if (var_indx == SIZE_MAX) {
+            if (t == TOK_UNKNOWN) {
 
                 ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
                 error_undefined_var(loc, expression->variable.name);
 
             }
 
-            emit_byte(emitter, OP_GET_VAR);
+            emit_byte(emitter, is_local ? OP_GET_LOCAL : OP_GET_GLOBAL);
             emit_u16(emitter, (uint16_t)var_indx);
 
         } break;
 
-    }
+        case EXP_CALL: {
 
-}
+            FunctionDef *fn = find_function(emitter, expression->call.func_name);
 
-/* Emit bytecode for an AST statement node */
-static void emit_statement(Emitter *emitter, AstStatement *statement) {
+            if (!fn) {
 
-    switch (statement->tag) {
-
-        case STM_OUT: {
-
-            emit_expression(emitter, statement->out.expression);
-            emit_byte(emitter, OP_PRINT);
-
-        } break;
-
-        case STM_ASSIGN: {
-
-            size_t var_indx = find_variable(emitter, statement->assign.var_name);
-
-            if (var_indx == SIZE_MAX) {
-
-                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
-                error_undefined_var(loc, statement->assign.var_name);
+                ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                error_unexpected_ident(loc, expression->call.func_name);
 
             }
 
-            TokenType var_type = get_variable_type(emitter, var_indx);
-            TokenType expr_type = get_expression_type(emitter, statement->assign.expression);
+            if (expression->call.arg_count != fn->param_count) {
 
-            if (var_type != expr_type) {
-
-                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
-                error_type_mismatch(loc,
-                                   statement->assign.var_name,
-                                   token_type_to_string(var_type),
-                                   token_type_to_string(expr_type));
+                ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                error_wrong_var_init(loc, fn->param_count, expression->call.arg_count);
 
             }
 
-            emit_expression(emitter, statement->assign.expression);
-            emit_byte(emitter, OP_SET_VAR);
-            emit_u16(emitter, (uint16_t)var_indx);
+            for (size_t i = 0; i < expression->call.arg_count; i++) {
 
-        } break;
+                TokenType arg_type = get_expression_type(emitter, current_fn, expression->call.args[i]);
+                TokenType param_type = fn->param_types[i];
 
-        case STM_VAR_DECL: {
+                if (arg_type != param_type) {
 
-            if (statement->var_decl.init_count > 0 && statement->var_decl.init_count != statement->var_decl.var_count) {
+                    ErrorLocation loc = { .line = expression->call.args[i]->line, .col_start = expression->call.args[i]->column_start, .col_end = expression->call.args[i]->column_end };
+                    error_type_mismatch(loc,
+                                        fn->name,
+                                        token_type_to_string(param_type),
+                                        token_type_to_string(arg_type));
 
-                ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
-                error_wrong_var_init(loc, statement->var_decl.var_count, statement->var_decl.init_count);
-
-            }
-
-            for (size_t i = 0; i < statement->var_decl.var_count; i++) {
-
-                size_t var_indx = add_variable(emitter, statement->var_decl.var_names[i], statement->var_decl.var_type);
-
-                if (i < statement->var_decl.init_count) {
-
-                    TokenType var_type = statement->var_decl.var_type;
-                    TokenType expr_type = get_expression_type(emitter, statement->var_decl.init_exprs[i]);
-
-                    if (var_type != expr_type) {
-
-                        ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
-                        error_type_mismatch(loc,
-                            statement->var_decl.var_names[i],
-                            token_type_to_string(var_type),
-                            token_type_to_string(expr_type));
-
-                    }
-
-                    emit_expression(emitter, statement->var_decl.init_exprs[i]);
-                    emit_byte(emitter, OP_SET_VAR);
-                    emit_u16(emitter, (uint16_t)var_indx);
                 }
+
+                emit_expression(emitter, current_fn, expression->call.args[i]);
+
             }
+
+            size_t fn_index = (size_t)(fn - emitter->functions);
+
+            emit_byte(emitter, OP_CALL);
+            emit_u16(emitter, (uint16_t)fn_index);
 
         } break;
 
@@ -338,14 +643,33 @@ static void emit_statement(Emitter *emitter, AstStatement *statement) {
 
 }
 
-/* Emit bytecode for an AST block node */
-static void emit_block(Emitter *emitter, AstBlock *block) {
+static void emit_block(Emitter *emitter, FunctionDef *current_fn, AstBlock *block) {
 
-    for (size_t i = 0; i < block->len; i++) emit_statement(emitter, block->statements[i]);
+    for (size_t i = 0; i < block->len; i++) emit_statement(emitter, current_fn, block->statements[i]);
 
 }
 
-/* Emit bytecode for an AST declaration node */
+static void emit_function(Emitter *emitter, FunctionDef *fn, AstDeclaration *declare) {
+
+    fn->start_ip = emitter->code_len;
+    fn->has_return = false;
+
+    // Parameters become locals first
+    for (size_t i = 0; i < declare->func.param_count; i++) add_local(fn, declare->func.params[i].name, declare->func.params[i].type);
+
+    emit_block(emitter, fn, declare->func.body);
+
+    if (fn->return_type == TOK_VOID_T && !fn->has_return) emit_byte(emitter, OP_RET);
+
+    if (fn->return_type != TOK_VOID_T && !fn->has_return) {
+
+        ErrorLocation loc = { .line = declare->line, .col_start = declare->column_start, .col_end = declare->column_end };
+        error_missing_return(loc, fn->name);
+
+    }
+
+}
+
 static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *entry_exists) {
 
     switch (declare->tag) {
@@ -359,18 +683,32 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
             }
 
-            emit_block(emitter, declare->entry.block);
-
+            emitter->entry.start_ip = emitter->code_len;
+            emitter->entry.has_return = false;
+            emit_block(emitter, &emitter->entry, declare->entry.block);
+            emit_byte(emitter, OP_HALT);
             *entry_exists = true;
 
         } break;
 
         case DEC_VAR: {
 
-            for (size_t i = 0; i < declare->var_decl.var_count; i++) {
+            // Global variables are already registered in the first pass
 
-                add_variable(emitter, declare->var_decl.var_names[i], declare->var_decl.var_type);
+        } break;
+
+        case DEC_FUNC: {
+
+            FunctionDef *fn = find_function(emitter, declare->func.name);
+
+            if (!fn) {
+
+                ErrorLocation loc = { .line = declare->line, .col_start = declare->column_start, .col_end = declare->column_end };
+                error_invalid_token(loc);
+
             }
+
+            emit_function(emitter, fn, declare);
 
         } break;
 
@@ -378,26 +716,56 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
 }
 
-/* Emit bytecode for an AST program node */
 void emit_program(Emitter *emitter, AstProgram *program) {
 
     init_emitter(emitter);
 
-    bool entry_exists = false;
-
+    // First pass: register functions and globals
     for (size_t i = 0; i < program->len; i++) {
 
-        emit_declaration(emitter, program->declarations[i], &entry_exists);
+        AstDeclaration *decl = program->declarations[i];
+
+        if (decl->tag == DEC_FUNC) {
+
+            register_function(emitter, decl->func.name, decl->func.return_type, decl->func.params, decl->func.param_count);
+
+        } else if (decl->tag == DEC_VAR) {
+
+            for (size_t v = 0; v < decl->var_decl.var_count; v++) add_global(emitter, decl->var_decl.var_names[v], decl->var_decl.var_type);
+
+        }
+
+    }
+
+    bool entry_exists = false;
+
+    // Emit entry first so it starts at IP 0
+    for (size_t i = 0; i < program->len; i++) {
+
+        if (program->declarations[i]->tag == DEC_ENTRY) {
+
+            emit_declaration(emitter, program->declarations[i], &entry_exists);
+
+        }
+
+    }
+
+    // Emit functions and globals (globals already registered)
+    for (size_t i = 0; i < program->len; i++) {
+
+        if (program->declarations[i]->tag == DEC_FUNC || program->declarations[i]->tag == DEC_VAR) {
+
+            emit_declaration(emitter, program->declarations[i], &entry_exists);
+
+        }
 
     }
 
     if (!entry_exists) error_no_entry();
 
-    emit_byte(emitter, OP_HALT);
-
 }
 
-void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t code_len) {
+void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t code_len, FunctionDef *functions, size_t func_count, FunctionDef entry_fn, size_t global_count) {
 
     vm->stack = NULL;
     vm->stack_count = 0;
@@ -411,15 +779,43 @@ void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t
 
     vm->pos = 0;
 
-    vm->variables = calloc(256, sizeof(Value));
-    vm->var_count = 256;
+    vm->globals = calloc(global_count, sizeof(Value));
+    vm->global_count = global_count;
+
+    vm->functions = functions;
+    vm->func_count = func_count;
+    vm->entry_fn = entry_fn;
+
+    vm->frames = NULL;
+    vm->frame_count = 0;
+    vm->frame_cap = 0;
+
+    // Seed the entry frame locals
+    CallFrame entry_frame = {
+        .fn = &vm->entry_fn,
+        .locals = calloc(entry_fn.local_count, sizeof(Value)),
+        .return_ip = vm->code_len
+    };
+
+    if (entry_fn.local_count && !entry_frame.locals) error_oom();
+    zero_locals(entry_frame.locals, entry_fn.local_count);
+
+    vm->frame_cap = 4;
+    vm->frames = malloc(vm->frame_cap * sizeof(CallFrame));
+    if (!vm->frames) error_oom();
+
+    vm->frames[vm->frame_count++] = entry_frame;
 
 }
 
 void free_vm(VM *vm) {
 
     free(vm->stack);
-    free(vm->variables);
+
+    for (size_t i = 0; i < vm->frame_count; i++) free(vm->frames[i].locals);
+
+    free(vm->frames);
+    free(vm->globals);
 
 }
 
@@ -446,7 +842,6 @@ static Value pop(VM *vm) {
 
 }
 
-/* Read the next byte from the VM's code and advance the instruction pointer */
 static uint8_t read_byte(VM *vm) {
 
     return vm->code[vm->pos++];
@@ -459,6 +854,13 @@ static uint16_t read_u16(VM *vm) {
     uint16_t low = read_byte(vm);
 
     return (high << 8) | low;
+
+}
+
+static CallFrame *current_frame(VM *vm) {
+
+    if (vm->frame_count == 0) return NULL;
+    return &vm->frames[vm->frame_count - 1];
 
 }
 
@@ -504,29 +906,118 @@ void interpret(VM *vm) {
 
                 } else {
 
-                    printf("NULL\n");
+                    printf("void\n");
 
                 }
 
             } break;
 
-            case OP_SET_VAR: {
+            case OP_SET_GLOBAL: {
 
                 uint16_t var_indx = read_u16(vm);
 
-                if (var_indx >= vm->var_count) error_invalid_var_index((ErrorLocation){0}, vm->var_count);
+                if (var_indx >= vm->global_count) error_invalid_var_index((ErrorLocation){0}, vm->global_count);
 
-                vm->variables[var_indx] = pop(vm);
+                vm->globals[var_indx] = pop(vm);
 
             } break;
 
-            case OP_GET_VAR: {
+            case OP_GET_GLOBAL: {
 
                 uint16_t var_indx = read_u16(vm);
 
-                if (var_indx >= vm->var_count) error_invalid_var_index((ErrorLocation){0}, vm->var_count);
+                if (var_indx >= vm->global_count) error_invalid_var_index((ErrorLocation){0}, vm->global_count);
 
-                push(vm, vm->variables[var_indx]);
+                push(vm, vm->globals[var_indx]);
+
+            } break;
+
+            case OP_SET_LOCAL: {
+
+                uint16_t var_indx = read_u16(vm);
+                CallFrame *frame = current_frame(vm);
+
+                if (!frame || var_indx >= frame->fn->local_count) error_invalid_var_index((ErrorLocation){0}, frame ? frame->fn->local_count : 0);
+
+                frame->locals[var_indx] = pop(vm);
+
+            } break;
+
+            case OP_GET_LOCAL: {
+
+                uint16_t var_indx = read_u16(vm);
+                CallFrame *frame = current_frame(vm);
+
+                if (!frame || var_indx >= frame->fn->local_count) error_invalid_var_index((ErrorLocation){0}, frame ? frame->fn->local_count : 0);
+
+                push(vm, frame->locals[var_indx]);
+
+            } break;
+
+            case OP_CALL: {
+
+                uint16_t fn_indx = read_u16(vm);
+
+                if (fn_indx >= vm->func_count) error_invalid_opcode((ErrorLocation){0}, fn_indx);
+
+                FunctionDef *fn = &vm->functions[fn_indx];
+
+                Value *locals = calloc(fn->local_count, sizeof(Value));
+
+                if (fn->local_count && !locals) error_oom();
+                zero_locals(locals, fn->local_count);
+
+                for (size_t i = 0; i < fn->param_count; i++) {
+
+                    locals[fn->param_count - 1 - i] = pop(vm);
+
+                }
+
+                if (vm->frame_count + 1 > vm->frame_cap) {
+
+                    size_t new_cap = vm->frame_cap ? vm->frame_cap * 2 : 4;
+                    vm->frames = realloc(vm->frames, new_cap * sizeof(CallFrame));
+
+                    if (!vm->frames) error_oom();
+
+                    vm->frame_cap = new_cap;
+
+                }
+
+                vm->frames[vm->frame_count++] = (CallFrame){
+                    .fn = fn,
+                    .locals = locals,
+                    .return_ip = vm->pos
+                };
+
+                vm->pos = fn->start_ip;
+
+            } break;
+
+            case OP_RET: {
+
+                CallFrame *frame = current_frame(vm);
+
+                if (!frame) error_invalid_opcode((ErrorLocation){0}, operation);
+
+                Value ret = { .type = VAL_VOID };
+
+                if (frame->fn->return_type != TOK_VOID_T) ret = pop(vm);
+
+                free(frame->locals);
+                vm->frame_count--;
+
+                if (vm->frame_count == 0) return;
+
+                vm->pos = frame->return_ip;
+
+                if (frame->fn->return_type != TOK_VOID_T) push(vm, ret);
+
+            } break;
+
+            case OP_POP: {
+
+                pop(vm);
 
             } break;
 

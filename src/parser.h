@@ -8,7 +8,8 @@
 typedef enum {
 
     DEC_ENTRY,
-    DEC_VAR
+    DEC_VAR,
+    DEC_FUNC
 
 } DeclarationTag;
 
@@ -16,7 +17,9 @@ typedef enum {
 
     STM_OUT,
     STM_ASSIGN,
-    STM_VAR_DECL
+    STM_VAR_DECL,
+    STM_RETURN,
+    STM_EXPR
 
 } StatementTag;
 
@@ -26,11 +29,12 @@ typedef enum {
     EXP_INTEGER,
     EXP_FLOAT,
     EXP_BOOLEAN,
-    EXP_VARIABLE
+    EXP_VARIABLE,
+    EXP_CALL
 
 } ExpressionTag;
 
-typedef struct {
+typedef struct AstExpression {
 
     ExpressionTag tag;
     int line;
@@ -44,10 +48,25 @@ typedef struct {
         struct { float value; } float_lit;
         struct { bool value; } bool_lit;
         struct { char *name; } variable;
+        struct {
+            char *func_name;
+            struct AstExpression **args;
+            size_t arg_count;
+        } call;
 
     };
 
 } AstExpression;
+
+typedef struct {
+
+    char *name;
+    TokenType type;
+    int line;
+    int column_start;
+    int column_end;
+
+} AstParam;
 
 typedef struct {
 
@@ -69,6 +88,8 @@ typedef struct {
             size_t init_count;
 
         } var_decl;
+        struct { AstExpression *expression; } ret;
+        struct { AstExpression *expression; } expr;
 
     };
 
@@ -98,6 +119,15 @@ typedef struct {
             TokenType var_type;
 
         } var_decl;
+        struct {
+
+            char *name;
+            AstParam *params;
+            size_t param_count;
+            TokenType return_type;
+            AstBlock *body;
+
+        } func;
 
     };
 

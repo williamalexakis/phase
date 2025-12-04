@@ -51,6 +51,19 @@ static void print_expression(AstExpression *expression, int ind) {
 
         } break;
 
+        case EXP_CALL: {
+
+            indent(ind);
+            printf("%s EXPRESSION (%sCALL%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->call.func_name, RESET);
+
+            for (size_t i = 0; i < expression->call.arg_count; i++) {
+
+                print_expression(expression->call.args[i], ind + 6);
+
+            }
+
+        } break;
+
     }
 
 }
@@ -104,6 +117,22 @@ static void print_statement(AstStatement *statement, int ind) {
                 print_expression(statement->var_decl.init_exprs[i], ind + 6);
 
             }
+
+        } break;
+
+        case STM_RETURN: {
+
+            indent(ind);
+            printf("%s STATEMENT (%sRETURN%s)\n", branch_glyph, FG_CYAN, RESET);
+            if (statement->ret.expression) print_expression(statement->ret.expression, ind + 6);
+
+        } break;
+
+        case STM_EXPR: {
+
+            indent(ind);
+            printf("%s STATEMENT (%sEXPR%s)\n", branch_glyph, FG_CYAN, RESET);
+            print_expression(statement->expr.expression, ind + 6);
 
         } break;
 
@@ -163,6 +192,39 @@ static void print_declaration(AstDeclaration *declare, int ind) {
             }
 
             printf("]\n");
+
+        } break;
+
+        case DEC_FUNC: {
+
+            indent(ind);
+            printf("%s DECLARATION (%sFUNC%s) [%s%s%s -> %s%s%s]\n",
+                   branch_glyph, FG_CYAN, RESET,
+                   FG_PURPLE, declare->func.name, RESET,
+                   FG_PURPLE, token_type_to_string(declare->func.return_type), RESET);
+
+            if (declare->func.param_count == 0) {
+
+                indent(ind + 6);
+                printf("%s PARAMS (none)\n", branch_glyph);
+
+            } else {
+
+                indent(ind + 6);
+                printf("%s PARAMS\n", branch_glyph);
+
+                for (size_t i = 0; i < declare->func.param_count; i++) {
+
+                    indent(ind + 12);
+                    printf("%s %s%s%s: %s%s%s\n", branch_glyph,
+                           FG_PURPLE, declare->func.params[i].name, RESET,
+                           FG_PURPLE, token_type_to_string(declare->func.params[i].type), RESET);
+
+                }
+
+            }
+
+            print_block(declare->func.body, ind + 6);
 
         } break;
 
@@ -303,7 +365,7 @@ int main(int argc, char **argv) {
         emit_program(&emitter, program);
 
         VM vm = {0};
-        init_vm(&vm, emitter.constants, emitter.const_count, emitter.code, emitter.code_len);
+        init_vm(&vm, emitter.constants, emitter.const_count, emitter.code, emitter.code_len, emitter.functions, emitter.func_count, emitter.entry, emitter.global_count);
 
         interpret(&vm);
 
