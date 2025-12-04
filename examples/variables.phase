@@ -1,11 +1,11 @@
 entry {
     -- Grouped initializations
-    int (a, b, c) = (5, 10, 15)
-    str (x, y, z) = ("hello", "world", "!")
+    let (a, b, c): int = (5, 10, 15)
+    let (x, y, z): str = ("hello", "world", "!")
 
     -- Grouped declarations
-    int (p, q, r)
-    str (i, j, k)
+    let (p, q, r): int
+    let (i, j, k): str
 
     -- Cross assignments
     p = a

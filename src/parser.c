@@ -69,6 +69,30 @@ static void expect(Parser *parser, TokenType t_type, const char *message) {
 
 }
 
+static TokenType parse_type_annotation(Parser *parser, int *col_end_out) {
+
+    if (parser->look.type == TOK_INTEGER_T
+        || parser->look.type == TOK_STRING_T
+        || parser->look.type == TOK_FLOAT_T
+        || parser->look.type == TOK_BOOLEAN_T) {
+
+        TokenType var_type = parser->look.type;
+
+        if (col_end_out) *col_end_out = parser->look.column_end;
+
+        advance_parser(parser);
+
+        return var_type;
+
+    }
+
+    ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+    error_expect_symbol(loc, "type name");
+
+    return TOK_UNKNOWN;
+
+}
+
 static AstExpression *parse_expression(Parser *parser) {
 
     if (parser->look.type == TOK_STRING_LIT) {
@@ -232,15 +256,11 @@ static AstStatement *parse_statement(Parser *parser) {
 
     }
 
-    if (parser->look.type == TOK_INTEGER_T
-        || parser->look.type == TOK_STRING_T
-        || parser->look.type == TOK_FLOAT_T
-        || parser->look.type == TOK_BOOLEAN_T) {
+    if (parser->look.type == TOK_LET) {
 
         int line = parser->look.line;
         int col_start = parser->look.column_start;
         int col_end = parser->look.column_end;
-        TokenType var_type = parser->look.type;
 
         advance_parser(parser);
 
@@ -299,6 +319,10 @@ static AstStatement *parse_statement(Parser *parser) {
             error_expect_symbol(loc, "variable name or '('");
 
         }
+
+        expect(parser, TOK_COLON, "':'");
+
+        TokenType var_type = parse_type_annotation(parser, &col_end);
 
         AstExpression **init_exprs = NULL;
         size_t init_count = 0;
@@ -431,9 +455,8 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
     int line = parser->look.line;
     int col_start = parser->look.column_start;
     int col_end = parser->look.column_end;
-    TokenType var_type = parser->look.type;
 
-    advance_parser(parser);
+    expect(parser, TOK_LET, "'let'");
 
     char **var_names = NULL;
     size_t var_count = 0;
@@ -486,10 +509,14 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
 
     } else {
 
-        var_names = NULL;
-        var_count = 0;
+        ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
+        error_expect_symbol(loc, "variable name or '('");
 
     }
+
+    expect(parser, TOK_COLON, "':'");
+
+    TokenType var_type = parse_type_annotation(parser, &col_end);
 
     AstDeclaration *declaration = calloc(1, sizeof(*declaration));
 
@@ -523,10 +550,7 @@ AstProgram *parse_program(Parser *parser) {
 
             declaration = parse_entry_decl(parser);
 
-        } else if (parser->look.type == TOK_INTEGER_T
-            || parser->look.type == TOK_STRING_T
-            || parser->look.type == TOK_FLOAT_T
-            || parser->look.type == TOK_BOOLEAN_T) {
+        } else if (parser->look.type == TOK_LET) {
 
             declaration = parse_var_decl(parser);
 

@@ -159,9 +159,9 @@ entry {
 ### Variables
 ```c
 entry {
-    str (name, surname) = ("Arthur", "Ford")
-    int age = 25
-    bool employed = true
+    let (name, surname): str = ("Arthur", "Ford")
+    let age: int = 25
+    let employed: bool = true
     
     out("Name:")
     out(name)
@@ -195,7 +195,7 @@ entry {
 - [x] Token and AST diagnostics
 - [x] Floats and booleans
 - [x] Error manager
-- [ ] Declaration keywords & annotations
+- [x] Declaration keywords & annotations
 - [ ] Functions
 - [ ] Conditionals
 - [ ] Basic loops

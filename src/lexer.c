@@ -112,6 +112,7 @@ static Token lex_ident_or_kw(Lexer *lexer) {
 
     if (strcmp(lexeme, "entry") == 0) return make_token(TOK_ENTRY, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "out") == 0) return make_token(TOK_OUT, lexeme, line, col_start, col_end, true);
+    if (strcmp(lexeme, "let") == 0) return make_token(TOK_LET, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "toint") == 0) return make_token(TOK_TOINT, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "tostr") == 0) return make_token(TOK_TOSTR, lexeme, line, col_start, col_end, true);
     if (strcmp(lexeme, "int") == 0) return make_token(TOK_INTEGER_T, lexeme, line, col_start, col_end, true);
@@ -297,6 +298,7 @@ Token next_token(Lexer *lexer) {
         case '(': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_LPAREN, "(", lexer->line, col, col, false); }
         case ')': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_RPAREN, ")", lexer->line, col, col, false); }
         case ',': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, col, col, false); }
+        case ':': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_COLON, ":", lexer->line, col, col, false); }
         case '=': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, col, col, false); }
         case '+': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_ADD, "+", lexer->line, col, col, false); }
         case '-': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_SUBTRACT, "-", lexer->line, col, col, false); }
@@ -329,8 +331,10 @@ const char *get_token_name(TokenType type) {
         [TOK_LPAREN] = "LEFT PAREN",
         [TOK_RPAREN] = "RIGHT PAREN",
         [TOK_COMMA] = "COMMA",
+        [TOK_COLON] = "COLON",
         [TOK_ENTRY] = "ENTRY",
         [TOK_OUT] = "OUT",
+        [TOK_LET] = "LET",
         [TOK_TOINT] = "TOINT",
         [TOK_TOSTR] = "TOSTR",
         [TOK_STRING_T] = "STRING TYPE",
