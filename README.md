@@ -15,7 +15,7 @@
 > [!NOTE]
 > Phase is a functional prototype language. It is designed for clarity and experimentation rather than production deployment.
 
-#### **For a detailed insight into the design process behind Phase: [my blog post](https://williamalexakis.com/blog/posts/writing-phase)**
+#### **For a detailed insight into the design process behind Phase, look at my [blog post](https://williamalexakis.com/blog/posts/writing-phase)**
 
 ## Features
 
