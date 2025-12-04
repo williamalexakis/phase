@@ -246,12 +246,6 @@ entry {
 - [x] Conditionals
 - [x] Basic loops
 
-## Contributing
-
-Contributions and suggestions are welcome.
-
-Please open an issue before submitting large changes.
-
 ## License
 
 Phase is released under the MIT License.
