@@ -1,0 +1,46 @@
+func greet(name: str, excited: bool): void {
+    if excited {
+        out("Hello,")
+        out(name)
+    } else {
+        out("Hi,")
+        out(name)
+    }
+}
+
+func factorial(n: int): int {
+    if n == 0 {
+        return 1
+    }
+
+    let result: int = 1
+    let i: int = 1
+
+    while i <= n {
+        result *= i
+        i += 1
+    }
+
+    return result
+}
+
+entry {
+    let name: str = "Arthur Ford"
+    let excited: bool = true
+    greet(name, excited)
+    out("")
+
+    let x: int = 3
+    x += 2
+    x *= 2
+
+    let fact: int = factorial(x)
+
+    if fact > 10 and fact < 100 {
+        out("Medium factorial:")
+        out(fact)
+    } else {
+        out("Factorial:")
+        out(fact)
+    }
+}

@@ -12,10 +12,7 @@
 </div>
 <br/>
 
-> [!NOTE]
-> Phase is a functional prototype language. It is designed for clarity and experimentation rather than production deployment.
-
-#### **For a detailed insight into the design process behind Phase, look at my [blog post](https://williamalexakis.com/blog/posts/writing-phase)**
+### **For detailed insight into the design process behind Phase, look at my [blog post](https://williamalexakis.com/blog/posts/writing-phase)**
 
 ## Features
 
@@ -162,7 +159,9 @@ entry {
     let (name, surname): str = ("Arthur", "Ford")
     let age: int = 25
     let employed: bool = true
-    
+
+    age += 1
+
     out("Name:")
     out(name)
     out(surname)
@@ -173,31 +172,33 @@ entry {
 }
 ```
 
-### Functions
+### Functions + Logic
 ```c
-func hello(name: str): str {
-    return name
-}
-
-func announce(): void {
-    out("Welcome,")
+func greet(name: str, excited: bool): void {
+    if excited and name == "Alora" {
+        out("HELLO")
+    } else {
+        out("Hello")
+    }
+    out(name)
 }
 
 entry {
-    announce()
-    out(hello("Alora"))
+    greet("Alora", true)
 }
 ```
 
-### Conditionals
+### Conditionals + Arithmetic
 ```c
 entry {
-    let employment: bool = false
+    let score: int = 9
 
-    if employment {
-        out("Go to work!")
+    if score >= 10 {
+        out("Top tier")
+    } else if score > 5 {
+        out("Good")
     } else {
-        out("Get a job!")
+        out("Needs work")
     }
 }
 ```
@@ -206,10 +207,14 @@ entry {
 ```c
 entry {
     let keep: bool = true
+    let counter: int = 0
 
     while keep {
-        out("Looping once")
-        keep = false
+        out(counter)
+        counter += 1
+        if counter == 3 {
+            keep = false
+        }
     }
 }
 ```

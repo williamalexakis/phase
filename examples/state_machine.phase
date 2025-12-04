@@ -1,0 +1,28 @@
+-- Simple state machine: counts down and toggles flags
+
+entry {
+    let state: str = "idle"
+    let countdown: int = 3
+    let active: bool = false
+
+    while countdown > 0 {
+        out(state)
+
+        if countdown == 3 {
+            state = "starting"
+            active = true
+        } else if countdown == 1 and active {
+            state = "finishing"
+        } else {
+            state = "running"
+        }
+
+        countdown -= 1
+    }
+
+    if not active {
+        out("inactive")
+    } else {
+        out("complete")
+    }
+}
