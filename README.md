@@ -12,7 +12,7 @@
 </div>
 <br/>
 
-<h3 align="center">For detailed insight into the design process behind Phase, look at my <a href="https://williamalexakis.com/blog/posts/writing-phase">blog post</a></h3>.
+<h3 align="center">For detailed insight into the design process behind Phase, look at my <a href="https://williamalexakis.com/blog/posts/writing-phase">blog post</a>.</h3>
 
 ## Features
 
