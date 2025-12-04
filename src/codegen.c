@@ -361,6 +361,29 @@ static TokenType get_expression_type(Emitter *emitter, FunctionDef *current_fn, 
 
         }
 
+        case EXP_BINARY: {
+
+            TokenType left_type = get_expression_type(emitter, current_fn, expression->binary.left);
+            TokenType right_type = get_expression_type(emitter, current_fn, expression->binary.right);
+
+            if (left_type != right_type) {
+
+                ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                error_type_mismatch(loc, "binary op", token_type_to_string(left_type), token_type_to_string(right_type));
+
+            }
+
+            if (left_type != TOK_INTEGER_T && left_type != TOK_FLOAT_T) {
+
+                ErrorLocation loc = { .line = expression->line, .col_start = expression->column_start, .col_end = expression->column_end };
+                error_type_mismatch(loc, "binary op", "number", token_type_to_string(left_type));
+
+            }
+
+            return left_type;
+
+        }
+
         default: return TOK_UNKNOWN;
 
     }
@@ -711,6 +734,23 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
 
             emit_byte(emitter, OP_CALL);
             emit_u16(emitter, (uint16_t)fn_index);
+
+        } break;
+
+        case EXP_BINARY: {
+
+            emit_expression(emitter, current_fn, expression->binary.left);
+            emit_expression(emitter, current_fn, expression->binary.right);
+
+            switch (expression->binary.op) {
+
+                case TOK_ADD: emit_byte(emitter, OP_ADD); break;
+                case TOK_SUBTRACT: emit_byte(emitter, OP_SUB); break;
+                case TOK_MULTIPLY: emit_byte(emitter, OP_MUL); break;
+                case TOK_DIVIDE: emit_byte(emitter, OP_DIV); break;
+                default: error_invalid_opcode((ErrorLocation){0}, expression->binary.op);
+
+            }
 
         } break;
 
@@ -1111,6 +1151,90 @@ void interpret(VM *vm) {
                 if (cond.type == VAL_BOOLEAN && !cond.as.boolean) {
 
                     vm->pos = target;
+
+                }
+
+            } break;
+
+            case OP_ADD: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+
+                    push(vm, (Value){ .type = VAL_INTEGER, .as.integer = a.as.integer + b.as.integer });
+
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+
+                    push(vm, (Value){ .type = VAL_FLOAT, .as.floating = a.as.floating + b.as.floating });
+
+                } else {
+
+                    error_invalid_opcode((ErrorLocation){0}, OP_ADD);
+
+                }
+
+            } break;
+
+            case OP_SUB: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+
+                    push(vm, (Value){ .type = VAL_INTEGER, .as.integer = a.as.integer - b.as.integer });
+
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+
+                    push(vm, (Value){ .type = VAL_FLOAT, .as.floating = a.as.floating - b.as.floating });
+
+                } else {
+
+                    error_invalid_opcode((ErrorLocation){0}, OP_SUB);
+
+                }
+
+            } break;
+
+            case OP_MUL: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+
+                    push(vm, (Value){ .type = VAL_INTEGER, .as.integer = a.as.integer * b.as.integer });
+
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+
+                    push(vm, (Value){ .type = VAL_FLOAT, .as.floating = a.as.floating * b.as.floating });
+
+                } else {
+
+                    error_invalid_opcode((ErrorLocation){0}, OP_MUL);
+
+                }
+
+            } break;
+
+            case OP_DIV: {
+
+                Value b = pop(vm);
+                Value a = pop(vm);
+
+                if (a.type == VAL_INTEGER && b.type == VAL_INTEGER) {
+
+                    push(vm, (Value){ .type = VAL_INTEGER, .as.integer = a.as.integer / b.as.integer });
+
+                } else if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) {
+
+                    push(vm, (Value){ .type = VAL_FLOAT, .as.floating = a.as.floating / b.as.floating });
+
+                } else {
+
+                    error_invalid_opcode((ErrorLocation){0}, OP_DIV);
 
                 }
 

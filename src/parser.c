@@ -99,7 +99,17 @@ static TokenType parse_type_annotation(Parser *parser, bool allow_void, int *col
 
 }
 
+static AstExpression *parse_primary(Parser *parser);
+static AstExpression *parse_factor(Parser *parser);
+static AstExpression *parse_term(Parser *parser);
+
 static AstExpression *parse_expression(Parser *parser) {
+
+    return parse_term(parser);
+
+}
+
+static AstExpression *parse_primary(Parser *parser) {
 
     if (parser->look.type == TOK_STRING_LIT) {
 
@@ -268,6 +278,70 @@ static AstExpression *parse_expression(Parser *parser) {
 
 }
 
+static AstExpression *parse_factor(Parser *parser) {
+
+    AstExpression *left = parse_primary(parser);
+
+    while (parser->look.type == TOK_MULTIPLY || parser->look.type == TOK_DIVIDE) {
+
+        TokenType op = parser->look.type;
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        advance_parser(parser);
+        AstExpression *right = parse_primary(parser);
+
+        AstExpression *bin = calloc(1, sizeof(*bin));
+
+        if (!bin) error_oom();
+
+        bin->tag = EXP_BINARY;
+        bin->line = line;
+        bin->column_start = col_start;
+        bin->column_end = right->column_end;
+        bin->binary.left = left;
+        bin->binary.right = right;
+        bin->binary.op = op;
+
+        left = bin;
+
+    }
+
+    return left;
+
+}
+
+static AstExpression *parse_term(Parser *parser) {
+
+    AstExpression *left = parse_factor(parser);
+
+    while (parser->look.type == TOK_ADD || parser->look.type == TOK_SUBTRACT) {
+
+        TokenType op = parser->look.type;
+        int line = parser->look.line;
+        int col_start = parser->look.column_start;
+        advance_parser(parser);
+        AstExpression *right = parse_factor(parser);
+
+        AstExpression *bin = calloc(1, sizeof(*bin));
+
+        if (!bin) error_oom();
+
+        bin->tag = EXP_BINARY;
+        bin->line = line;
+        bin->column_start = col_start;
+        bin->column_end = right->column_end;
+        bin->binary.left = left;
+        bin->binary.right = right;
+        bin->binary.op = op;
+
+        left = bin;
+
+    }
+
+    return left;
+
+}
+
 static AstStatement *parse_statement(Parser *parser) {
 
     if (parser->look.type == TOK_OUT) {
@@ -421,6 +495,15 @@ static AstStatement *parse_statement(Parser *parser) {
         char *var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
         advance_parser(parser);
 
+        TokenType compound_op = TOK_UNKNOWN;
+
+        if (parser->look.type == TOK_PLUS_EQ || parser->look.type == TOK_MINUS_EQ || parser->look.type == TOK_STAR_EQ || parser->look.type == TOK_SLASH_EQ) {
+
+            compound_op = parser->look.type;
+            advance_parser(parser);
+
+        }
+
         if (parser->look.type == TOK_LPAREN) {
 
             // Treat as call expression statement
@@ -487,7 +570,7 @@ static AstStatement *parse_statement(Parser *parser) {
 
         }
 
-        if (parser->look.type != TOK_ASSIGN) {
+        if (compound_op == TOK_UNKNOWN && parser->look.type != TOK_ASSIGN) {
 
             ErrorLocation loc = { .file = parser->lexer->file_path, .line = parser->look.line, .col_start = parser->look.column_start, .col_end = parser->look.column_end };
 
@@ -503,9 +586,49 @@ static AstStatement *parse_statement(Parser *parser) {
 
         }
 
-        advance_parser(parser);
+        if (compound_op == TOK_UNKNOWN) {
+
+            advance_parser(parser);
+
+        }
 
         AstExpression *expression = parse_expression(parser);
+
+        if (compound_op != TOK_UNKNOWN) {
+
+            AstExpression *lhs = calloc(1, sizeof(*lhs));
+
+            if (!lhs) error_oom();
+
+            lhs->tag = EXP_VARIABLE;
+            lhs->line = line;
+            lhs->column_start = col_start;
+            lhs->column_end = col_end;
+            lhs->variable.name = strdup(var_name);
+
+            AstExpression *bin = calloc(1, sizeof(*bin));
+
+            if (!bin) error_oom();
+
+            bin->tag = EXP_BINARY;
+            bin->line = line;
+            bin->column_start = col_start;
+            bin->column_end = expression->column_end;
+            bin->binary.left = lhs;
+            bin->binary.right = expression;
+
+            switch (compound_op) {
+                case TOK_PLUS_EQ: bin->binary.op = TOK_ADD; break;
+                case TOK_MINUS_EQ: bin->binary.op = TOK_SUBTRACT; break;
+                case TOK_STAR_EQ: bin->binary.op = TOK_MULTIPLY; break;
+                case TOK_SLASH_EQ: bin->binary.op = TOK_DIVIDE; break;
+                default: bin->binary.op = TOK_UNKNOWN; break;
+            }
+
+            expression = bin;
+
+        }
+
         AstStatement *statement = calloc(1, sizeof(*statement));
 
         if (!statement) error_oom();
@@ -949,6 +1072,13 @@ static void free_expression(AstExpression *expression) {
 
             free(expression->call.args);
             free(expression->call.func_name);
+
+        } break;
+
+        case EXP_BINARY: {
+
+            free_expression(expression->binary.left);
+            free_expression(expression->binary.right);
 
         } break;
 

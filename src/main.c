@@ -69,6 +69,20 @@ static void print_expression(AstExpression *expression, int ind) {
 
         } break;
 
+        case EXP_BINARY: {
+
+            indent(ind);
+            printf("%s EXPRESSION (%sBINARY%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE,
+                   expression->binary.op == TOK_ADD ? "+" :
+                   expression->binary.op == TOK_SUBTRACT ? "-" :
+                   expression->binary.op == TOK_MULTIPLY ? "*" :
+                   expression->binary.op == TOK_DIVIDE ? "/" : "?",
+                   RESET);
+            print_expression(expression->binary.left, ind + 6);
+            print_expression(expression->binary.right, ind + 6);
+
+        } break;
+
     }
 
 }

@@ -306,10 +306,30 @@ Token next_token(Lexer *lexer) {
         case ',': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_COMMA, ",", lexer->line, col, col, false); }
         case ':': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_COLON, ":", lexer->line, col, col, false); }
         case '=': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_ASSIGN, "=", lexer->line, col, col, false); }
-        case '+': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_ADD, "+", lexer->line, col, col, false); }
-        case '-': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_SUBTRACT, "-", lexer->line, col, col, false); }
-        case '*': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_MULTIPLY, "*", lexer->line, col, col, false); }
-        case '/': { int col = lexer->column; advance_lexer(lexer); return make_token(TOK_DIVIDE, "/", lexer->line, col, col, false); }
+        case '+': {
+            int col = lexer->column;
+            advance_lexer(lexer);
+            if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_PLUS_EQ, "+=", lexer->line, col, col + 1, false); }
+            return make_token(TOK_ADD, "+", lexer->line, col, col, false);
+        }
+        case '-': {
+            int col = lexer->column;
+            advance_lexer(lexer);
+            if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_MINUS_EQ, "-=", lexer->line, col, col + 1, false); }
+            return make_token(TOK_SUBTRACT, "-", lexer->line, col, col, false);
+        }
+        case '*': {
+            int col = lexer->column;
+            advance_lexer(lexer);
+            if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_STAR_EQ, "*=", lexer->line, col, col + 1, false); }
+            return make_token(TOK_MULTIPLY, "*", lexer->line, col, col, false);
+        }
+        case '/': {
+            int col = lexer->column;
+            advance_lexer(lexer);
+            if (peek(lexer) == '=') { advance_lexer(lexer); return make_token(TOK_SLASH_EQ, "/=", lexer->line, col, col + 1, false); }
+            return make_token(TOK_DIVIDE, "/", lexer->line, col, col, false);
+        }
         case '"': return lex_string(lexer);
         case '\'': return lex_string(lexer);
 
@@ -356,6 +376,10 @@ const char *get_token_name(TokenType type) {
         [TOK_SUBTRACT] = "SUBTRACT",
         [TOK_MULTIPLY] = "MULTIPLY",
         [TOK_DIVIDE] = "DIVIDE",
+        [TOK_PLUS_EQ] = "PLUS_EQ",
+        [TOK_MINUS_EQ] = "MINUS_EQ",
+        [TOK_STAR_EQ] = "STAR_EQ",
+        [TOK_SLASH_EQ] = "SLASH_EQ",
         [TOK_FUNC] = "FUNC",
         [TOK_RETURN] = "RETURN",
         [TOK_VOID_T] = "VOID TYPE",

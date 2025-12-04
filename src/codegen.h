@@ -18,6 +18,10 @@ typedef enum {
     OP_RET,
     OP_JUMP,
     OP_JUMP_IF_FALSE,
+    OP_ADD,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
     OP_POP,
     OP_HALT
 
