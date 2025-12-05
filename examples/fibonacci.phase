@@ -1,0 +1,16 @@
+func fibonacci(n: int): void {
+    let (a, b): int = (0, 1)
+    let (next, count): int = (b, 1)
+    
+    while count <= n {
+        out(next)
+        count += 1
+        a = b
+        b = next
+        next = a + b
+    }
+}
+
+entry {
+    fibonacci(10)
+}
