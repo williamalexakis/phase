@@ -2,8 +2,8 @@ entry {
     let ready: bool = true
 
     if ready {
-        out("ready")
+        out("Ready!")
     } else {
-        out("not ready")
+        out("Not ready...")
     }
 }

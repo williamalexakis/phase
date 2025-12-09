@@ -58,17 +58,30 @@ phase/
   │   ├─ main.c
   │   └─ colours.h
   ├─ examples/
+  │   ├─ conditionals.phase
+  │   ├─ fibonacci.phase
+  │   ├─ full_demo.phase
+  │   ├─ functions.phase
   │   ├─ helloworld.phase
+  │   ├─ loops.phase
+  │   ├─ state_machine.phase
   │   └─ variables.phase
   ├─ tests/
+  │   ├─ apostrophe_string.phase
+  │   ├─ arithmetic.phase
+  │   ├─ compound_assign.phase
+  │   ├─ if_else.phase
   │   ├─ invalid_token_global.phase
+  │   ├─ logic.phase
   │   ├─ missing_expression.phase
   │   ├─ missing_paren.phase
+  │   ├─ missing_return.phase
   │   ├─ multiple_entry.phase
   │   ├─ no_entry.phase
   │   ├─ open_string.phase
   │   ├─ type_mismatch.phase
   │   ├─ undefined_var.phase
+  │   ├─ while_basic.phase
   │   └─ wrong_var_init_count.phase
   ├─ CMakeLists.txt
   ├─ build.sh

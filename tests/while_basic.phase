@@ -2,7 +2,7 @@ entry {
     let keep: bool = true
 
     while keep {
-        out("once")
+        out("Once")
         keep = false
     }
 }

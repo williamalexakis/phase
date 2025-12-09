@@ -1,7 +1,7 @@
--- Simple state machine: counts down and toggles flags
+-- Simple state machine that counts down and toggles different flags
 
 entry {
-    let state: str = "idle"
+    let state: str = "Idle"
     let countdown: int = 3
     let active: bool = false
 
@@ -9,20 +9,20 @@ entry {
         out(state)
 
         if countdown == 3 {
-            state = "starting"
+            state = "Starting"
             active = true
         } else if countdown == 1 and active {
-            state = "finishing"
+            state = "Finishing"
         } else {
-            state = "running"
+            state = "Running"
         }
 
         countdown -= 1
     }
 
     if not active {
-        out("inactive")
+        out("Inactive")
     } else {
-        out("complete")
+        out("Complete")
     }
 }

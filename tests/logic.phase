@@ -3,14 +3,14 @@ entry {
     let b: bool = false
 
     if a and not b {
-        out("passed")
+        out("Passed")
     }
 
     if 2 < 3 {
-        out("lt")
+        out("Less than")
     }
 
     if 3 == 3 {
-        out("eq")
+        out("Equal")
     }
 }

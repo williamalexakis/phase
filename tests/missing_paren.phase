@@ -1,4 +1,3 @@
 entry {
-    out("a, b, c:"
+    out("Hello world!"
 }
-

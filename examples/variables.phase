@@ -14,7 +14,7 @@ entry {
     pens = 5
     papers = 7
 
-    -- Output summary
+    -- Display results
     out("Name:")
     out(first)
     out(last)

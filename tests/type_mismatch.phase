@@ -1,4 +1,4 @@
 -- Type mismatch between var and initializer
 entry {
-    let x: int = "hi"
+    let x: int = "Hi"
 }

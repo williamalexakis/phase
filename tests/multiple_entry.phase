@@ -1,8 +1,7 @@
 entry {
-    out("first")
+    out("First")
 }
 
 entry {
-    out("second")
+    out("Second")
 }
-
