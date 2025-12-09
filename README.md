@@ -113,7 +113,7 @@ entry {
 ```c
 00 00 00   ; OP_PUSH_CONST 0
 01         ; OP_PRINT
-04         ; OP_HALT
+18         ; OP_HALT
 ```
 
 ## Installation
