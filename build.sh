@@ -4,7 +4,6 @@ set -e
 BUILD_DIR="build"
 BUILD_TYPE="Release"  # Default
 
-# Colours
 GREEN="\033[1;32m"
 YELLOW="\033[1;38;5;220m"
 BLUE="\033[1;34m"
@@ -12,7 +11,7 @@ RESET="\033[0m"
 
 echo -e "\n${GREEN}>>> Starting Phase Build <<<${RESET}\n"
 
-# Parse flags
+# First we parse flags
 while [[ $# -gt 0 ]]; do
     case $1 in
         --debug)
@@ -27,14 +26,14 @@ while [[ $# -gt 0 ]]; do
             RUN_AFTER_BUILD=true
             ;;
         *)
-            echo "[phase] Error: Unknown flag: $1"
+            echo "[phase] Error: Unknown flag ($1)."
             exit 1
             ;;
     esac
     shift
 done
 
-# Configure
+# Then configure
 echo -e "${YELLOW}Configuring (${BUILD_TYPE})...${RESET}"
 
 mkdir -p "$BUILD_DIR"
@@ -42,12 +41,12 @@ cd "$BUILD_DIR"
 
 cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE .. 
 
-# Build
+# Then build
 echo -e "${YELLOW}Building Phase...${RESET}"
 cmake --build . -- -j$(nproc || echo 4)
-echo -e "\n${GREEN}>>> Build Complete <<<${GREEN}\n"
+echo -e "\n${GREEN}>>> Phase Build Complete <<<${GREEN}\n"
 
-# Optionally run
+# And optionally run
 if [[ "$RUN_AFTER_BUILD" == true ]]; then
     echo -e "${YELLOW}Running Phase...${RESET}\n"
     ./phase --help || echo "[phase] Error: Executable not found."

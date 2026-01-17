@@ -155,7 +155,7 @@ static size_t emit_jump(Emitter *emitter, Opcode op) {
 
     emit_byte(emitter, op);
     size_t jump_pos = emitter->code_len;
-    emit_u16(emitter, 0);  // Placeholder
+    emit_u16(emitter, 0);  // Lil placeholder
     return jump_pos;
 
 }
@@ -405,7 +405,7 @@ static TokenType get_expression_type(Emitter *emitter, FunctionDef *current_fn, 
 
             }
 
-            // Logical
+            // Logic
             if (expression->binary.op == TOK_AND || expression->binary.op == TOK_OR) {
 
                 if (left_type != TOK_BOOLEAN_T) {
@@ -503,10 +503,7 @@ static void emit_statement(Emitter *emitter, FunctionDef *current_fn, AstStateme
             if (var_type != expr_type) {
 
                 ErrorLocation loc = { .line = statement->line, .col_start = statement->column_start, .col_end = statement->column_end };
-                error_type_mismatch(loc,
-                                    statement->assign.var_name,
-                                    token_type_to_string(var_type),
-                                    token_type_to_string(expr_type));
+                error_type_mismatch(loc, statement->assign.var_name, token_type_to_string(var_type), token_type_to_string(expr_type));
 
             }
 
@@ -786,10 +783,7 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
                 if (arg_type != param_type) {
 
                     ErrorLocation loc = { .line = expression->call.args[i]->line, .col_start = expression->call.args[i]->column_start, .col_end = expression->call.args[i]->column_end };
-                    error_type_mismatch(loc,
-                                        fn->name,
-                                        token_type_to_string(param_type),
-                                        token_type_to_string(arg_type));
+                    error_type_mismatch(loc, fn->name, token_type_to_string(param_type), token_type_to_string(arg_type));
 
                 }
 
@@ -863,7 +857,7 @@ static void emit_function(Emitter *emitter, FunctionDef *fn, AstDeclaration *dec
     fn->start_ip = emitter->code_len;
     fn->has_return = false;
 
-    // Parameters become locals first
+    // The parameters become locals first
     for (size_t i = 0; i < declare->func.param_count; i++) add_local(fn, declare->func.params[i].name, declare->func.params[i].type);
 
     emit_block(emitter, fn, declare->func.body);
@@ -902,7 +896,7 @@ static void emit_declaration(Emitter *emitter, AstDeclaration *declare, bool *en
 
         case DEC_VAR: {
 
-            // Global variables are already registered in the first pass
+            // Global vars are already registered in the first pass, so we do nothing
 
         } break;
 
@@ -929,7 +923,7 @@ void emit_program(Emitter *emitter, AstProgram *program) {
 
     init_emitter(emitter);
 
-    // First pass: register functions and globals
+    // First pass where we register functions and global vars
     for (size_t i = 0; i < program->len; i++) {
 
         AstDeclaration *decl = program->declarations[i];
@@ -948,7 +942,7 @@ void emit_program(Emitter *emitter, AstProgram *program) {
 
     bool entry_exists = false;
 
-    // Emit entry first so it starts at IP 0
+    // Emit entry first so that it starts at IP 0
     for (size_t i = 0; i < program->len; i++) {
 
         if (program->declarations[i]->tag == DEC_ENTRY) {
@@ -959,7 +953,7 @@ void emit_program(Emitter *emitter, AstProgram *program) {
 
     }
 
-    // Emit functions and globals (globals already registered)
+    // We emit functions and globals
     for (size_t i = 0; i < program->len; i++) {
 
         if (program->declarations[i]->tag == DEC_FUNC || program->declarations[i]->tag == DEC_VAR) {
@@ -1253,7 +1247,9 @@ void interpret(VM *vm) {
             case OP_NOT: {
 
                 Value v = pop(vm);
+                
                 if (v.type != VAL_BOOLEAN) error_invalid_opcode((ErrorLocation){0}, OP_NOT);
+                
                 push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = !v.as.boolean });
 
             } break;
@@ -1262,7 +1258,9 @@ void interpret(VM *vm) {
 
                 Value b = pop(vm);
                 Value a = pop(vm);
+                
                 if (a.type != VAL_BOOLEAN || b.type != VAL_BOOLEAN) error_invalid_opcode((ErrorLocation){0}, OP_AND);
+                
                 push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.boolean && b.as.boolean });
 
             } break;
@@ -1271,7 +1269,9 @@ void interpret(VM *vm) {
 
                 Value b = pop(vm);
                 Value a = pop(vm);
+                
                 if (a.type != VAL_BOOLEAN || b.type != VAL_BOOLEAN) error_invalid_opcode((ErrorLocation){0}, OP_OR);
+                
                 push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = a.as.boolean || b.as.boolean });
 
             } break;
@@ -1288,8 +1288,11 @@ void interpret(VM *vm) {
                     else if (a.type == VAL_FLOAT) result = a.as.floating == b.as.floating;
                     else if (a.type == VAL_BOOLEAN) result = a.as.boolean == b.as.boolean;
                     else if (a.type == VAL_STRING) result = strcmp(a.as.str, b.as.str) == 0;
+                    
                 } else {
+                    
                     error_invalid_opcode((ErrorLocation){0}, OP_EQUAL);
+                    
                 }
 
                 push(vm, (Value){ .type = VAL_BOOLEAN, .as.boolean = result });

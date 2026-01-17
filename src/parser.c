@@ -667,7 +667,6 @@ static AstStatement *parse_statement(Parser *parser) {
 
         if (parser->look.type == TOK_LPAREN) {
 
-            // Treat as call expression statement
             advance_parser(parser);
 
             AstExpression **args = NULL;
