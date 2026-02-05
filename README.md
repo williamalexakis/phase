@@ -12,22 +12,14 @@
 </div>
 <br/>
 
-<h3 align="center">For detailed insight into the design process behind Phase, look at my <a href="https://williamalexakis.com/blog/posts/writing-phase">blog post</a>.</h3>
+<h3 align="center">For detailed insight into the development of Phase, read my <a href="https://williamalexakis.com/blog/posts/writing-phase">blog post</a>.</h3>
 
 ## Features
 
-- **Clean Semantics** – Syntax is clear, balanced, and predictable.
-- **Static Typing** – Variable declarations have consistent syntax and type safety is ensured through compile-time checking.
-- **Bytecode Compilation** – Source code is compiled into a portable instruction set executed by a fast handwritten VM.
-- **Error Manager** – Errors are handled by a diagnostic system that displays clear and informative reports.
-- **Debug Modes** – Token streams and AST structures are easily viewable for effective diagnostics of source code.
-
-## Motivation
-
-I created Phase to bridge a gap between high-level languages and low-level ones.
-High-level languages are expressive but obscure their mechanics, while low-level languages are explicit but heavy; I wanted a middleground that's clear, predictable, and simple.
-
-I also spent time designing an error system that tells you exactly what you need to know – without excessive noise or missing context. I think that good diagnostics are as important as good semantics, and I wanted Phase to reflect that.
+- Supports functions, conditionals, loops (`while`), tuple destructuring.
+- 5 primitive types (`str`, `int`, `float`, `bool`, and `void`).
+- 21 error types with detailed diagnostics including visual markers and diff-style fix suggestions.
+- Implemented fully in C17.
 
 ## Architecture
 
@@ -42,74 +34,17 @@ flowchart LR
     E --> F(Virtual Machine)
 ```
 
-### Project Structure
-
-```txt
-phase/
-  ├─ src/
-  │   ├─ lexer.c
-  │   ├─ lexer.h
-  │   ├─ parser.c
-  │   ├─ parser.h
-  │   ├─ codegen.c
-  │   ├─ codegen.h
-  │   ├─ errors.c
-  │   ├─ errors.h
-  │   ├─ main.c
-  │   └─ colours.h
-  ├─ examples/
-  │   ├─ conditionals.phase
-  │   ├─ fibonacci.phase
-  │   ├─ full_demo.phase
-  │   ├─ functions.phase
-  │   ├─ helloworld.phase
-  │   ├─ loops.phase
-  │   ├─ state_machine.phase
-  │   └─ variables.phase
-  ├─ tests/
-  │   ├─ apostrophe_string.phase
-  │   ├─ arithmetic.phase
-  │   ├─ compound_assign.phase
-  │   ├─ if_else.phase
-  │   ├─ invalid_token_global.phase
-  │   ├─ logic.phase
-  │   ├─ missing_expression.phase
-  │   ├─ missing_paren.phase
-  │   ├─ missing_return.phase
-  │   ├─ multiple_entry.phase
-  │   ├─ no_entry.phase
-  │   ├─ open_string.phase
-  │   ├─ type_mismatch.phase
-  │   ├─ undefined_var.phase
-  │   ├─ while_basic.phase
-  │   └─ wrong_var_init_count.phase
-  ├─ CMakeLists.txt
-  ├─ build.sh
-  ├─ LICENSE
-  └─ README.md
-```
-
-## Type System
-
-Phase currently supports `int`, `float`, `bool`, and `str`.
-
-Types are checked at compile-time, and all variables must explicitly declare their type.
-
-Type-checking ensures operands match expected types and prevents invalid operations before bytecode generation.
-
 ## Virtual Machine
 
-Phase compiles programs into a compact bytecode instruction set, executed by a handwritten stack-based VM.
+Phase compiles programs into bytecode, executed by a handwritten stack-based VM supporting 25 opcodes.
 
-Each instruction operates on a shared stack and uses a small and predictable opcode set.
-
-**This source code**:
+**So this source code**:
 ```c
 entry {
     out("Hello world!")
 }
 ```
-**Compiles into this bytecode**:
+**Will compile into this bytecode**:
 ```c
 00 00 00   ; OP_PUSH_CONST 0
 01         ; OP_PRINT
@@ -121,26 +56,26 @@ entry {
 ### Prerequisites
 
 - **CMake 3.20+**
-- **C17-compatible compiler**
+- **Compiler that supports C17**
 
 ### Building
 
-1. **Clone the repo in your desired directory:**
+1. **Clone the repo:**
     ```bash
     git clone https://github.com/williamalexakis/phase.git
     cd phase
     ```
 
-2. **Run the Automated Build Script (Recommended)**:
+2. **Run the automated build script**:
     
     Quick Build
     ```bash
     ./build.sh
     ```
     
-    Run with `--debug` for Debug Build or `--run` to immediately run after building.
+    Run with `--debug` for the Debug Build or `--run` to immediately run after building.
         
-    **Or Build Manually:**
+    **Or build it manually:**
     ```bash
     mkdir build
     cd build
@@ -169,49 +104,35 @@ entry {
 ### Variables
 ```c
 entry {
-    let (name, surname): str = ("Arthur", "Ford")
-    let age: int = 25
-    let employed: bool = true
-
-    age += 1
-
-    out("Name:")
-    out(name)
-    out(surname)
-    out("Age:")
-    out(age)
-    out("Employed:")
-    out(employed)
+    let (var1, var2): str = ("Hello", "World")
+    let var3: bool = true
+    let var4: int = 1
+    let var5: float = 1.0
 }
 ```
 
-### Functions + Logic
+### Functions and Logic
 ```c
-func greet(name: str, excited: bool): void {
-    if excited and name == "Alora" {
-        out("HELLO")
-    } else {
-        out("Hello")
-    }
-    out(name)
+func add(num1: int, num2: int): void {
+    out(num1 + num2)
 }
 
 entry {
-    greet("Alora", true)
+    add(5, 5)
 }
 ```
 
-### Conditionals + Arithmetic
+### Conditionals and Arithmetic
 ```c
 entry {
     let score: int = 9
 
     if score >= 10 {
-        out("Top tier")
+        out("Excellent")
     } else if score > 5 {
         out("Good")
     } else {
-        out("Needs work")
+        out("Bad")
     }
 }
 ```
@@ -219,15 +140,11 @@ entry {
 ### Loops (while)
 ```c
 entry {
-    let keep: bool = true
     let counter: int = 0
-
-    while keep {
+    
+    while counter < 11 {
         out(counter)
         counter += 1
-        if counter == 3 {
-            keep = false
-        }
     }
 }
 ```
@@ -263,4 +180,4 @@ entry {
 
 Phase is released under the MIT License.
 
-See the LICENSE for full details.
+See the `LICENSE` for full details.
