@@ -1,5 +1,5 @@
 <h1 align="center">Phase</h1>
-<h3 align="center">A statically-typed language bridging high-level clarity with low-level control</h3>
+<h3 align="center">A statically-typed bytecode-interpreted programming language for clarity and control</h3>
 
 <div align="center">
     <img src="assets/phase_fib_vid.gif" width="500"><br/><br/>
@@ -12,7 +12,7 @@
 </div>
 <br/>
 
-<h3 align="center">For detailed insight into the development of Phase, read my <a href="https://williamalexakis.com/blog/posts/writing-phase">blog post</a>.</h3>
+<h3 align="center">For deeper insight into the development behind phase, read my <a href="https://williamalexakis.com/writing-phase">post</a>.</h3>
 
 ## Features
 
