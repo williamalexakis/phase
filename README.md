@@ -12,7 +12,7 @@
 </div>
 <br/>
 
-<h3 align="center">Read my <a href="https://williamalexakis.com/writing-phase">technical post</a> for a deep-dive into Phase's development.</h3>
+<h3 align="center">Read my <a href="https://williamalexakis.com/writing-phase">essay</a> for a deep-dive into Phase's development.</h3>
 
 ## Features
 
