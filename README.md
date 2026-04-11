@@ -2,7 +2,7 @@
 <h3 align="center">A statically-typed bytecode-interpreted programming language for clarity and control</h3>
 
 <div align="center">
-    <img src="assets/phase_fib_vid.gif" width="500"><br/><br/>
+    <img src="assets/phase_demo.gif" width="500"><br/><br/>
     <img src="https://img.shields.io/github/license/williamalexakis/phase">&nbsp;&nbsp;
     <img src="https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build">&nbsp;&nbsp;
     <img src="https://img.shields.io/badge/language-C17-blue">&nbsp;&nbsp;
@@ -12,7 +12,7 @@
 </div>
 <br/>
 
-<h3 align="center">For deeper insight into the development behind phase, read my <a href="https://williamalexakis.com/writing-phase">post</a>.</h3>
+<h3 align="center">Read my <a href="https://williamalexakis.com/writing-phase">technical post</a> for a deep-dive into Phase's development.</h3>
 
 ## Features
 
@@ -36,7 +36,7 @@ flowchart LR
 
 ## Virtual Machine
 
-Phase compiles programs into bytecode, executed by a handwritten stack-based VM supporting 25 opcodes.
+Phase compiles programs into bytecode and executed by a handwritten stack-based VM supporting 25 opcodes.
 
 **So this source code**:
 ```c
@@ -178,6 +178,4 @@ entry {
 
 ## License
 
-Phase is released under the MIT License.
-
-See the `LICENSE` for full details.
+Phase is released under the `MIT License`.
