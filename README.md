@@ -23,7 +23,7 @@
 
 ### Interpreter Architecture
 
-**SOURCE CODE --> Lexer --> Parser --> Type Checker --> Bytecode Generator --> Virtual Machine --> OUTPUT**
+**INPUT --> Lexer --> Parser --> Type Checker --> Bytecode Generator --> Virtual Machine --> OUTPUT**
 
 ## Virtual Machine
 
