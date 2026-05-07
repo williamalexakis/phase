@@ -1,5 +1,5 @@
 <h1 align="center">Phase</h1>
-<h3 align="center">A statically-typed bytecode-interpreted programming programming language with zero dependencies</h3>
+<h3 align="center">A statically-typed bytecode-interpreted programming language in C with zero dependencies</h3>
 
 <div align="center">
     <img src="assets/phase_demo.gif" width="500"><br/><br/>
