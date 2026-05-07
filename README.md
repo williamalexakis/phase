@@ -1,18 +1,16 @@
 <h1 align="center">Phase</h1>
-<h3 align="center">A statically-typed bytecode-interpreted programming language for clarity and control</h3>
+<h3 align="center">A statically-typed bytecode-interpreted programming programming language with zero dependencies</h3>
 
 <div align="center">
     <img src="assets/phase_demo.gif" width="500"><br/><br/>
-    <img src="https://img.shields.io/github/license/williamalexakis/phase">&nbsp;&nbsp;
     <img src="https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build">&nbsp;&nbsp;
     <img src="https://img.shields.io/badge/language-C17-blue">&nbsp;&nbsp;
-    <img src="https://img.shields.io/badge/VM-bytecode%20interpreter-purple">&nbsp;&nbsp;
     <img src="https://img.shields.io/badge/status-finished-blue">&nbsp;&nbsp;
     <img src="https://img.shields.io/github/v/tag/williamalexakis/phase?label=version">
 </div>
 <br/>
 
-<h3 align="center">Read my <a href="https://williamalexakis.com/writing-phase">essay</a> for a deep-dive into Phase's development.</h3>
+<h3 align="center">Read my <a href="https://williamalexakis.com/writing-phase">writing</a> for a deep look into Phase's development.</h3>
 
 ## Features
 
@@ -23,20 +21,13 @@
 
 ## Architecture
 
-### Interpreter Pipeline
+### Interpreter Architecture
 
-```mermaid
-flowchart LR
-    A(Source Code) --> B(Lexer)
-    B --> C(Parser)
-    C --> D(Type Checker)
-    D --> E(Bytecode Generator)
-    E --> F(Virtual Machine)
-```
+**SOURCE CODE --> Lexer --> Parser --> Type Checker --> Bytecode Generator --> Virtual Machine --> OUTPUT**
 
 ## Virtual Machine
 
-Phase compiles programs into bytecode and executed by a handwritten stack-based VM supporting 25 opcodes.
+Phase compiles programs into bytecode which is executed by a stack-based VM supporting 25 opcodes.
 
 **So this source code**:
 ```c
@@ -66,7 +57,7 @@ entry {
     cd phase
     ```
 
-2. **Run the automated build script**:
+2. **Run the automated build script:**
     
     Quick Build
     ```bash
