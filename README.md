@@ -21,7 +21,7 @@
 
 ## Architecture
 
-### Interpreter Architecture
+### Interpreter Pipeline
 
 **INPUT --> Lexer --> Parser --> Type Checker --> Bytecode Generator --> Virtual Machine --> OUTPUT**
 
