@@ -1,109 +1,31 @@
-<h1 align="center">Phase</h1>
-<h3 align="center">A statically-typed bytecode-interpreted programming language in C with zero dependencies</h3>
+# Phase
 
-<div align="center">
-    <img src="assets/phase_demo.gif" width="500"><br/><br/>
-    <img src="https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/.github/workflows/ci.yml?label=build">&nbsp;&nbsp;
-    <img src="https://img.shields.io/badge/language-C17-blue">&nbsp;&nbsp;
-    <img src="https://img.shields.io/badge/status-finished-blue">&nbsp;&nbsp;
-    <img src="https://img.shields.io/github/v/tag/williamalexakis/phase?label=version">
-</div>
-<br/>
+A statically-typed bytecode-interpreted programming language in C with zero dependencies.
 
-<h3 align="center">Read my <a href="https://williamalexakis.com/writing-phase">writing</a> for a deep look into Phase's development.</h3>
+[Bytecode Interpretation From Scratch in C](https://williamalexakis.com/interpreter-in-c)
 
-## Features
+## Building
 
-- Supports functions, conditionals, loops (`while`), tuple destructuring.
-- 5 primitive types (`str`, `int`, `float`, `bool`, and `void`).
-- 21 error types with detailed diagnostics including visual markers and diff-style fix suggestions.
-- Implemented fully in C17.
-
-## Architecture
-
-### Interpreter Pipeline
-
-**INPUT --> Lexer --> Parser --> Type Checker --> Bytecode Generator --> Virtual Machine --> OUTPUT**
-
-## Virtual Machine
-
-Phase compiles programs into bytecode which is executed by a stack-based VM supporting 25 opcodes.
-
-**So this source code**:
-```c
-entry {
-    out("Hello world!")
-}
-```
-**Will compile into this bytecode**:
-```c
-00 00 00   ; OP_PUSH_CONST 0
-01         ; OP_PRINT
-18         ; OP_HALT
+```bash
+git clone https://github.com/williamalexakis/phase.git
+cd phase
+mkdir build
+cd build
+cmake ..
+cmake --build .
 ```
 
-## Installation
+## Syntax
 
-### Prerequisites
-
-- **CMake 3.20+**
-- **Compiler that supports C17**
-
-### Building
-
-1. **Clone the repo:**
-    ```bash
-    git clone https://github.com/williamalexakis/phase.git
-    cd phase
-    ```
-
-2. **Run the automated build script:**
-    
-    Quick Build
-    ```bash
-    ./build.sh
-    ```
-    
-    Run with `--debug` for the Debug Build or `--run` to immediately run after building.
-        
-    **Or build it manually:**
-    ```bash
-    mkdir build
-    cd build
-    cmake ..
-    cmake --build .
-    ```
-    
-## Usage
-
-| Command | Description |
-|--------|-------------|
-| `phase --help` | Display available commands and flags |
-| `phase <file.phase> --tokens` | Display token stream |
-| `phase <file.phase> --ast` | Display AST |
-| `phase <file.phase> --loud` | Display a success message when programs finish |
-
-## Syntax Examples
-
-### Hello World
-```c
+**Hello World**
+```go
 entry {
     out("Hello world!")
 }
 ```
 
-### Variables
-```c
-entry {
-    let (var1, var2): str = ("Hello", "World")
-    let var3: bool = true
-    let var4: int = 1
-    let var5: float = 1.0
-}
-```
-
-### Functions and Logic
-```c
+**Functions**
+```go
 func add(num1: int, num2: int): void {
     out(num1 + num2)
 }
@@ -113,60 +35,36 @@ entry {
 }
 ```
 
-### Conditionals and Arithmetic
-```c
+**Loops**
+```go
 entry {
-    let score: int = 9
-
-    if score >= 10 {
-        out("Excellent")
-    } else if score > 5 {
-        out("Good")
-    } else {
-        out("Bad")
-    }
-}
-```
-
-### Loops (while)
-```c
-entry {
-    let counter: int = 0
+    let num: int = 0
     
-    while counter < 11 {
-        out(counter)
-        counter += 1
+    while num < 11 {
+        out(num)
+        num += 1
     }
 }
 ```
 
-#### See `examples/` for more
+[More examples](examples/)
 
-## Diagnostics Examples
+## Architecture
 
-### Error Reporting
-<img src="assets/phase_error.png" width="400">
+**INPUT → Lexer → Parser → Type Checker → Bytecode Generator → Virtual Machine → OUTPUT**
 
-### Token Display
-<img src="assets/phase_toks.png" width="400">
+Programs are compiled into hexadecimal bytecode and executed by a stack-based VM supporting 25 opcodes. For example, **Hello World** translates to:
+```
+0x0000  →  00 00 00  →  OP_PUSH_CONST 0
+0x0003  →  01        →  OP_PRINT
+0x0004  →  18        →  OP_HALT
+```
 
-### AST Display
-<img src="assets/phase_ast.png" width="400">
+## Usage
 
-## Roadmap
+- `phase --help` — list commands and flags
+- `phase <file.phase> --tokens` — print the token stream
+- `phase <file.phase> --ast` — print the AST
+- `phase <file.phase> --loud` — print a success message on exit
 
-- [x] Lexer
-- [x] Parser
-- [x] Bytecode generator
-- [x] VM execution loop
-- [x] Token and AST diagnostics
-- [x] Floats and booleans
-- [x] Error manager
-- [x] Declaration keywords & annotations
-- [x] Functions
-- [x] Conditionals
-- [x] Basic loops
-
-## License
-
-Phase is released under the `MIT License`.
+[MIT](LICENSE)
