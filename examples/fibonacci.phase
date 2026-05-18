@@ -5,9 +5,9 @@ func fibonacci(n: int): void {
     while count <= n {
         out(next)
         count += 1
+        next = a + b
         a = b
         b = next
-        next = a + b
     }
 }
 
