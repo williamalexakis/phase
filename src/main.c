@@ -326,10 +326,10 @@ static void help_flag() {
 
     printf("Usage: %s./phase <input.phase>%s\n\n", FG_BLUE_BOLD, RESET);
     printf("Options:\n");
-    printf("  %s--help,   -h%s        Display this message.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--tokens, -t%s        Display the token stream of a source file.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--ast,    -a%s        Display the AST structure of a source file.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--loud,   -l%s        Display a proud message upon program completion.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--help,   -h%s        Print this message.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--tokens, -t%s        Print the token stream of a source.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--ast,    -a%s        Print the AST of a source.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--loud,   -l%s        Print a success message on exit.\n", FG_BLUE_BOLD, RESET);
 
     exit_phase(2);
 
