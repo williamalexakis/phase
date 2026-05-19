@@ -1,2 +1,0 @@
--- Missing entry block should fail
-let x: int

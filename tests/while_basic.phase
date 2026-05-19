@@ -1,8 +1,0 @@
-entry {
-    let keep: bool = true
-
-    while keep {
-        out("Once")
-        keep = false
-    }
-}

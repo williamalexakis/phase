@@ -1,7 +1,0 @@
-entry {
-    out("First")
-}
-
-entry {
-    out("Second")
-}

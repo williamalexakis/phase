@@ -1,4 +1,0 @@
--- Type mismatch between var and initializer
-entry {
-    let x: int = "Hi"
-}

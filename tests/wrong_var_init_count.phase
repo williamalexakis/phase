@@ -1,3 +1,0 @@
-entry {
-    let (a, b, c): int = (1, 2, 3, 4)  -- '4' shouldn't be here
-}

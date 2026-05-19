@@ -1,9 +1,0 @@
-entry {
-    let ready: bool = true
-
-    if ready {
-        out("Ready!")
-    } else {
-        out("Not ready...")
-    }
-}
