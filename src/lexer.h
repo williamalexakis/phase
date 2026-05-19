@@ -27,8 +27,6 @@ typedef enum {
     TOK_AND,
     TOK_OR,
     TOK_NOT,
-    TOK_TOINT,
-    TOK_TOSTR,
     TOK_IF,
     TOK_ELSE,
     TOK_WHILE,
