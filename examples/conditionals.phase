@@ -1,12 +1,26 @@
 entry {
     let sunny: bool = true
     let warm: bool = false
+    let precip: int = 5
 
-    if sunny {
-        out("It's sunny!")
-    } else if warm {
-        out("It's warm enough.")
-    } else {
-        out("It's freezing!")
+    if sunny and warm {
+        out("It's hot.")
+    } else if sunny and not warm {
+        out("It's breezy.")
+    } else if not sunny and warm {
+        out("It's humid.")
+    } else { 
+        out("It's cold.")
+    }
+
+    if precip >= 7  and precip <= 10 {
+        out("High chance of rain.")
+    } else if precip >= 4 and precip <= 6 {
+        out("Moderate chance of rain.")
+    } else if precip >= 0 and precip <= 3 {
+        out("Low chance of rain.")
     }
 }
+
+-- It's breezy.
+-- Moderate chance of rain.

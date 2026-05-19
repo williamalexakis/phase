@@ -1,34 +1,22 @@
 entry {
-    -- Basic declarations with initializers
-    let (first, last): str = ("Alora", "Brooks")
-    let age: int = 34
-    let salary: float = 125000.50
-    let active: bool = true
+    -- 4 literal types, plus void for
+    -- function return types and
+    -- null values
+    let number: int = 10
+    let decimal: float = 10.0
+    let word: str = "Ten"
+    let flag: bool = true
 
-    -- Reassignments
-    age = 38
-    active = false
+    -- Tuple destructuring
+    let (num1, num2): int = (1, 2)
+    let (num3, num4): int = (num2, num1)
 
-    -- Grouped declarations without initializers
-    let (pens, papers): int
-    pens = 5
-    papers = 7
-
-    -- Display results
-    out("Name:")
-    out(first)
-    out(last)
-
-    out("\nAge:")
-    out(age)
-
-    out("\nSalary:")
-    out(salary)
-
-    out("\nActive:")
-    out(active)
-
-    out("\nInventory:")
-    out(pens)
-    out(papers)
+    -- You can also declare a variable
+    -- without assigning a value, but
+    -- it will assume null type
+    let x: int
+    
+    out(x)
 }
+
+-- void

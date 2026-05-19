@@ -1,17 +1,15 @@
-func hello(name: str): str {
-    return name
-}
-
-func announce(activity: str): void {
-    out("\nActive:")
-    out(activity)
+func factorial(n: int): int {
+    if n <= 1 {
+        return 1
+    }
+    
+    return n * factorial(n - 1)
 }
 
 entry {
-    let user: str = "Hayes Miller"
-
-    out("Hello,")
-    out(hello(user))
-
-    announce("Yes")
+    out(factorial(5))
+    out(factorial(7))
 }
+
+-- 120
+-- 5040
