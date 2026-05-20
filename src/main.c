@@ -346,29 +346,68 @@ int main(int argc, char **argv) {
     error_set_source(argv[1]);
     if ((strcmp(argv[1], "--help") == 0) || (strcmp(argv[1], "-h") == 0)) help_flag();
 
-    FILE *input_file = fopen(argv[1], "r");  // Open the input file
-
+    FILE *input_file = fopen(argv[1], "r");
     if (!input_file) error_ifnf(argv[1]);
 
-    // Move file ptr to end to determine size
-    fseek(input_file, 0, SEEK_END);
-    size_t file_size = (size_t)ftell(input_file);
-    rewind(input_file);  // Return to start
-
-    char *file_content = malloc(file_size + 1);
-
-    if (!file_content) {
-
-        fclose(input_file);
-        error_oom();
-
+    const size_t CHUNK_SIZE = 4096;
+    size_t file_len = 0;
+    size_t file_cap = CHUNK_SIZE;
+    
+    char *file_content = malloc(file_cap);
+    if (!file_content) { 
+        fclose(input_file); 
+        error_oom(); 
     }
 
-    fread(file_content, sizeof(char), file_size, input_file);
+    // We read the source file in chunks of
+    // 4096 bytes to handle potentially
+    // unseekable inputs like pipes
+    while (true) {
+        // Double cap or set initial to CHUNK_SIZE
+        // for extra memory space
+        if ((file_len + CHUNK_SIZE) > file_cap) {
+            size_t new_cap = file_cap ? file_cap * 2 : CHUNK_SIZE;
+            // Sanitize realloc
+            char *temp_ptr = realloc(file_content, new_cap);
+            if (!temp_ptr) { 
+                free(file_content);
+                fclose(input_file); 
+                error_oom(); 
+            }
+            
+            file_content = temp_ptr;
+            file_cap = new_cap;
+        }
+        // We try to read CHUNK_SIZE bytes so we
+        // can ensure there's more content in
+        // the source to read from
+        size_t num_bytes = fread(file_content + file_len, 1, CHUNK_SIZE, input_file);
+        file_len += num_bytes;
 
-    file_content[file_size] = '\0';  // Null terminate the str
+        // Either hit EOF or an error occurred
+        if (num_bytes < CHUNK_SIZE) break;
+    }
 
-    fclose(input_file);  // Close input file
+    // Nonzero ferror tells us it's
+    // an actual error instead of
+    // just EOF
+    if (ferror(input_file) != 0) { 
+        free(file_content);
+        fclose(input_file); 
+        error_invalid_arg(argv[1]); 
+    }
+
+    // Sanitize realloc
+    char *temp_ptr = realloc(file_content, file_len + 1);
+    if (!temp_ptr) { 
+        free(file_content);
+        fclose(input_file); 
+        error_oom(); 
+    }
+    
+    file_content = temp_ptr;
+    file_content[file_len] = '\0';
+    fclose(input_file);
 
     for (int i = 2; i < argc; i++) {
 
