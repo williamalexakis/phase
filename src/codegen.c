@@ -158,8 +158,8 @@ static size_t emit_jump(Emitter *emitter, Opcode op) {
 }
 
 static void patch_jump(Emitter *emitter, size_t jump_pos) {
-    if (jump_pos > UINT16_MAX) error_complexity();
     size_t target = emitter->code_len;
+    if (target > UINT16_MAX) error_complexity();
     emitter->code[jump_pos] = (target >> 8) & 0xFF;
     emitter->code[jump_pos + 1] = target & 0xFF;
 }
