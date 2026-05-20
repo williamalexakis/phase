@@ -394,7 +394,7 @@ int main(int argc, char **argv) {
     if (ferror(input_file) != 0) { 
         free(file_content);
         fclose(input_file); 
-        error_invalid_arg(argv[1]); 
+        error_io(argv[1]); 
     }
 
     // Sanitize realloc

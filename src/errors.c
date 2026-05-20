@@ -26,7 +26,6 @@ static char *suggest_type_mismatch_fix(const char *line_text, ErrorLocation loc,
 static char *suggest_close_string(const char *line_text, ErrorLocation loc, va_list args);
 
 static const ErrorInfo ERROR_TABLE[] = {
-
     { ERR_OOM, "Out of memory.", "Reduce memory usage or increase its capacity.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_close_string },
     { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_insert_expected },
@@ -47,8 +46,8 @@ static const ErrorInfo ERROR_TABLE[] = {
     { ERR_UNDEFINED_FUNC, "Function '%s' is undefined.", "Declare the function before calling it.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_NO_ARGS, "Missing input file.", "Pass an input file path (<input_file.phase>).", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_INVALID_ARG, "Unknown argument '%s'.", "See all available arguments with 'phase --help'.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_IO, "I/O error on argument '%s'.", "Ensure the input path exists and is readable.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_NO_INPUT, "Input file '%s' not found.", "Use a valid input path (e.g. /path/to/file.phase).", FG_RED_BOLD, FG_BLUE_BOLD, NULL }
-
 };
 
 static const char *g_error_file = NULL;
@@ -564,4 +563,5 @@ void error_undefined_func(ErrorLocation loc, const char *name) { error_emit(loc,
 // CLI errors
 void error_no_args(void) { error_emit((ErrorLocation){0}, ERR_NO_ARGS); }
 void error_invalid_arg(const char *arg) { error_emit((ErrorLocation){0}, ERR_INVALID_ARG, arg); }
+void error_io(const char *arg) { error_emit((ErrorLocation){0}, ERR_IO, arg); }
 void error_ifnf(const char *name) { error_emit((ErrorLocation){ .file = name }, ERR_NO_INPUT, name); }

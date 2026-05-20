@@ -39,6 +39,7 @@ typedef enum {
     // CLI errors
     ERR_NO_ARGS = 200,
     ERR_INVALID_ARG,
+    ERR_IO,
     ERR_NO_INPUT
 
 } ErrorType;
@@ -63,6 +64,7 @@ noreturn void error_missing_return(ErrorLocation loc, const char *name);
 noreturn void error_undefined_func(ErrorLocation loc, const char *name);
 noreturn void error_no_args(void);
 noreturn void error_invalid_arg(const char *arg);
+noreturn void error_io(const char *arg);
 noreturn void error_ifnf(const char *name);
 void error_set_source(const char *file);
 bool unicode_available(void);
