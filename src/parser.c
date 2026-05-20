@@ -19,17 +19,17 @@ static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
     if (*len + 1 > *cap) {
 
         size_t new_cap = *cap ? *cap * 2 : 8;
-        void **new_items = realloc(*items, new_cap * sizeof(void*));
+        void **temp_ptr = realloc(*items, new_cap * sizeof(void*));
+        if (!temp_ptr) {
+            free(*items);
+            error_oom(); 
+        }
 
-        if (!new_items) error_oom();
-
-        *items = new_items;
+        *items = temp_ptr;
         *cap = new_cap;
-
     }
-
+    
     (*items)[(*len)++] = item;
-
 }
 
 static AstBlock *parse_block(Parser *parser);
@@ -220,12 +220,14 @@ static AstExpression *parse_primary(Parser *parser) {
                     if (arg_count + 1 > arg_cap) {
 
                         size_t new_cap = arg_cap ? arg_cap * 2 : 4;
-                        args = realloc(args, new_cap * sizeof(AstExpression*));
-
-                        if (!args) error_oom();
-
+                        void *temp_ptr = realloc(args, new_cap * sizeof(AstExpression*));
+                        if (!temp_ptr) {
+                            free(args);
+                            error_oom();
+                        }
+                        
+                        args = temp_ptr;
                         arg_cap = new_cap;
-
                     }
 
                     args[arg_count++] = parse_expression(parser);
@@ -688,12 +690,14 @@ static AstStatement *parse_statement(Parser *parser) {
                     if (arg_count + 1 > arg_cap) {
 
                         size_t new_cap = arg_cap ? arg_cap * 2 : 4;
-                        args = realloc(args, new_cap * sizeof(AstExpression*));
-
-                        if (!args) error_oom();
-
+                        void *temp_ptr = realloc(args, new_cap * sizeof(AstExpression*));
+                        if (!temp_ptr) {
+                            free(args);
+                            error_oom();
+                        }
+                        
+                        args = temp_ptr;
                         arg_cap = new_cap;
-
                     }
 
                     args[arg_count++] = parse_expression(parser);
@@ -841,12 +845,14 @@ static AstStatement *parse_statement(Parser *parser) {
                 if (var_count + 1 > var_cap) {
 
                     size_t new_cap = var_cap ? var_cap * 2 : 4;
-                    var_names = realloc(var_names, new_cap * sizeof(char*));
-
-                    if (!var_names) error_oom();
-
+                    void *temp_ptr = realloc(var_names, new_cap * sizeof(char*));
+                    if (!temp_ptr) {
+                        free(var_names);
+                        error_oom();
+                    }
+                    
+                    var_names = temp_ptr;
                     var_cap = new_cap;
-
                 }
 
                 var_names[var_count++] = strdup(parser->look.lexeme ? parser->look.lexeme : "");
@@ -897,12 +903,14 @@ static AstStatement *parse_statement(Parser *parser) {
                     if (init_count + 1 > init_cap) {
 
                         size_t new_cap = init_cap ? init_cap * 2 : 4;
-                        init_exprs = realloc(init_exprs, new_cap * sizeof(AstExpression*));
-
-                        if (!init_exprs) error_oom();
-
+                        void *temp_ptr = realloc(init_exprs, new_cap * sizeof(AstExpression*));
+                        if (!temp_ptr) {
+                            free(init_exprs);
+                            error_oom();
+                        }
+                        
+                        init_exprs = temp_ptr;
                         init_cap = new_cap;
-
                     }
 
                     init_exprs[init_count++] = parse_expression(parser);
@@ -1049,12 +1057,14 @@ static AstDeclaration *parse_func_decl(Parser *parser) {
             if (param_count + 1 > param_cap) {
 
                 size_t new_cap = param_cap ? param_cap * 2 : 4;
-                params = realloc(params, new_cap * sizeof(AstParam));
-
-                if (!params) error_oom();
-
+                void *temp_ptr = realloc(params, new_cap * sizeof(AstParam));
+                if (!temp_ptr) {
+                    free(params);
+                    error_oom();
+                }
+                
+                params = temp_ptr;
                 param_cap = new_cap;
-
             }
 
             params[param_count].name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
@@ -1128,12 +1138,14 @@ static AstDeclaration *parse_var_decl(Parser *parser) {
             if (var_count + 1 > var_cap) {
 
                 size_t new_cap = var_cap ? var_cap * 2 : 4;
-                var_names = realloc(var_names, new_cap * sizeof(char*));
-
-                if (!var_names) error_oom();
-
+                void *temp_ptr = realloc(var_names, new_cap * sizeof(char*));
+                if (!temp_ptr) {
+                    free(var_names);
+                    error_oom();
+                }
+                
+                var_names = temp_ptr;
                 var_cap = new_cap;
-
             }
 
             var_names[var_count++] = strdup(parser->look.lexeme ? parser->look.lexeme : "");

@@ -127,20 +127,16 @@ static char *load_line_from_file(const char *path, int target_line) {
             }
 
             if (len + 1 >= cap) {
-
-                cap *= 2;
-                char *new_buf = realloc(buffer, cap);
-
-                if (!new_buf) {
-
+                size_t new_cap = cap ? cap * 2 : 32;
+                char *temp_ptr = realloc(buffer, new_cap);
+                if (!temp_ptr) {
                     free(buffer);
                     fclose(file);
-                    return NULL;
-
+                    error_oom();
                 }
 
-                buffer = new_buf;
-
+                buffer = temp_ptr;
+                cap = new_cap;
             }
 
             buffer[len++] = (char)ch;

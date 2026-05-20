@@ -197,33 +197,37 @@ static Token lex_string(Lexer *lexer) {
                 case '\'': escaped_char = '\''; break;
 
                 default:
-
                     escaped_char = '\\';
                     advance_lexer(lexer);
 
                     if (lexeme_len + 1 >= lexeme_cap) {
-
-                        lexeme_cap *= 2;
-                        lexeme = realloc(lexeme, lexeme_cap);
-
-                        if (!lexeme) error_oom();
-
+                        size_t new_cap = lexeme_cap ? lexeme_cap * 2 : 32;
+                        char *temp_ptr = realloc(lexeme, new_cap);
+                        if (!temp_ptr) { 
+                            free(lexeme);
+                            error_oom(); 
+                        }
+                        
+                        lexeme = temp_ptr;
+                        lexeme_cap = new_cap;
                     }
 
                     lexeme[lexeme_len++] = escaped_char;
-
                     continue;
             }
 
             advance_lexer(lexer);
 
             if (lexeme_len + 1 >= lexeme_cap) {
-
-                lexeme_cap *= 2;
-                lexeme = realloc(lexeme, lexeme_cap);
-
-                if (!lexeme) error_oom();
-
+                size_t new_cap = lexeme_cap ? lexeme_cap * 2 : 32;
+                char *temp_ptr = realloc(lexeme, new_cap);
+                if (!temp_ptr) { 
+                    free(lexeme);
+                    error_oom(); 
+                }
+                
+                lexeme = temp_ptr;
+                lexeme_cap = new_cap;
             }
 
             lexeme[lexeme_len++] = escaped_char;
@@ -233,12 +237,15 @@ static Token lex_string(Lexer *lexer) {
             advance_lexer(lexer);
 
             if (lexeme_len + 1 >= lexeme_cap) {
-
-                lexeme_cap *= 2;
-                lexeme = realloc(lexeme, lexeme_cap);
-
-                if (!lexeme) error_oom();
-
+                size_t new_cap = lexeme_cap ? lexeme_cap * 2 : 32;
+                char *temp_ptr = realloc(lexeme, new_cap);
+                if (!temp_ptr) { 
+                    free(lexeme);
+                    error_oom(); 
+                }
+                
+                lexeme = temp_ptr;
+                lexeme_cap = new_cap;
             }
 
             lexeme[lexeme_len++] = c;

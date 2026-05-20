@@ -28,15 +28,22 @@ static void zero_locals(Value *locals, size_t count) {
 static size_t add_to_var_table(VarTable *table, const char *name, TokenType type) {
 
     if (table->count + 1 > table->cap) {
-
         size_t new_cap = table->cap ? table->cap * 2 : 8;
-        table->names = realloc(table->names, new_cap * sizeof(char*));
-        table->types = realloc(table->types, new_cap * sizeof(TokenType));
+        void *temp_ptr_1 = realloc(table->names, new_cap * sizeof(char*));
+        if (!temp_ptr_1) {
+            free(table->names);
+            error_oom();
+        }
+        
+        void *temp_ptr_2 = realloc(table->types, new_cap * sizeof(TokenType));
+        if (!temp_ptr_2) {
+            free(table->types);
+            error_oom();
+        }
 
-        if (!table->names || !table->types) error_oom();
-
+        table->names = temp_ptr_1;
+        table->types = temp_ptr_2;
         table->cap = new_cap;
-
     }
 
     table->names[table->count] = strdup(name);
@@ -130,14 +137,15 @@ void free_emitter(Emitter *emitter) {
 static void emit_byte(Emitter *emitter, uint8_t byte) {
 
     if (emitter->code_len + 1 > emitter->code_cap) {
-
         size_t new_cap = emitter->code_cap ? emitter->code_cap * 2 : 64;
-        emitter->code = realloc(emitter->code, new_cap);
+        void *temp_ptr = realloc(emitter->code, new_cap);
+        if (!temp_ptr) {
+            free(emitter->code);
+            error_oom();
+        }
 
-        if (!emitter->code) error_oom();
-
+        emitter->code = temp_ptr;
         emitter->code_cap = new_cap;
-
     }
 
     emitter->code[emitter->code_len++] = byte;
@@ -171,12 +179,14 @@ static size_t add_constant(Emitter *emitter, Value value) {
     if (emitter->const_count + 1 > emitter->const_cap) {
 
         size_t new_cap = emitter->const_cap ? emitter->const_cap * 2 : 8;
-        emitter->constants = realloc(emitter->constants, new_cap * sizeof(Value));
+        void *temp_ptr = realloc(emitter->constants, new_cap * sizeof(Value));
+        if (!temp_ptr) {
+            free(emitter->constants);
+            error_oom();
+        }
 
-        if (!emitter->constants) error_oom();
-
+        emitter->constants = temp_ptr;
         emitter->const_cap = new_cap;
-
     }
 
     emitter->constants[emitter->const_count] = value;
@@ -190,13 +200,21 @@ static size_t add_global(Emitter *emitter, const char *name, TokenType type) {
     if (emitter->global_count + 1 > emitter->global_cap) {
 
         size_t new_cap = emitter->global_cap ? emitter->global_cap * 2 : 8;
-        emitter->global_names = realloc(emitter->global_names, new_cap * sizeof(char*));
-        emitter->global_types = realloc(emitter->global_types, new_cap * sizeof(TokenType));
+        void *temp_ptr_1 = realloc(emitter->global_names, new_cap * sizeof(char*));
+        if (!temp_ptr_1) {
+            free(emitter->global_names);
+            error_oom();
+        }
+        
+        void *temp_ptr_2 = realloc(emitter->global_types, new_cap * sizeof(TokenType));
+        if (!temp_ptr_2) {
+            free(emitter->global_types);
+            error_oom();
+        }
 
-        if (!emitter->global_names || !emitter->global_types) error_oom();
-
+        emitter->global_names = temp_ptr_1;
+        emitter->global_types = temp_ptr_2;
         emitter->global_cap = new_cap;
-
     }
 
     emitter->global_names[emitter->global_count] = strdup(name);
@@ -242,12 +260,14 @@ static FunctionDef *register_function(Emitter *emitter, const char *name, TokenT
     if (emitter->func_count + 1 > emitter->func_cap) {
 
         size_t new_cap = emitter->func_cap ? emitter->func_cap * 2 : 4;
-        emitter->functions = realloc(emitter->functions, new_cap * sizeof(FunctionDef));
+        void *temp_ptr = realloc(emitter->functions, new_cap * sizeof(FunctionDef));
+        if (!temp_ptr) {
+            free(emitter->functions);
+            error_oom();
+        }
 
-        if (!emitter->functions) error_oom();
-
+        emitter->functions = temp_ptr;
         emitter->func_cap = new_cap;
-
     }
 
     FunctionDef *fn = &emitter->functions[emitter->func_count++];
@@ -1023,16 +1043,17 @@ static void push(VM *vm, Value value) {
     if (vm->stack_count + 1 > vm->stack_cap) {
 
         size_t new_cap = vm->stack_cap ? vm->stack_cap * 2 : 8;
-        vm->stack = realloc(vm->stack, new_cap * sizeof(Value));
+        void *temp_ptr = realloc(vm->stack, new_cap * sizeof(Value));
+        if (!temp_ptr) {
+            free(vm->stack);
+            error_oom();
+        }
 
-        if (!vm->stack) error_oom();
-
+        vm->stack = temp_ptr;
         vm->stack_cap = new_cap;
-
     }
 
     vm->stack[vm->stack_count++] = value;
-
 }
 
 static Value pop(VM *vm) {
@@ -1175,12 +1196,14 @@ void interpret(VM *vm) {
                 if (vm->frame_count + 1 > vm->frame_cap) {
 
                     size_t new_cap = vm->frame_cap ? vm->frame_cap * 2 : 4;
-                    vm->frames = realloc(vm->frames, new_cap * sizeof(CallFrame));
+                    void *temp_ptr = realloc(vm->frames, new_cap * sizeof(CallFrame));
+                    if (!temp_ptr) {
+                        free(vm->frames);
+                        error_oom();
+                    }
 
-                    if (!vm->frames) error_oom();
-
+                    vm->frames = temp_ptr;
                     vm->frame_cap = new_cap;
-
                 }
 
                 vm->frames[vm->frame_count++] = (CallFrame){
