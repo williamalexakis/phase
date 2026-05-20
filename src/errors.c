@@ -27,12 +27,12 @@ static char *suggest_close_string(const char *line_text, ErrorLocation loc, va_l
 
 static const ErrorInfo ERROR_TABLE[] = {
     { ERR_OOM, "Out of memory.", "Reduce memory usage or increase its capacity.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
-    { ERR_COMPLEXITY, "Program complexity exceeded.", "Reduce the number of nested expressions and/or blocks.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_COMPLEXITY, "Program complexity exceeded.", "Reduce the number of nested frames and/or values.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_close_string },
     { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_insert_expected },
     { ERR_EXPECT_EXPRESSION, "Expected expression.", "Provide an expression at this position.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_EXPECT_STATEMENT, "Expected statement or declaration.", "Provide a statement or declaration here.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
-    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Only 'entry' blocks or 'let' declarations are valid at global scope; remove or rewrite this token.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_remove_span },
+    { ERR_INVALID_TOK, "Unexpected token at global scope.", "Only 'entry' blocks or 'let' declarations are valid at global scope.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_remove_span },
     { ERR_MANY_ENTRY, "Duplicate entry block.", "Only one 'entry' block is allowed.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_NO_ENTRY, "Missing entry block.", "Add an 'entry' block to define the program entrypoint.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_TYPE_MISMATCH, "Type mismatch.", "Variable '%s' expects %s but got %s.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_type_mismatch_fix },

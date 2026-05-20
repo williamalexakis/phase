@@ -144,28 +144,24 @@ static void emit_byte(Emitter *emitter, uint8_t byte) {
 
 }
 
-static void emit_u16(Emitter *emitter, uint16_t value) {
-
+static void emit_u16(Emitter *emitter, size_t value) {
+    if (value > UINT16_MAX) error_complexity();
     emit_byte(emitter, (value >> 8) & 0xFF);
     emit_byte(emitter, value & 0xFF);
-
 }
 
 static size_t emit_jump(Emitter *emitter, Opcode op) {
-
     emit_byte(emitter, op);
     size_t jump_pos = emitter->code_len;
-    emit_u16(emitter, 0);  // Lil placeholder
+    emit_u16(emitter, 0);  // Placeholder
     return jump_pos;
-
 }
 
 static void patch_jump(Emitter *emitter, size_t jump_pos) {
-
+    if (jump_pos > UINT16_MAX) error_complexity();
     size_t target = emitter->code_len;
     emitter->code[jump_pos] = (target >> 8) & 0xFF;
     emitter->code[jump_pos + 1] = target & 0xFF;
-
 }
 
 static void emit_block(Emitter *emitter, FunctionDef *current_fn, AstBlock *block);
@@ -519,7 +515,7 @@ static void emit_statement(Emitter *emitter, FunctionDef *current_fn, AstStateme
 
             }
 
-            emit_u16(emitter, (uint16_t)var_indx);
+            emit_u16(emitter, var_indx);
 
         } break;
 
@@ -553,7 +549,7 @@ static void emit_statement(Emitter *emitter, FunctionDef *current_fn, AstStateme
 
                     emit_expression(emitter, current_fn, statement->var_decl.init_exprs[i]);
                     emit_byte(emitter, OP_SET_LOCAL);
-                    emit_u16(emitter, (uint16_t)var_indx);
+                    emit_u16(emitter, var_indx);
                 }
             }
 
@@ -661,7 +657,7 @@ static void emit_statement(Emitter *emitter, FunctionDef *current_fn, AstStateme
             emit_block(emitter, current_fn, statement->if_stmt.then_block);
 
             emit_byte(emitter, OP_JUMP);
-            emit_u16(emitter, (uint16_t)loop_start);
+            emit_u16(emitter, loop_start);
 
             patch_jump(emitter, exit_jump);
 
@@ -687,7 +683,7 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
             size_t indx = add_constant(emitter, value);
 
             emit_byte(emitter, OP_PUSH_CONST);
-            emit_u16(emitter, (uint16_t)indx);
+            emit_u16(emitter, indx);
 
         } break;
 
@@ -703,7 +699,7 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
             size_t indx = add_constant(emitter, value);
 
             emit_byte(emitter, OP_PUSH_CONST);
-            emit_u16(emitter, (uint16_t)indx);
+            emit_u16(emitter, indx);
 
         } break;
 
@@ -719,7 +715,7 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
             size_t indx = add_constant(emitter, value);
 
             emit_byte(emitter, OP_PUSH_CONST);
-            emit_u16(emitter, (uint16_t)indx);
+            emit_u16(emitter, indx);
 
         } break;
 
@@ -735,7 +731,7 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
             size_t indx = add_constant(emitter, value);
 
             emit_byte(emitter, OP_PUSH_CONST);
-            emit_u16(emitter, (uint16_t)indx);
+            emit_u16(emitter, indx);
 
         } break;
 
@@ -753,7 +749,7 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
             }
 
             emit_byte(emitter, is_local ? OP_GET_LOCAL : OP_GET_GLOBAL);
-            emit_u16(emitter, (uint16_t)var_indx);
+            emit_u16(emitter, var_indx);
 
         } break;
 
@@ -794,7 +790,7 @@ static void emit_expression(Emitter *emitter, FunctionDef *current_fn, AstExpres
             size_t fn_index = (size_t)(fn - emitter->functions);
 
             emit_byte(emitter, OP_CALL);
-            emit_u16(emitter, (uint16_t)fn_index);
+            emit_u16(emitter, fn_index);
 
         } break;
 
