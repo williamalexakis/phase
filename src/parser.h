@@ -161,10 +161,9 @@ typedef struct {
 } AstProgram;
 
 typedef struct {
-
     Lexer *lexer;
     Token look;
-
+    size_t depth;
 } Parser;
 
 Parser init_parser(Lexer *lexer);

@@ -27,6 +27,7 @@ static char *suggest_close_string(const char *line_text, ErrorLocation loc, va_l
 
 static const ErrorInfo ERROR_TABLE[] = {
     { ERR_OOM, "Out of memory.", "Reduce memory usage or increase its capacity.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
+    { ERR_COMPLEXITY, "Program complexity exceeded.", "Reduce the number of nested expressions and/or blocks.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
     { ERR_OPEN_STR, "Unterminated string.", "Use a closing '\"' to end a string.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_close_string },
     { ERR_EXPECT_SYMBOL, "Expected %s.", "Add %s here.", FG_RED_BOLD, FG_BLUE_BOLD, suggest_insert_expected },
     { ERR_EXPECT_EXPRESSION, "Expected expression.", "Provide an expression at this position.", FG_RED_BOLD, FG_BLUE_BOLD, NULL },
@@ -539,6 +540,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
 
 // Internal errors
 void error_oom(void) { error_emit((ErrorLocation){0}, ERR_OOM); }
+void error_complexity(void) { error_emit((ErrorLocation){0}, ERR_COMPLEXITY); }
 void error_open_str(ErrorLocation loc) { error_emit(loc, ERR_OPEN_STR); }
 void error_expect_symbol(ErrorLocation loc, const char *expected) { error_emit(loc, ERR_EXPECT_SYMBOL, expected); }
 void error_expect_expression(ErrorLocation loc) { error_emit(loc, ERR_EXPECT_EXPRESSION); }
@@ -549,7 +551,6 @@ void error_no_entry(void) { error_emit((ErrorLocation){0}, ERR_NO_ENTRY); }
 void error_type_mismatch(ErrorLocation loc, const char *var_name, const char *expected_type, const char *actual_type) {
     error_emit(loc, ERR_TYPE_MISMATCH, var_name, expected_type, actual_type);
 }
-
 void error_invalid_opcode(ErrorLocation loc, int op) { error_emit(loc, ERR_INVALID_OPCODE, op); }
 void error_invalid_var_index(ErrorLocation loc, size_t var_count) { error_emit(loc, ERR_INVALID_VAR_INDEX, var_count); }
 void error_invalid_const_index(ErrorLocation loc, size_t const_count) { error_emit(loc, ERR_INVALID_CONST_INDEX, const_count); }

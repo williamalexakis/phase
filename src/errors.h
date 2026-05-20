@@ -18,6 +18,7 @@ typedef enum {
 
     // Internal errors
     ERR_OOM = 100,
+    ERR_COMPLEXITY,
     ERR_OPEN_STR,
     ERR_EXPECT_SYMBOL,
     ERR_EXPECT_EXPRESSION,
@@ -45,6 +46,7 @@ typedef enum {
 } ErrorType;
 
 noreturn void error_oom(void);
+noreturn void error_complexity(void);
 noreturn void error_open_str(ErrorLocation loc);
 noreturn void error_expect_symbol(ErrorLocation loc, const char *expected);
 noreturn void error_expect_expression(ErrorLocation loc);

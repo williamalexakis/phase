@@ -2,12 +2,16 @@
 #include <string.h>
 #include "parser.h"
 
-Parser init_parser(Lexer *lexer) {
+#define DEPTH_LIMIT 256
 
-    Parser parser = { .lexer = lexer, .look = next_token(lexer) };
+Parser init_parser(Lexer *lexer) {
+    Parser parser = { 
+        .lexer = lexer, 
+        .look = next_token(lexer),
+        .depth = 0
+    };
 
     return parser;
-
 }
 
 static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
@@ -109,9 +113,13 @@ static AstExpression *parse_logic_and(Parser *parser);
 static AstExpression *parse_logic_or(Parser *parser);
 
 static AstExpression *parse_expression(Parser *parser) {
-
+    // Increase program depth and
+    // check if it exceeds the
+    // complexity limit
+    parser->depth++;
+    if (parser->depth > DEPTH_LIMIT) error_complexity();
+    
     return parse_logic_or(parser);
-
 }
 
 static AstExpression *parse_primary(Parser *parser) {
@@ -941,7 +949,12 @@ static AstStatement *parse_statement(Parser *parser) {
 }
 
 static AstBlock *parse_block(Parser *parser) {
-
+    // Increase program depth and
+    // check if it exceeds the
+    // complexity limit
+    parser->depth++;
+    if (parser->depth > DEPTH_LIMIT) error_complexity();
+    
     expect(parser, TOK_LBRACE, "'{'");
     AstBlock *block = calloc(1, sizeof(*block));
 
