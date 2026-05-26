@@ -1,16 +1,16 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdnoreturn.h>
-#include <stdbool.h>
 
 typedef struct {
 
-    const char *file;
-    int line;
-    int col_start;
-    int col_end;
+    const char* file;
+    int         line;
+    int         col_start;
+    int         col_end;
 
 } ErrorLocation;
 
@@ -48,28 +48,32 @@ typedef enum {
 noreturn void error_oom(void);
 noreturn void error_complexity(void);
 noreturn void error_open_str(ErrorLocation loc);
-noreturn void error_expect_symbol(ErrorLocation loc, const char *expected);
+noreturn void error_expect_symbol(ErrorLocation loc, const char* expected);
 noreturn void error_expect_expression(ErrorLocation loc);
 noreturn void error_expect_statement(ErrorLocation loc);
 noreturn void error_invalid_token(ErrorLocation loc);
 noreturn void error_multiple_entry(ErrorLocation loc);
 noreturn void error_no_entry(void);
-noreturn void error_type_mismatch(ErrorLocation loc, const char *var_name, const char *expected_type, const char *actual_type);
+noreturn void error_type_mismatch(ErrorLocation loc,
+                                  const char*   var_name,
+                                  const char*   expected_type,
+                                  const char*   actual_type);
 noreturn void error_invalid_opcode(ErrorLocation loc, int op);
 noreturn void error_invalid_var_index(ErrorLocation loc, size_t var_count);
 noreturn void error_invalid_const_index(ErrorLocation loc, size_t const_count);
 noreturn void error_vm_oob(ErrorLocation loc);
-noreturn void error_wrong_var_init(ErrorLocation loc, size_t var_count, size_t init_count);
-noreturn void error_undefined_var(ErrorLocation loc, const char *name);
-noreturn void error_unexpected_ident(ErrorLocation loc, const char *name);
-noreturn void error_missing_return(ErrorLocation loc, const char *name);
-noreturn void error_undefined_func(ErrorLocation loc, const char *name);
+noreturn void
+error_wrong_var_init(ErrorLocation loc, size_t var_count, size_t init_count);
+noreturn void error_undefined_var(ErrorLocation loc, const char* name);
+noreturn void error_unexpected_ident(ErrorLocation loc, const char* name);
+noreturn void error_missing_return(ErrorLocation loc, const char* name);
+noreturn void error_undefined_func(ErrorLocation loc, const char* name);
 noreturn void error_no_args(void);
-noreturn void error_invalid_arg(const char *arg);
-noreturn void error_io(const char *arg);
-noreturn void error_ifnf(const char *name);
-void error_set_source(const char *file);
-bool unicode_available(void);
+noreturn void error_invalid_arg(const char* arg);
+noreturn void error_io(const char* arg);
+noreturn void error_ifnf(const char* name);
+void          error_set_source(const char* file);
+bool          unicode_available(void);
 noreturn void exit_phase(unsigned int code);
 
 #endif
