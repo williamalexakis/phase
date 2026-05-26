@@ -1,3 +1,6 @@
+# Windows
+Thumbs.db
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -12,6 +15,10 @@ build/
 *.cgen
 *.exe
 *.c~
+
+# Swap/backup files
+*.swp
+*~
 
 # Project
 phase
