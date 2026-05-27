@@ -12,6 +12,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(PHASE_FORMAT "Have support for running clang-format on sources" OFF)
+option(PHASE_TIDY "Have support for running clang-tidy on sources" OFF)
 
 file(GLOB SRC_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.c")
 file(GLOB HDR_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.h")
@@ -63,5 +64,18 @@ if(PHASE_FORMAT)
             VERBATIM)
     else()
         message(WARNING "phase ---- cannot find clang-format. Target 'format' will not be available.")
+    endif()
+endif()
+
+if(PHASE_TIDY)
+    # if tidying and clang tidy found
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    if(CLANG_TIDY_EXE)
+        # custom target running on sources
+        add_custom_target(tidy COMMAND ${CLANG_TIDY_EXE} ${SRC_FILES} ${HDR_FILES}
+            COMMENT "Running clang-tidy on source files..."
+            VERBATIM)
+    else()
+        message(WARNING "phase ---- cannot find clang-tidy. Target 'tidy' will not be available.")
     endif()
 endif()
