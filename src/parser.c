@@ -5,18 +5,18 @@
 
 #define DEPTH_LIMIT 256
 
-Parser init_parser(Lexer* lexer) {
+Parser init_parser(Lexer *lexer) {
     Parser parser = {.lexer = lexer, .look = next_token(lexer), .depth = 0};
 
     return parser;
 }
 
-static void vector_push(void*** items, size_t* len, size_t* cap, void* item) {
+static void vector_push(void ***items, size_t *len, size_t *cap, void *item) {
 
     if (*len + 1 > *cap) {
 
         size_t new_cap  = *cap ? *cap * 2 : 8;
-        void** temp_ptr = realloc(*items, new_cap * sizeof(void*));
+        void **temp_ptr = realloc(*items, new_cap * sizeof(void *));
         if (!temp_ptr) {
             free(*items);
             error_oom();
@@ -29,18 +29,18 @@ static void vector_push(void*** items, size_t* len, size_t* cap, void* item) {
     (*items)[(*len)++] = item;
 }
 
-static AstBlock*      parse_block(Parser* parser);
-static AstExpression* parse_expression(Parser* parser);
-static AstStatement*  parse_statement(Parser* parser);
-static void           free_block(AstBlock* block);
+static AstBlock      *parse_block(Parser *parser);
+static AstExpression *parse_expression(Parser *parser);
+static AstStatement  *parse_statement(Parser *parser);
+static void           free_block(AstBlock *block);
 
-void free_token(Token* token) {
+void free_token(Token *token) {
 
     if (token->lexeme && token->heap_allocated)
         free(token->lexeme);
 }
 
-static void advance_parser(Parser* parser) {
+static void advance_parser(Parser *parser) {
 
     if (parser->look.type != TOK_EOF)
         free_token(&parser->look);
@@ -48,7 +48,7 @@ static void advance_parser(Parser* parser) {
     parser->look = next_token(parser->lexer);
 }
 
-static bool match(Parser* parser, TokenType t_type) {
+static bool match(Parser *parser, TokenType t_type) {
 
     if (parser->look.type == t_type) {
 
@@ -61,7 +61,7 @@ static bool match(Parser* parser, TokenType t_type) {
 }
 
 /* Expect a specific token type and error if not found */
-static void expect(Parser* parser, TokenType t_type, const char* message) {
+static void expect(Parser *parser, TokenType t_type, const char *message) {
 
     if (!match(parser, t_type)) {
 
@@ -74,7 +74,7 @@ static void expect(Parser* parser, TokenType t_type, const char* message) {
 }
 
 static TokenType
-parse_type_annotation(Parser* parser, bool allow_void, int* col_end_out) {
+parse_type_annotation(Parser *parser, bool allow_void, int *col_end_out) {
 
     if (parser->look.type == TOK_INTEGER_T ||
         parser->look.type == TOK_STRING_T || parser->look.type == TOK_FLOAT_T ||
@@ -100,16 +100,16 @@ parse_type_annotation(Parser* parser, bool allow_void, int* col_end_out) {
     return TOK_UNKNOWN;
 }
 
-static AstExpression* parse_primary(Parser* parser);
-static AstExpression* parse_unary(Parser* parser);
-static AstExpression* parse_factor(Parser* parser);
-static AstExpression* parse_term(Parser* parser);
-static AstExpression* parse_comparison(Parser* parser);
-static AstExpression* parse_equality(Parser* parser);
-static AstExpression* parse_logic_and(Parser* parser);
-static AstExpression* parse_logic_or(Parser* parser);
+static AstExpression *parse_primary(Parser *parser);
+static AstExpression *parse_unary(Parser *parser);
+static AstExpression *parse_factor(Parser *parser);
+static AstExpression *parse_term(Parser *parser);
+static AstExpression *parse_comparison(Parser *parser);
+static AstExpression *parse_equality(Parser *parser);
+static AstExpression *parse_logic_and(Parser *parser);
+static AstExpression *parse_logic_or(Parser *parser);
 
-static AstExpression* parse_expression(Parser* parser) {
+static AstExpression *parse_expression(Parser *parser) {
     // Increase program depth and
     // check if it exceeds the
     // complexity limit
@@ -120,11 +120,11 @@ static AstExpression* parse_expression(Parser* parser) {
     return parse_logic_or(parser);
 }
 
-static AstExpression* parse_primary(Parser* parser) {
+static AstExpression *parse_primary(Parser *parser) {
 
     if (parser->look.type == TOK_STRING_LIT) {
 
-        AstExpression* expression = calloc(1, sizeof(*expression));
+        AstExpression *expression = calloc(1, sizeof(*expression));
 
         if (!expression)
             error_oom();
@@ -143,7 +143,7 @@ static AstExpression* parse_primary(Parser* parser) {
 
     if (parser->look.type == TOK_INTEGER_LIT) {
 
-        AstExpression* expression = calloc(1, sizeof(*expression));
+        AstExpression *expression = calloc(1, sizeof(*expression));
 
         if (!expression)
             error_oom();
@@ -162,7 +162,7 @@ static AstExpression* parse_primary(Parser* parser) {
 
     if (parser->look.type == TOK_FLOAT_LIT) {
 
-        AstExpression* expression = calloc(1, sizeof(*expression));
+        AstExpression *expression = calloc(1, sizeof(*expression));
 
         if (!expression)
             error_oom();
@@ -181,7 +181,7 @@ static AstExpression* parse_primary(Parser* parser) {
 
     if (parser->look.type == TOK_BOOLEAN_LIT) {
 
-        AstExpression* expression = calloc(1, sizeof(*expression));
+        AstExpression *expression = calloc(1, sizeof(*expression));
 
         if (!expression)
             error_oom();
@@ -202,7 +202,7 @@ static AstExpression* parse_primary(Parser* parser) {
         int   line         = parser->look.line;
         int   col_start    = parser->look.column_start;
         int   name_col_end = parser->look.column_end;
-        char* name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+        char *name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
 
         advance_parser(parser);
 
@@ -210,7 +210,7 @@ static AstExpression* parse_primary(Parser* parser) {
 
             advance_parser(parser);
 
-            AstExpression** args      = NULL;
+            AstExpression **args      = NULL;
             size_t          arg_count = 0;
             size_t          arg_cap   = 0;
 
@@ -221,8 +221,9 @@ static AstExpression* parse_primary(Parser* parser) {
                     if (arg_count + 1 > arg_cap) {
 
                         size_t new_cap = arg_cap ? arg_cap * 2 : 4;
-                        void*  temp_ptr =
-                                realloc(args, new_cap * sizeof(AstExpression*));
+                        void  *temp_ptr =
+                                realloc(args,
+                                        new_cap * sizeof(AstExpression *));
                         if (!temp_ptr) {
                             free(args);
                             error_oom();
@@ -249,7 +250,7 @@ static AstExpression* parse_primary(Parser* parser) {
             int col_end = parser->look.column_end;
             expect(parser, TOK_RPAREN, "')'");
 
-            AstExpression* expression = calloc(1, sizeof(*expression));
+            AstExpression *expression = calloc(1, sizeof(*expression));
 
             if (!expression)
                 error_oom();
@@ -265,7 +266,7 @@ static AstExpression* parse_primary(Parser* parser) {
             return expression;
         }
 
-        AstExpression* expression = calloc(1, sizeof(*expression));
+        AstExpression *expression = calloc(1, sizeof(*expression));
 
         if (!expression)
             error_oom();
@@ -282,7 +283,7 @@ static AstExpression* parse_primary(Parser* parser) {
     if (parser->look.type == TOK_LPAREN) {
 
         advance_parser(parser);
-        AstExpression* expression = parse_expression(parser);
+        AstExpression *expression = parse_expression(parser);
         expect(parser, TOK_RPAREN, "')'");
 
         return expression;
@@ -297,7 +298,7 @@ static AstExpression* parse_primary(Parser* parser) {
     return NULL;
 }
 
-static AstExpression* parse_unary(Parser* parser) {
+static AstExpression *parse_unary(Parser *parser) {
 
     if (parser->look.type == TOK_BANG || parser->look.type == TOK_NOT ||
         parser->look.type == TOK_SUBTRACT) {
@@ -306,9 +307,9 @@ static AstExpression* parse_unary(Parser* parser) {
         int       line      = parser->look.line;
         int       col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression* operand = parse_unary(parser);
+        AstExpression *operand = parse_unary(parser);
 
-        AstExpression* un = calloc(1, sizeof(*un));
+        AstExpression *un = calloc(1, sizeof(*un));
 
         if (!un)
             error_oom();
@@ -325,9 +326,9 @@ static AstExpression* parse_unary(Parser* parser) {
 
     return parse_primary(parser);
 }
-static AstExpression* parse_factor(Parser* parser) {
+static AstExpression *parse_factor(Parser *parser) {
 
-    AstExpression* left = parse_unary(parser);
+    AstExpression *left = parse_unary(parser);
 
     while (parser->look.type == TOK_MULTIPLY ||
            parser->look.type == TOK_DIVIDE) {
@@ -336,9 +337,9 @@ static AstExpression* parse_factor(Parser* parser) {
         int       line      = parser->look.line;
         int       col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression* right = parse_unary(parser);
+        AstExpression *right = parse_unary(parser);
 
-        AstExpression* bin = calloc(1, sizeof(*bin));
+        AstExpression *bin = calloc(1, sizeof(*bin));
 
         if (!bin)
             error_oom();
@@ -357,9 +358,9 @@ static AstExpression* parse_factor(Parser* parser) {
     return left;
 }
 
-static AstExpression* parse_term(Parser* parser) {
+static AstExpression *parse_term(Parser *parser) {
 
-    AstExpression* left = parse_factor(parser);
+    AstExpression *left = parse_factor(parser);
 
     while (parser->look.type == TOK_ADD || parser->look.type == TOK_SUBTRACT) {
 
@@ -367,9 +368,9 @@ static AstExpression* parse_term(Parser* parser) {
         int       line      = parser->look.line;
         int       col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression* right = parse_factor(parser);
+        AstExpression *right = parse_factor(parser);
 
-        AstExpression* bin = calloc(1, sizeof(*bin));
+        AstExpression *bin = calloc(1, sizeof(*bin));
 
         if (!bin)
             error_oom();
@@ -388,9 +389,9 @@ static AstExpression* parse_term(Parser* parser) {
     return left;
 }
 
-static AstExpression* parse_comparison(Parser* parser) {
+static AstExpression *parse_comparison(Parser *parser) {
 
-    AstExpression* left = parse_term(parser);
+    AstExpression *left = parse_term(parser);
 
     while (parser->look.type == TOK_LESS || parser->look.type == TOK_GREATER ||
            parser->look.type == TOK_LESS_EQUAL ||
@@ -400,9 +401,9 @@ static AstExpression* parse_comparison(Parser* parser) {
         int       line      = parser->look.line;
         int       col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression* right = parse_term(parser);
+        AstExpression *right = parse_term(parser);
 
-        AstExpression* bin = calloc(1, sizeof(*bin));
+        AstExpression *bin = calloc(1, sizeof(*bin));
 
         if (!bin)
             error_oom();
@@ -421,9 +422,9 @@ static AstExpression* parse_comparison(Parser* parser) {
     return left;
 }
 
-static AstExpression* parse_equality(Parser* parser) {
+static AstExpression *parse_equality(Parser *parser) {
 
-    AstExpression* left = parse_comparison(parser);
+    AstExpression *left = parse_comparison(parser);
 
     while (parser->look.type == TOK_EQUAL_EQUAL) {
 
@@ -431,9 +432,9 @@ static AstExpression* parse_equality(Parser* parser) {
         int       line      = parser->look.line;
         int       col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression* right = parse_comparison(parser);
+        AstExpression *right = parse_comparison(parser);
 
-        AstExpression* bin = calloc(1, sizeof(*bin));
+        AstExpression *bin = calloc(1, sizeof(*bin));
 
         if (!bin)
             error_oom();
@@ -452,9 +453,9 @@ static AstExpression* parse_equality(Parser* parser) {
     return left;
 }
 
-static AstExpression* parse_logic_and(Parser* parser) {
+static AstExpression *parse_logic_and(Parser *parser) {
 
-    AstExpression* left = parse_equality(parser);
+    AstExpression *left = parse_equality(parser);
 
     while (parser->look.type == TOK_AND) {
 
@@ -462,9 +463,9 @@ static AstExpression* parse_logic_and(Parser* parser) {
         int       line      = parser->look.line;
         int       col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression* right = parse_equality(parser);
+        AstExpression *right = parse_equality(parser);
 
-        AstExpression* bin = calloc(1, sizeof(*bin));
+        AstExpression *bin = calloc(1, sizeof(*bin));
 
         if (!bin)
             error_oom();
@@ -483,9 +484,9 @@ static AstExpression* parse_logic_and(Parser* parser) {
     return left;
 }
 
-static AstExpression* parse_logic_or(Parser* parser) {
+static AstExpression *parse_logic_or(Parser *parser) {
 
-    AstExpression* left = parse_logic_and(parser);
+    AstExpression *left = parse_logic_and(parser);
 
     while (parser->look.type == TOK_OR) {
 
@@ -493,9 +494,9 @@ static AstExpression* parse_logic_or(Parser* parser) {
         int       line      = parser->look.line;
         int       col_start = parser->look.column_start;
         advance_parser(parser);
-        AstExpression* right = parse_logic_and(parser);
+        AstExpression *right = parse_logic_and(parser);
 
-        AstExpression* bin = calloc(1, sizeof(*bin));
+        AstExpression *bin = calloc(1, sizeof(*bin));
 
         if (!bin)
             error_oom();
@@ -514,7 +515,7 @@ static AstExpression* parse_logic_or(Parser* parser) {
     return left;
 }
 
-static AstStatement* parse_statement(Parser* parser) {
+static AstStatement *parse_statement(Parser *parser) {
 
     if (parser->look.type == TOK_OUT) {
 
@@ -525,10 +526,10 @@ static AstStatement* parse_statement(Parser* parser) {
         advance_parser(parser);
 
         expect(parser, TOK_LPAREN, "'('");
-        AstExpression* expression = parse_expression(parser);
+        AstExpression *expression = parse_expression(parser);
         expect(parser, TOK_RPAREN, "')'");
 
-        AstStatement* statement = calloc(1, sizeof(*statement));
+        AstStatement *statement = calloc(1, sizeof(*statement));
 
         if (!statement)
             error_oom();
@@ -549,10 +550,10 @@ static AstStatement* parse_statement(Parser* parser) {
 
         advance_parser(parser);
 
-        AstExpression* condition  = parse_expression(parser);
-        AstBlock*      then_block = parse_block(parser);
+        AstExpression *condition  = parse_expression(parser);
+        AstBlock      *then_block = parse_block(parser);
 
-        AstBlock* else_block = NULL;
+        AstBlock *else_block = NULL;
 
         if (parser->look.type == TOK_ELSE) {
 
@@ -560,14 +561,14 @@ static AstStatement* parse_statement(Parser* parser) {
 
             if (parser->look.type == TOK_IF) {
 
-                AstStatement* nested_if = parse_statement(parser);
+                AstStatement *nested_if = parse_statement(parser);
 
                 else_block = calloc(1, sizeof(*else_block));
 
                 if (!else_block)
                     error_oom();
 
-                else_block->statements = malloc(sizeof(AstStatement*));
+                else_block->statements = malloc(sizeof(AstStatement *));
 
                 if (!else_block->statements)
                     error_oom();
@@ -590,7 +591,7 @@ static AstStatement* parse_statement(Parser* parser) {
                                   : col_start
                         : col_start;
 
-        AstStatement* statement = calloc(1, sizeof(*statement));
+        AstStatement *statement = calloc(1, sizeof(*statement));
 
         if (!statement)
             error_oom();
@@ -613,14 +614,14 @@ static AstStatement* parse_statement(Parser* parser) {
 
         advance_parser(parser);
 
-        AstExpression* condition = parse_expression(parser);
-        AstBlock*      body      = parse_block(parser);
+        AstExpression *condition = parse_expression(parser);
+        AstBlock      *body      = parse_block(parser);
 
         int col_end = body && body->len > 0
                               ? body->statements[body->len - 1]->column_end
                               : col_start;
 
-        AstStatement* statement = calloc(1, sizeof(*statement));
+        AstStatement *statement = calloc(1, sizeof(*statement));
 
         if (!statement)
             error_oom();
@@ -644,7 +645,7 @@ static AstStatement* parse_statement(Parser* parser) {
 
         advance_parser(parser);
 
-        AstExpression* expression = NULL;
+        AstExpression *expression = NULL;
 
         if (parser->look.type != TOK_NEWLINE &&
             parser->look.type != TOK_RBRACE && parser->look.type != TOK_EOF) {
@@ -653,7 +654,7 @@ static AstStatement* parse_statement(Parser* parser) {
             col_end    = expression->column_end;
         }
 
-        AstStatement* statement = calloc(1, sizeof(*statement));
+        AstStatement *statement = calloc(1, sizeof(*statement));
 
         if (!statement)
             error_oom();
@@ -672,7 +673,7 @@ static AstStatement* parse_statement(Parser* parser) {
         int   line      = parser->look.line;
         int   col_start = parser->look.column_start;
         int   col_end   = parser->look.column_end;
-        char* var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+        char *var_name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
         advance_parser(parser);
 
         TokenType compound_op = TOK_UNKNOWN;
@@ -690,7 +691,7 @@ static AstStatement* parse_statement(Parser* parser) {
 
             advance_parser(parser);
 
-            AstExpression** args      = NULL;
+            AstExpression **args      = NULL;
             size_t          arg_count = 0;
             size_t          arg_cap   = 0;
 
@@ -701,8 +702,9 @@ static AstStatement* parse_statement(Parser* parser) {
                     if (arg_count + 1 > arg_cap) {
 
                         size_t new_cap = arg_cap ? arg_cap * 2 : 4;
-                        void*  temp_ptr =
-                                realloc(args, new_cap * sizeof(AstExpression*));
+                        void  *temp_ptr =
+                                realloc(args,
+                                        new_cap * sizeof(AstExpression *));
                         if (!temp_ptr) {
                             free(args);
                             error_oom();
@@ -729,7 +731,7 @@ static AstStatement* parse_statement(Parser* parser) {
             col_end = parser->look.column_end;
             expect(parser, TOK_RPAREN, "')'");
 
-            AstExpression* expr = calloc(1, sizeof(*expr));
+            AstExpression *expr = calloc(1, sizeof(*expr));
 
             if (!expr)
                 error_oom();
@@ -742,7 +744,7 @@ static AstStatement* parse_statement(Parser* parser) {
             expr->call.args      = args;
             expr->call.arg_count = arg_count;
 
-            AstStatement* statement = calloc(1, sizeof(*statement));
+            AstStatement *statement = calloc(1, sizeof(*statement));
 
             if (!statement)
                 error_oom();
@@ -780,11 +782,11 @@ static AstStatement* parse_statement(Parser* parser) {
             advance_parser(parser);
         }
 
-        AstExpression* expression = parse_expression(parser);
+        AstExpression *expression = parse_expression(parser);
 
         if (compound_op != TOK_UNKNOWN) {
 
-            AstExpression* lhs = calloc(1, sizeof(*lhs));
+            AstExpression *lhs = calloc(1, sizeof(*lhs));
 
             if (!lhs)
                 error_oom();
@@ -795,7 +797,7 @@ static AstStatement* parse_statement(Parser* parser) {
             lhs->column_end    = col_end;
             lhs->variable.name = strdup(var_name);
 
-            AstExpression* bin = calloc(1, sizeof(*bin));
+            AstExpression *bin = calloc(1, sizeof(*bin));
 
             if (!bin)
                 error_oom();
@@ -828,7 +830,7 @@ static AstStatement* parse_statement(Parser* parser) {
             expression = bin;
         }
 
-        AstStatement* statement = calloc(1, sizeof(*statement));
+        AstStatement *statement = calloc(1, sizeof(*statement));
 
         if (!statement)
             error_oom();
@@ -851,7 +853,7 @@ static AstStatement* parse_statement(Parser* parser) {
 
         advance_parser(parser);
 
-        char** var_names = NULL;
+        char **var_names = NULL;
         size_t var_count = 0;
         size_t var_cap   = 0;
 
@@ -874,8 +876,8 @@ static AstStatement* parse_statement(Parser* parser) {
                 if (var_count + 1 > var_cap) {
 
                     size_t new_cap = var_cap ? var_cap * 2 : 4;
-                    void*  temp_ptr =
-                            realloc(var_names, new_cap * sizeof(char*));
+                    void  *temp_ptr =
+                            realloc(var_names, new_cap * sizeof(char *));
                     if (!temp_ptr) {
                         free(var_names);
                         error_oom();
@@ -896,7 +898,7 @@ static AstStatement* parse_statement(Parser* parser) {
             // Single declaration
         } else if (parser->look.type == TOK_VARIABLE) {
 
-            var_names = malloc(sizeof(char*));
+            var_names = malloc(sizeof(char *));
 
             if (!var_names)
                 error_oom();
@@ -921,7 +923,7 @@ static AstStatement* parse_statement(Parser* parser) {
 
         TokenType var_type = parse_type_annotation(parser, false, &col_end);
 
-        AstExpression** init_exprs = NULL;
+        AstExpression **init_exprs = NULL;
         size_t          init_count = 0;
 
         if (match(parser, TOK_ASSIGN)) {
@@ -938,9 +940,9 @@ static AstStatement* parse_statement(Parser* parser) {
                     if (init_count + 1 > init_cap) {
 
                         size_t new_cap = init_cap ? init_cap * 2 : 4;
-                        void*  temp_ptr =
+                        void  *temp_ptr =
                                 realloc(init_exprs,
-                                        new_cap * sizeof(AstExpression*));
+                                        new_cap * sizeof(AstExpression *));
                         if (!temp_ptr) {
                             free(init_exprs);
                             error_oom();
@@ -959,7 +961,7 @@ static AstStatement* parse_statement(Parser* parser) {
                 // Single initialization
             } else {
 
-                init_exprs = malloc(sizeof(AstExpression*));
+                init_exprs = malloc(sizeof(AstExpression *));
 
                 if (!init_exprs)
                     error_oom();
@@ -969,7 +971,7 @@ static AstStatement* parse_statement(Parser* parser) {
             }
         }
 
-        AstStatement* statement = calloc(1, sizeof(*statement));
+        AstStatement *statement = calloc(1, sizeof(*statement));
 
         statement->tag                 = STM_VAR_DECL;
         statement->line                = line;
@@ -993,7 +995,7 @@ static AstStatement* parse_statement(Parser* parser) {
     return NULL;
 }
 
-static AstBlock* parse_block(Parser* parser) {
+static AstBlock *parse_block(Parser *parser) {
     // Increase program depth and
     // check if it exceeds the
     // complexity limit
@@ -1002,15 +1004,15 @@ static AstBlock* parse_block(Parser* parser) {
         error_complexity();
 
     expect(parser, TOK_LBRACE, "'{'");
-    AstBlock* block = calloc(1, sizeof(*block));
+    AstBlock *block = calloc(1, sizeof(*block));
 
     while (parser->look.type == TOK_NEWLINE)
         advance_parser(parser);
 
     while (parser->look.type != TOK_RBRACE) {
 
-        AstStatement* statement = parse_statement(parser);
-        vector_push((void***)&block->statements,
+        AstStatement *statement = parse_statement(parser);
+        vector_push((void ***)&block->statements,
                     &block->len,
                     &block->cap,
                     statement);
@@ -1040,7 +1042,7 @@ static AstBlock* parse_block(Parser* parser) {
     return block;
 }
 
-static AstDeclaration* parse_entry_decl(Parser* parser) {
+static AstDeclaration *parse_entry_decl(Parser *parser) {
 
     int line      = parser->look.line;
     int col_start = parser->look.column_start;
@@ -1048,8 +1050,8 @@ static AstDeclaration* parse_entry_decl(Parser* parser) {
 
     expect(parser, TOK_ENTRY, "'entry'");
 
-    AstBlock*       block       = parse_block(parser);
-    AstDeclaration* declaration = calloc(1, sizeof(*declaration));
+    AstBlock       *block       = parse_block(parser);
+    AstDeclaration *declaration = calloc(1, sizeof(*declaration));
 
     declaration->tag          = DEC_ENTRY;
     declaration->line         = line;
@@ -1060,7 +1062,7 @@ static AstDeclaration* parse_entry_decl(Parser* parser) {
     return declaration;
 }
 
-static AstDeclaration* parse_func_decl(Parser* parser) {
+static AstDeclaration *parse_func_decl(Parser *parser) {
 
     int line      = parser->look.line;
     int col_start = parser->look.column_start;
@@ -1077,12 +1079,12 @@ static AstDeclaration* parse_func_decl(Parser* parser) {
         error_expect_symbol(loc, "function name");
     }
 
-    char* name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
+    char *name = strdup(parser->look.lexeme ? parser->look.lexeme : "");
     advance_parser(parser);
 
     expect(parser, TOK_LPAREN, "'('");
 
-    AstParam* params      = NULL;
+    AstParam *params      = NULL;
     size_t    param_count = 0;
     size_t    param_cap   = 0;
 
@@ -1102,7 +1104,7 @@ static AstDeclaration* parse_func_decl(Parser* parser) {
             if (param_count + 1 > param_cap) {
 
                 size_t new_cap  = param_cap ? param_cap * 2 : 4;
-                void*  temp_ptr = realloc(params, new_cap * sizeof(AstParam));
+                void  *temp_ptr = realloc(params, new_cap * sizeof(AstParam));
                 if (!temp_ptr) {
                     free(params);
                     error_oom();
@@ -1137,9 +1139,9 @@ static AstDeclaration* parse_func_decl(Parser* parser) {
 
     TokenType return_type = parse_type_annotation(parser, true, &col_end);
 
-    AstBlock* body = parse_block(parser);
+    AstBlock *body = parse_block(parser);
 
-    AstDeclaration* declaration = calloc(1, sizeof(*declaration));
+    AstDeclaration *declaration = calloc(1, sizeof(*declaration));
 
     if (!declaration)
         error_oom();
@@ -1157,7 +1159,7 @@ static AstDeclaration* parse_func_decl(Parser* parser) {
     return declaration;
 }
 
-static AstDeclaration* parse_var_decl(Parser* parser) {
+static AstDeclaration *parse_var_decl(Parser *parser) {
 
     int line      = parser->look.line;
     int col_start = parser->look.column_start;
@@ -1165,7 +1167,7 @@ static AstDeclaration* parse_var_decl(Parser* parser) {
 
     expect(parser, TOK_LET, "'let'");
 
-    char** var_names = NULL;
+    char **var_names = NULL;
     size_t var_count = 0;
     size_t var_cap   = 0;
 
@@ -1188,7 +1190,7 @@ static AstDeclaration* parse_var_decl(Parser* parser) {
             if (var_count + 1 > var_cap) {
 
                 size_t new_cap  = var_cap ? var_cap * 2 : 4;
-                void*  temp_ptr = realloc(var_names, new_cap * sizeof(char*));
+                void  *temp_ptr = realloc(var_names, new_cap * sizeof(char *));
                 if (!temp_ptr) {
                     free(var_names);
                     error_oom();
@@ -1209,7 +1211,7 @@ static AstDeclaration* parse_var_decl(Parser* parser) {
         // Single declaration
     } else if (parser->look.type == TOK_VARIABLE) {
 
-        var_names = malloc(sizeof(char*));
+        var_names = malloc(sizeof(char *));
 
         if (!var_names)
             error_oom();
@@ -1233,7 +1235,7 @@ static AstDeclaration* parse_var_decl(Parser* parser) {
 
     TokenType var_type = parse_type_annotation(parser, false, &col_end);
 
-    AstDeclaration* declaration = calloc(1, sizeof(*declaration));
+    AstDeclaration *declaration = calloc(1, sizeof(*declaration));
 
     declaration->tag                = DEC_VAR;
     declaration->line               = line;
@@ -1246,9 +1248,9 @@ static AstDeclaration* parse_var_decl(Parser* parser) {
     return declaration;
 }
 
-AstProgram* parse_program(Parser* parser) {
+AstProgram *parse_program(Parser *parser) {
 
-    AstProgram* program = calloc(1, sizeof(*program));
+    AstProgram *program = calloc(1, sizeof(*program));
 
     while (parser->look.type == TOK_NEWLINE)
         advance_parser(parser);
@@ -1261,7 +1263,7 @@ AstProgram* parse_program(Parser* parser) {
         if (parser->look.type == TOK_EOF)
             break;
 
-        AstDeclaration* declaration = NULL;
+        AstDeclaration *declaration = NULL;
 
         if (parser->look.type == TOK_ENTRY) {
 
@@ -1284,7 +1286,7 @@ AstProgram* parse_program(Parser* parser) {
             error_invalid_token(loc);
         }
 
-        vector_push((void***)&program->declarations,
+        vector_push((void ***)&program->declarations,
                     &program->len,
                     &program->cap,
                     declaration);
@@ -1296,7 +1298,7 @@ AstProgram* parse_program(Parser* parser) {
     return program;
 }
 
-static void free_expression(AstExpression* expression) {
+static void free_expression(AstExpression *expression) {
 
     if (!expression)
         return;
@@ -1344,7 +1346,7 @@ static void free_expression(AstExpression* expression) {
     free(expression);
 }
 
-static void free_statement(AstStatement* statement) {
+static void free_statement(AstStatement *statement) {
 
     if (!statement)
         return;
@@ -1404,7 +1406,7 @@ static void free_statement(AstStatement* statement) {
     free(statement);
 }
 
-static void free_block(AstBlock* block) {
+static void free_block(AstBlock *block) {
 
     if (!block)
         return;
@@ -1416,7 +1418,7 @@ static void free_block(AstBlock* block) {
     free(block);
 }
 
-static void free_declaration(AstDeclaration* declaration) {
+static void free_declaration(AstDeclaration *declaration) {
 
     if (!declaration)
         return;
@@ -1455,7 +1457,7 @@ static void free_declaration(AstDeclaration* declaration) {
     free(declaration);
 }
 
-void free_program(AstProgram* program) {
+void free_program(AstProgram *program) {
 
     if (!program)
         return;

@@ -6,8 +6,8 @@
 
 typedef struct {
 
-    char**     names;
-    TokenType* types;
+    char     **names;
+    TokenType *types;
     size_t     count;
     size_t     cap;
 
@@ -15,29 +15,29 @@ typedef struct {
 
 typedef struct CallFrame {
 
-    FunctionDef* fn;
-    Value*       locals;
+    FunctionDef *fn;
+    Value       *locals;
     size_t       return_ip;
 
 } CallFrame;
 
-static void zero_locals(Value* locals, size_t count) {
+static void zero_locals(Value *locals, size_t count) {
 
     for (size_t i = 0; i < count; i++)
         locals[i].type = VAL_VOID;
 }
 static size_t
-add_to_var_table(VarTable* table, const char* name, TokenType type) {
+add_to_var_table(VarTable *table, const char *name, TokenType type) {
 
     if (table->count + 1 > table->cap) {
         size_t new_cap    = table->cap ? table->cap * 2 : 8;
-        void*  temp_ptr_1 = realloc(table->names, new_cap * sizeof(char*));
+        void  *temp_ptr_1 = realloc(table->names, new_cap * sizeof(char *));
         if (!temp_ptr_1) {
             free(table->names);
             error_oom();
         }
 
-        void* temp_ptr_2 = realloc(table->types, new_cap * sizeof(TokenType));
+        void *temp_ptr_2 = realloc(table->types, new_cap * sizeof(TokenType));
         if (!temp_ptr_2) {
             free(table->types);
             error_oom();
@@ -54,7 +54,7 @@ add_to_var_table(VarTable* table, const char* name, TokenType type) {
     return table->count++;
 }
 
-static size_t find_in_table(VarTable* table, const char* name) {
+static size_t find_in_table(VarTable *table, const char *name) {
 
     for (size_t i = 0; i < table->count; i++) {
 
@@ -65,7 +65,7 @@ static size_t find_in_table(VarTable* table, const char* name) {
     return SIZE_MAX;
 }
 
-static void init_emitter(Emitter* emitter) {
+static void init_emitter(Emitter *emitter) {
 
     emitter->code     = NULL;
     emitter->code_len = 0;
@@ -96,7 +96,7 @@ static void init_emitter(Emitter* emitter) {
     emitter->entry.start_ip    = 0;
 }
 
-static void free_function(FunctionDef* fn) {
+static void free_function(FunctionDef *fn) {
 
     if (!fn)
         return;
@@ -109,7 +109,7 @@ static void free_function(FunctionDef* fn) {
     free(fn->local_types);
 }
 
-void free_emitter(Emitter* emitter) {
+void free_emitter(Emitter *emitter) {
 
     free(emitter->code);
 
@@ -135,11 +135,11 @@ void free_emitter(Emitter* emitter) {
     free(emitter->functions);
 }
 
-static void emit_byte(Emitter* emitter, uint8_t byte) {
+static void emit_byte(Emitter *emitter, uint8_t byte) {
 
     if (emitter->code_len + 1 > emitter->code_cap) {
         size_t new_cap  = emitter->code_cap ? emitter->code_cap * 2 : 64;
-        void*  temp_ptr = realloc(emitter->code, new_cap);
+        void  *temp_ptr = realloc(emitter->code, new_cap);
         if (!temp_ptr) {
             free(emitter->code);
             error_oom();
@@ -152,21 +152,21 @@ static void emit_byte(Emitter* emitter, uint8_t byte) {
     emitter->code[emitter->code_len++] = byte;
 }
 
-static void emit_u16(Emitter* emitter, size_t value) {
+static void emit_u16(Emitter *emitter, size_t value) {
     if (value > UINT16_MAX)
         error_complexity();
     emit_byte(emitter, (value >> 8) & 0xFF);
     emit_byte(emitter, value & 0xFF);
 }
 
-static size_t emit_jump(Emitter* emitter, Opcode op) {
+static size_t emit_jump(Emitter *emitter, Opcode op) {
     emit_byte(emitter, op);
     size_t jump_pos = emitter->code_len;
     emit_u16(emitter, 0); // Placeholder
     return jump_pos;
 }
 
-static void patch_jump(Emitter* emitter, size_t jump_pos) {
+static void patch_jump(Emitter *emitter, size_t jump_pos) {
     size_t target = emitter->code_len;
     if (target > UINT16_MAX)
         error_complexity();
@@ -175,14 +175,14 @@ static void patch_jump(Emitter* emitter, size_t jump_pos) {
 }
 
 static void
-emit_block(Emitter* emitter, FunctionDef* current_fn, AstBlock* block);
+emit_block(Emitter *emitter, FunctionDef *current_fn, AstBlock *block);
 
-static size_t add_constant(Emitter* emitter, Value value) {
+static size_t add_constant(Emitter *emitter, Value value) {
 
     if (emitter->const_count + 1 > emitter->const_cap) {
 
         size_t new_cap  = emitter->const_cap ? emitter->const_cap * 2 : 8;
-        void*  temp_ptr = realloc(emitter->constants, new_cap * sizeof(Value));
+        void  *temp_ptr = realloc(emitter->constants, new_cap * sizeof(Value));
         if (!temp_ptr) {
             free(emitter->constants);
             error_oom();
@@ -197,19 +197,19 @@ static size_t add_constant(Emitter* emitter, Value value) {
     return emitter->const_count++;
 }
 
-static size_t add_global(Emitter* emitter, const char* name, TokenType type) {
+static size_t add_global(Emitter *emitter, const char *name, TokenType type) {
 
     if (emitter->global_count + 1 > emitter->global_cap) {
 
         size_t new_cap = emitter->global_cap ? emitter->global_cap * 2 : 8;
-        void*  temp_ptr_1 =
-                realloc(emitter->global_names, new_cap * sizeof(char*));
+        void  *temp_ptr_1 =
+                realloc(emitter->global_names, new_cap * sizeof(char *));
         if (!temp_ptr_1) {
             free(emitter->global_names);
             error_oom();
         }
 
-        void* temp_ptr_2 =
+        void *temp_ptr_2 =
                 realloc(emitter->global_types, new_cap * sizeof(TokenType));
         if (!temp_ptr_2) {
             free(emitter->global_types);
@@ -227,7 +227,7 @@ static size_t add_global(Emitter* emitter, const char* name, TokenType type) {
     return emitter->global_count++;
 }
 
-static size_t find_global(Emitter* emitter, const char* name) {
+static size_t find_global(Emitter *emitter, const char *name) {
 
     for (size_t i = 0; i < emitter->global_count; i++) {
 
@@ -238,7 +238,7 @@ static size_t find_global(Emitter* emitter, const char* name) {
     return SIZE_MAX;
 }
 
-static FunctionDef* find_function(Emitter* emitter, const char* name) {
+static FunctionDef *find_function(Emitter *emitter, const char *name) {
 
     for (size_t i = 0; i < emitter->func_count; i++) {
 
@@ -249,10 +249,10 @@ static FunctionDef* find_function(Emitter* emitter, const char* name) {
     return NULL;
 }
 
-static FunctionDef* register_function(Emitter*    emitter,
-                                      const char* name,
+static FunctionDef *register_function(Emitter    *emitter,
+                                      const char *name,
                                       TokenType   return_type,
-                                      AstParam*   params,
+                                      AstParam   *params,
                                       size_t      param_count) {
 
     if (find_function(emitter, name)) {
@@ -264,7 +264,7 @@ static FunctionDef* register_function(Emitter*    emitter,
     if (emitter->func_count + 1 > emitter->func_cap) {
 
         size_t new_cap = emitter->func_cap ? emitter->func_cap * 2 : 4;
-        void*  temp_ptr =
+        void  *temp_ptr =
                 realloc(emitter->functions, new_cap * sizeof(FunctionDef));
         if (!temp_ptr) {
             free(emitter->functions);
@@ -275,7 +275,7 @@ static FunctionDef* register_function(Emitter*    emitter,
         emitter->func_cap  = new_cap;
     }
 
-    FunctionDef* fn = &emitter->functions[emitter->func_count++];
+    FunctionDef *fn = &emitter->functions[emitter->func_count++];
 
     fn->name        = strdup(name);
     fn->return_type = return_type;
@@ -297,7 +297,7 @@ static FunctionDef* register_function(Emitter*    emitter,
     return fn;
 }
 
-static size_t add_local(FunctionDef* fn, const char* name, TokenType type) {
+static size_t add_local(FunctionDef *fn, const char *name, TokenType type) {
 
     VarTable table  = {.names = fn->local_names,
                        .types = fn->local_types,
@@ -311,7 +311,7 @@ static size_t add_local(FunctionDef* fn, const char* name, TokenType type) {
     return idx;
 }
 
-static size_t find_local(FunctionDef* fn, const char* name) {
+static size_t find_local(FunctionDef *fn, const char *name) {
 
     VarTable table = {.names = fn->local_names,
                       .types = fn->local_types,
@@ -319,11 +319,11 @@ static size_t find_local(FunctionDef* fn, const char* name) {
     return find_in_table(&table, name);
 }
 
-static TokenType get_variable_type(Emitter*     emitter,
-                                   FunctionDef* current_fn,
-                                   const char*  name,
-                                   bool*        is_local_out,
-                                   size_t*      index_out) {
+static TokenType get_variable_type(Emitter     *emitter,
+                                   FunctionDef *current_fn,
+                                   const char  *name,
+                                   bool        *is_local_out,
+                                   size_t      *index_out) {
 
     size_t local_idx = find_local(current_fn, name);
 
@@ -352,9 +352,9 @@ static TokenType get_variable_type(Emitter*     emitter,
     return TOK_UNKNOWN;
 }
 
-static TokenType get_expression_type(Emitter*       emitter,
-                                     FunctionDef*   current_fn,
-                                     AstExpression* expression) {
+static TokenType get_expression_type(Emitter       *emitter,
+                                     FunctionDef   *current_fn,
+                                     AstExpression *expression) {
 
     switch (expression->tag) {
 
@@ -388,7 +388,7 @@ static TokenType get_expression_type(Emitter*       emitter,
         }
         case EXP_CALL: {
 
-            FunctionDef* fn =
+            FunctionDef *fn =
                     find_function(emitter, expression->call.func_name);
 
             if (!fn) {
@@ -527,7 +527,7 @@ static TokenType get_expression_type(Emitter*       emitter,
     }
 }
 
-const char* token_type_to_string(TokenType type) {
+const char *token_type_to_string(TokenType type) {
 
     switch (type) {
 
@@ -546,13 +546,13 @@ const char* token_type_to_string(TokenType type) {
     }
 }
 
-static void emit_expression(Emitter*       emitter,
-                            FunctionDef*   current_fn,
-                            AstExpression* expression);
+static void emit_expression(Emitter       *emitter,
+                            FunctionDef   *current_fn,
+                            AstExpression *expression);
 
-static void emit_statement(Emitter*      emitter,
-                           FunctionDef*  current_fn,
-                           AstStatement* statement) {
+static void emit_statement(Emitter      *emitter,
+                           FunctionDef  *current_fn,
+                           AstStatement *statement) {
 
     switch (statement->tag) {
 
@@ -797,9 +797,9 @@ static void emit_statement(Emitter*      emitter,
     }
 }
 
-static void emit_expression(Emitter*       emitter,
-                            FunctionDef*   current_fn,
-                            AstExpression* expression) {
+static void emit_expression(Emitter       *emitter,
+                            FunctionDef   *current_fn,
+                            AstExpression *expression) {
 
     switch (expression->tag) {
 
@@ -891,7 +891,7 @@ static void emit_expression(Emitter*       emitter,
 
         case EXP_CALL: {
 
-            FunctionDef* fn =
+            FunctionDef *fn =
                     find_function(emitter, expression->call.func_name);
 
             if (!fn) {
@@ -1013,14 +1013,14 @@ static void emit_expression(Emitter*       emitter,
 }
 
 static void
-emit_block(Emitter* emitter, FunctionDef* current_fn, AstBlock* block) {
+emit_block(Emitter *emitter, FunctionDef *current_fn, AstBlock *block) {
 
     for (size_t i = 0; i < block->len; i++)
         emit_statement(emitter, current_fn, block->statements[i]);
 }
 
 static void
-emit_function(Emitter* emitter, FunctionDef* fn, AstDeclaration* declare) {
+emit_function(Emitter *emitter, FunctionDef *fn, AstDeclaration *declare) {
 
     fn->start_ip   = emitter->code_len;
     fn->has_return = false;
@@ -1045,9 +1045,9 @@ emit_function(Emitter* emitter, FunctionDef* fn, AstDeclaration* declare) {
     }
 }
 
-static void emit_declaration(Emitter*        emitter,
-                             AstDeclaration* declare,
-                             bool*           entry_exists) {
+static void emit_declaration(Emitter        *emitter,
+                             AstDeclaration *declare,
+                             bool           *entry_exists) {
 
     switch (declare->tag) {
 
@@ -1078,7 +1078,7 @@ static void emit_declaration(Emitter*        emitter,
 
         case DEC_FUNC: {
 
-            FunctionDef* fn = find_function(emitter, declare->func.name);
+            FunctionDef *fn = find_function(emitter, declare->func.name);
 
             if (!fn) {
 
@@ -1094,14 +1094,14 @@ static void emit_declaration(Emitter*        emitter,
     }
 }
 
-void emit_program(Emitter* emitter, AstProgram* program) {
+void emit_program(Emitter *emitter, AstProgram *program) {
 
     init_emitter(emitter);
 
     // First pass where we register functions and global vars
     for (size_t i = 0; i < program->len; i++) {
 
-        AstDeclaration* decl = program->declarations[i];
+        AstDeclaration *decl = program->declarations[i];
 
         if (decl->tag == DEC_FUNC) {
 
@@ -1145,12 +1145,12 @@ void emit_program(Emitter* emitter, AstProgram* program) {
         error_no_entry();
 }
 
-void init_vm(VM*          vm,
-             Value*       constants,
+void init_vm(VM          *vm,
+             Value       *constants,
              size_t       const_count,
-             uint8_t*     code,
+             uint8_t     *code,
              size_t       code_len,
-             FunctionDef* functions,
+             FunctionDef *functions,
              size_t       func_count,
              FunctionDef  entry_fn,
              size_t       global_count) {
@@ -1196,7 +1196,7 @@ void init_vm(VM*          vm,
     vm->frames[vm->frame_count++] = entry_frame;
 }
 
-void free_vm(VM* vm) {
+void free_vm(VM *vm) {
 
     free(vm->stack);
 
@@ -1207,12 +1207,12 @@ void free_vm(VM* vm) {
     free(vm->globals);
 }
 
-static void push(VM* vm, Value value) {
+static void push(VM *vm, Value value) {
 
     if (vm->stack_count + 1 > vm->stack_cap) {
 
         size_t new_cap  = vm->stack_cap ? vm->stack_cap * 2 : 8;
-        void*  temp_ptr = realloc(vm->stack, new_cap * sizeof(Value));
+        void  *temp_ptr = realloc(vm->stack, new_cap * sizeof(Value));
         if (!temp_ptr) {
             free(vm->stack);
             error_oom();
@@ -1225,17 +1225,17 @@ static void push(VM* vm, Value value) {
     vm->stack[vm->stack_count++] = value;
 }
 
-static Value pop(VM* vm) {
+static Value pop(VM *vm) {
 
     return vm->stack[--vm->stack_count];
 }
 
-static uint8_t read_byte(VM* vm) {
+static uint8_t read_byte(VM *vm) {
 
     return vm->code[vm->pos++];
 }
 
-static uint16_t read_u16(VM* vm) {
+static uint16_t read_u16(VM *vm) {
 
     uint16_t high = read_byte(vm);
     uint16_t low  = read_byte(vm);
@@ -1243,14 +1243,14 @@ static uint16_t read_u16(VM* vm) {
     return (high << 8) | low;
 }
 
-static CallFrame* current_frame(VM* vm) {
+static CallFrame *current_frame(VM *vm) {
 
     if (vm->frame_count == 0)
         return NULL;
     return &vm->frames[vm->frame_count - 1];
 }
 
-void interpret(VM* vm) {
+void interpret(VM *vm) {
 
     for (;;) {
 
@@ -1327,7 +1327,7 @@ void interpret(VM* vm) {
             case OP_SET_LOCAL: {
 
                 uint16_t   var_indx = read_u16(vm);
-                CallFrame* frame    = current_frame(vm);
+                CallFrame *frame    = current_frame(vm);
 
                 if (!frame || var_indx >= frame->fn->local_count)
                     error_invalid_var_index((ErrorLocation){0},
@@ -1340,7 +1340,7 @@ void interpret(VM* vm) {
             case OP_GET_LOCAL: {
 
                 uint16_t   var_indx = read_u16(vm);
-                CallFrame* frame    = current_frame(vm);
+                CallFrame *frame    = current_frame(vm);
 
                 if (!frame || var_indx >= frame->fn->local_count)
                     error_invalid_var_index((ErrorLocation){0},
@@ -1357,9 +1357,9 @@ void interpret(VM* vm) {
                 if (fn_indx >= vm->func_count)
                     error_invalid_opcode((ErrorLocation){0}, fn_indx);
 
-                FunctionDef* fn = &vm->functions[fn_indx];
+                FunctionDef *fn = &vm->functions[fn_indx];
 
-                Value* locals = calloc(fn->local_count, sizeof(Value));
+                Value *locals = calloc(fn->local_count, sizeof(Value));
 
                 if (fn->local_count && !locals)
                     error_oom();
@@ -1373,7 +1373,7 @@ void interpret(VM* vm) {
                 if (vm->frame_count + 1 > vm->frame_cap) {
 
                     size_t new_cap = vm->frame_cap ? vm->frame_cap * 2 : 4;
-                    void*  temp_ptr =
+                    void  *temp_ptr =
                             realloc(vm->frames, new_cap * sizeof(CallFrame));
                     if (!temp_ptr) {
                         free(vm->frames);
@@ -1395,7 +1395,7 @@ void interpret(VM* vm) {
 
             case OP_RET: {
 
-                CallFrame* frame = current_frame(vm);
+                CallFrame *frame = current_frame(vm);
 
                 if (!frame)
                     error_invalid_opcode((ErrorLocation){0}, operation);

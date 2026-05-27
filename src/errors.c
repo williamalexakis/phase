@@ -14,23 +14,23 @@
 typedef struct {
 
     ErrorType   code;
-    const char* message_fmt;
-    const char* help_fmt;
-    const char* error_colour;
-    const char* help_colour;
-    char* (*suggest)(const char* line_text, ErrorLocation loc, va_list args);
+    const char *message_fmt;
+    const char *help_fmt;
+    const char *error_colour;
+    const char *help_colour;
+    char *(*suggest)(const char *line_text, ErrorLocation loc, va_list args);
 
 } ErrorInfo;
 
-static char*
-suggest_insert_expected(const char* line_text, ErrorLocation loc, va_list args);
-static char*
-suggest_remove_span(const char* line_text, ErrorLocation loc, va_list args);
-static char* suggest_type_mismatch_fix(const char*   line_text,
+static char *
+suggest_insert_expected(const char *line_text, ErrorLocation loc, va_list args);
+static char *
+suggest_remove_span(const char *line_text, ErrorLocation loc, va_list args);
+static char *suggest_type_mismatch_fix(const char   *line_text,
                                        ErrorLocation loc,
                                        va_list       args);
-static char*
-suggest_close_string(const char* line_text, ErrorLocation loc, va_list args);
+static char *
+suggest_close_string(const char *line_text, ErrorLocation loc, va_list args);
 
 // clang-format off
 static const ErrorInfo ERROR_TABLE[] = {
@@ -60,7 +60,7 @@ static const ErrorInfo ERROR_TABLE[] = {
 };
 // clang-format on
 
-static const char* g_error_file = NULL;
+static const char *g_error_file = NULL;
 
 noreturn void exit_phase(unsigned int code) {
     if (code == 0) {
@@ -73,12 +73,12 @@ noreturn void exit_phase(unsigned int code) {
     exit(code);
 }
 
-void error_set_source(const char* file) {
+void error_set_source(const char *file) {
 
     g_error_file = file;
 }
 
-static const ErrorInfo* find_error_info(ErrorType code) {
+static const ErrorInfo *find_error_info(ErrorType code) {
 
     size_t count = sizeof(ERROR_TABLE) / sizeof(ERROR_TABLE[0]);
 
@@ -101,19 +101,19 @@ static ErrorLocation normalize_location(ErrorLocation loc) {
     return loc;
 }
 
-static char* load_line_from_file(const char* path, int target_line) {
+static char *load_line_from_file(const char *path, int target_line) {
 
     if (!path || target_line <= 0)
         return NULL;
 
-    FILE* file = fopen(path, "r");
+    FILE *file = fopen(path, "r");
 
     if (!file)
         return NULL;
 
     size_t cap          = 256;
     size_t len          = 0;
-    char*  buffer       = malloc(cap);
+    char  *buffer       = malloc(cap);
     int    current_line = 1;
     int    ch;
 
@@ -136,7 +136,7 @@ static char* load_line_from_file(const char* path, int target_line) {
 
             if (len + 1 >= cap) {
                 size_t new_cap  = cap ? cap * 2 : 32;
-                char*  temp_ptr = realloc(buffer, new_cap);
+                char  *temp_ptr = realloc(buffer, new_cap);
                 if (!temp_ptr) {
                     free(buffer);
                     fclose(file);
@@ -173,9 +173,9 @@ static char* load_line_from_file(const char* path, int target_line) {
     return NULL;
 }
 
-static void print_source_snippet(const char*   line_text,
+static void print_source_snippet(const char   *line_text,
                                  ErrorLocation loc,
-                                 const char*   bar_side) {
+                                 const char   *bar_side) {
 
     if (!line_text)
         return;
@@ -207,7 +207,7 @@ static void print_source_snippet(const char*   line_text,
     fprintf(stderr, "%s%s%s\n", FG_RED_BOLD, bar_side, RESET);
 }
 
-static char* trim_expected_token(const char* expected) {
+static char *trim_expected_token(const char *expected) {
 
     if (!expected)
         return NULL;
@@ -230,7 +230,7 @@ static char* trim_expected_token(const char* expected) {
         len -= 2;
     }
 
-    char* clean = malloc(len + 1);
+    char *clean = malloc(len + 1);
 
     if (!clean)
         return NULL;
@@ -241,15 +241,15 @@ static char* trim_expected_token(const char* expected) {
     return clean;
 }
 
-static char* suggest_insert_expected(const char*   line_text,
+static char *suggest_insert_expected(const char   *line_text,
                                      ErrorLocation loc,
                                      va_list       args) {
 
     if (!line_text)
         return NULL;
 
-    const char* expected = va_arg(args, const char*);
-    char*       token    = trim_expected_token(expected);
+    const char *expected = va_arg(args, const char *);
+    char       *token    = trim_expected_token(expected);
 
     if (!token)
         return NULL;
@@ -270,7 +270,7 @@ static char* suggest_insert_expected(const char*   line_text,
     if (pos > line_len)
         pos = line_len;
 
-    char* out = malloc(line_len + insert_len + 1);
+    char *out = malloc(line_len + insert_len + 1);
 
     if (!out) {
 
@@ -288,8 +288,8 @@ static char* suggest_insert_expected(const char*   line_text,
     return out;
 }
 
-static char*
-suggest_remove_span(const char* line_text, ErrorLocation loc, va_list args) {
+static char *
+suggest_remove_span(const char *line_text, ErrorLocation loc, va_list args) {
 
     (void)args;
 
@@ -312,7 +312,7 @@ suggest_remove_span(const char* line_text, ErrorLocation loc, va_list args) {
         remove_len = line_len;
 
     size_t new_len = line_len - remove_len;
-    char*  out     = malloc(new_len + 1);
+    char  *out     = malloc(new_len + 1);
 
     if (!out)
         return NULL;
@@ -324,7 +324,7 @@ suggest_remove_span(const char* line_text, ErrorLocation loc, va_list args) {
     return out;
 }
 
-static const char* placeholder_for_expected(const char* expected) {
+static const char *placeholder_for_expected(const char *expected) {
 
     if (!expected)
         return "/* fix type */";
@@ -341,8 +341,8 @@ static const char* placeholder_for_expected(const char* expected) {
     return "/* fix type */";
 }
 
-static char*
-suggest_close_string(const char* line_text, ErrorLocation loc, va_list args) {
+static char *
+suggest_close_string(const char *line_text, ErrorLocation loc, va_list args) {
 
     (void)loc;
     (void)args;
@@ -363,7 +363,7 @@ suggest_close_string(const char* line_text, ErrorLocation loc, va_list args) {
         }
     }
 
-    char* out = malloc(len + 2);
+    char *out = malloc(len + 2);
 
     if (!out)
         return NULL;
@@ -376,15 +376,15 @@ suggest_close_string(const char* line_text, ErrorLocation loc, va_list args) {
     return out;
 }
 
-static char* suggest_type_mismatch_fix(const char*   line_text,
+static char *suggest_type_mismatch_fix(const char   *line_text,
                                        ErrorLocation loc,
                                        va_list       args) {
 
     (void)loc;
 
-    const char* var_name = va_arg(args, const char*);
-    const char* expected = va_arg(args, const char*);
-    const char* actual   = va_arg(args, const char*);
+    const char *var_name = va_arg(args, const char *);
+    const char *expected = va_arg(args, const char *);
+    const char *actual   = va_arg(args, const char *);
 
     if (!line_text || !var_name || !expected || !actual)
         return NULL;
@@ -394,8 +394,8 @@ static char* suggest_type_mismatch_fix(const char*   line_text,
     while (line_text[indent_len] == ' ' || line_text[indent_len] == '\t')
         indent_len++;
 
-    const char* type_start      = line_text + indent_len;
-    const char* type_keywords[] = {"int", "float", "str", "bool"};
+    const char *type_start      = line_text + indent_len;
+    const char *type_keywords[] = {"int", "float", "str", "bool"};
     size_t      matched_len     = 0;
 
     for (size_t i = 0; i < sizeof(type_keywords) / sizeof(type_keywords[0]);
@@ -416,7 +416,7 @@ static char* suggest_type_mismatch_fix(const char*   line_text,
         size_t suffix_len = strlen(type_start + matched_len);
         size_t actual_len = strlen(actual);
 
-        char* out = malloc(prefix_len + actual_len + suffix_len + 1);
+        char *out = malloc(prefix_len + actual_len + suffix_len + 1);
 
         if (!out)
             return NULL;
@@ -431,14 +431,14 @@ static char* suggest_type_mismatch_fix(const char*   line_text,
         return out;
     }
 
-    const char* placeholder = placeholder_for_expected(expected);
+    const char *placeholder = placeholder_for_expected(expected);
 
     size_t line_len        = strlen(line_text);
     size_t var_len         = strlen(var_name);
     size_t placeholder_len = strlen(placeholder);
     size_t out_len         = indent_len + var_len + 3 + placeholder_len;
 
-    char* out = malloc(out_len + 1);
+    char *out = malloc(out_len + 1);
 
     if (!out)
         return NULL;
@@ -458,7 +458,7 @@ static char* suggest_type_mismatch_fix(const char*   line_text,
 /* Check if we can use unicode glyphs in errors */
 bool unicode_available(void) {
 
-    const char* term = getenv("TERM");
+    const char *term = getenv("TERM");
 
     if (term) {
 
@@ -470,14 +470,14 @@ bool unicode_available(void) {
             return false;
     }
 
-    const char* loc          = setlocale(LC_CTYPE, NULL);
-    const char* env_ct       = getenv("LC_CTYPE");
-    const char* env_lang     = getenv("LANG");
-    const char* candidates[] = {loc, env_ct, env_lang};
+    const char *loc          = setlocale(LC_CTYPE, NULL);
+    const char *env_ct       = getenv("LC_CTYPE");
+    const char *env_lang     = getenv("LANG");
+    const char *candidates[] = {loc, env_ct, env_lang};
 
     for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
 
-        const char* val = candidates[i];
+        const char *val = candidates[i];
 
         if (!val)
             continue;
@@ -497,10 +497,10 @@ bool unicode_available(void) {
 static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
 
     bool             unicode  = unicode_available();
-    const char*      bar_main = unicode ? "┏" : ">";
-    const char*      bar_sub  = unicode ? "┣" : ">";
-    const char*      bar_side = unicode ? "┃" : "|";
-    const ErrorInfo* info     = find_error_info(code);
+    const char      *bar_main = unicode ? "┏" : ">";
+    const char      *bar_sub  = unicode ? "┣" : ">";
+    const char      *bar_side = unicode ? "┃" : "|";
+    const ErrorInfo *info     = find_error_info(code);
 
     if (!info) {
 
@@ -520,13 +520,13 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
 
     loc = normalize_location(loc);
 
-    const char* file         = loc.file ? loc.file : "<unknown>";
+    const char *file         = loc.file ? loc.file : "<unknown>";
     int         line         = loc.line > 0 ? loc.line : 0;
     int         col_start    = loc.col_start > 0 ? loc.col_start : 1;
     int         col_end      = loc.col_end > 0 ? loc.col_end : col_start;
     bool        has_location = line > 0;
 
-    char* line_text = NULL;
+    char *line_text = NULL;
     if (has_location)
         line_text = load_line_from_file(loc.file, loc.line);
 
@@ -571,7 +571,7 @@ static noreturn void error_emit(ErrorLocation loc, ErrorType code, ...) {
 
     va_end(args_help);
 
-    char* suggested_line = NULL;
+    char *suggested_line = NULL;
 
     if (has_location && info->suggest && line_text) {
 
@@ -625,7 +625,7 @@ void error_complexity(void) {
 void error_open_str(ErrorLocation loc) {
     error_emit(loc, ERR_OPEN_STR);
 }
-void error_expect_symbol(ErrorLocation loc, const char* expected) {
+void error_expect_symbol(ErrorLocation loc, const char *expected) {
     error_emit(loc, ERR_EXPECT_SYMBOL, expected);
 }
 void error_expect_expression(ErrorLocation loc) {
@@ -644,9 +644,9 @@ void error_no_entry(void) {
     error_emit((ErrorLocation){0}, ERR_NO_ENTRY);
 }
 void error_type_mismatch(ErrorLocation loc,
-                         const char*   var_name,
-                         const char*   expected_type,
-                         const char*   actual_type) {
+                         const char   *var_name,
+                         const char   *expected_type,
+                         const char   *actual_type) {
     error_emit(loc, ERR_TYPE_MISMATCH, var_name, expected_type, actual_type);
 }
 void error_invalid_opcode(ErrorLocation loc, int op) {
@@ -666,16 +666,16 @@ void error_wrong_var_init(ErrorLocation loc,
                           size_t        init_count) {
     error_emit(loc, ERR_WRONG_VAR_INIT, var_count, init_count);
 }
-void error_undefined_var(ErrorLocation loc, const char* name) {
+void error_undefined_var(ErrorLocation loc, const char *name) {
     error_emit(loc, ERR_UNDEFINED_VAR, name);
 }
-void error_unexpected_ident(ErrorLocation loc, const char* name) {
+void error_unexpected_ident(ErrorLocation loc, const char *name) {
     error_emit(loc, ERR_UNEXPECTED_IDENT, name, name);
 }
-void error_missing_return(ErrorLocation loc, const char* name) {
+void error_missing_return(ErrorLocation loc, const char *name) {
     error_emit(loc, ERR_MISSING_RETURN, name);
 }
-void error_undefined_func(ErrorLocation loc, const char* name) {
+void error_undefined_func(ErrorLocation loc, const char *name) {
     error_emit(loc, ERR_UNDEFINED_FUNC, name);
 }
 
@@ -683,12 +683,12 @@ void error_undefined_func(ErrorLocation loc, const char* name) {
 void error_no_args(void) {
     error_emit((ErrorLocation){0}, ERR_NO_ARGS);
 }
-void error_invalid_arg(const char* arg) {
+void error_invalid_arg(const char *arg) {
     error_emit((ErrorLocation){0}, ERR_INVALID_ARG, arg);
 }
-void error_io(const char* arg) {
+void error_io(const char *arg) {
     error_emit((ErrorLocation){0}, ERR_IO, arg);
 }
-void error_ifnf(const char* name) {
+void error_ifnf(const char *name) {
     error_emit((ErrorLocation){.file = name}, ERR_NO_INPUT, name);
 }

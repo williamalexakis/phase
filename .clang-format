@@ -37,8 +37,8 @@ SpaceBeforeAssignmentOperators: true
 
 # Pointers and references
 DerivePointerAlignment: false
-PointerAlignment: Left     # "int* ptr" rather than "int *ptr"
-ReferenceAlignment: Left
+PointerAlignment: Right     
+ReferenceAlignment: Right
 
 # Includes
 IncludeBlocks: Regroup

@@ -12,18 +12,18 @@ static void indent(int n) {
         putchar(' ');
 }
 
-static const char* branch_glyph = "╰";
+static const char *branch_glyph = "╰";
 
 static void set_branch_glyph(bool unicode) {
     branch_glyph = unicode ? "╰" : ">";
 }
 
-static void print_block(AstBlock* block, int ind);
-static void print_expression(AstExpression* expression, int ind);
-static void print_statement(AstStatement* statement, int ind);
-static void print_declaration(AstDeclaration* declare, int ind);
+static void print_block(AstBlock *block, int ind);
+static void print_expression(AstExpression *expression, int ind);
+static void print_statement(AstStatement *statement, int ind);
+static void print_declaration(AstDeclaration *declare, int ind);
 
-static void print_expression(AstExpression* expression, int ind) {
+static void print_expression(AstExpression *expression, int ind) {
 
     switch (expression->tag) {
 
@@ -148,7 +148,7 @@ static void print_expression(AstExpression* expression, int ind) {
     }
 }
 
-static void print_statement(AstStatement* statement, int ind) {
+static void print_statement(AstStatement *statement, int ind) {
 
     switch (statement->tag) {
 
@@ -259,7 +259,7 @@ static void print_statement(AstStatement* statement, int ind) {
     }
 }
 
-static void print_block(AstBlock* block, int ind) {
+static void print_block(AstBlock *block, int ind) {
 
     indent(ind);
     printf("%s BLOCK\n", branch_glyph);
@@ -268,7 +268,7 @@ static void print_block(AstBlock* block, int ind) {
         print_statement(block->statements[i], ind + 6);
 }
 
-static void print_declaration(AstDeclaration* declare, int ind) {
+static void print_declaration(AstDeclaration *declare, int ind) {
 
     switch (declare->tag) {
 
@@ -366,7 +366,7 @@ static void print_declaration(AstDeclaration* declare, int ind) {
     }
 }
 
-static void print_program(AstProgram* program) {
+static void print_program(AstProgram *program) {
 
     printf("PROGRAM\n");
 
@@ -376,7 +376,7 @@ static void print_program(AstProgram* program) {
     exit_phase(2);
 }
 
-static void display_tokens(Lexer* lexer) {
+static void display_tokens(Lexer *lexer) {
 
     for (;;) {
 
@@ -425,7 +425,7 @@ static void help_flag() {
     exit_phase(2);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 
     bool token_mode = false;
     bool ast_mode   = false;
@@ -438,7 +438,7 @@ int main(int argc, char** argv) {
     if ((strcmp(argv[1], "--help") == 0) || (strcmp(argv[1], "-h") == 0))
         help_flag();
 
-    FILE* input_file = fopen(argv[1], "r");
+    FILE *input_file = fopen(argv[1], "r");
     if (!input_file)
         error_ifnf(argv[1]);
 
@@ -446,7 +446,7 @@ int main(int argc, char** argv) {
     size_t       file_len   = 0;
     size_t       file_cap   = CHUNK_SIZE;
 
-    char* file_content = malloc(file_cap);
+    char *file_content = malloc(file_cap);
     if (!file_content) {
         fclose(input_file);
         error_oom();
@@ -461,7 +461,7 @@ int main(int argc, char** argv) {
         if ((file_len + CHUNK_SIZE) > file_cap) {
             size_t new_cap = file_cap ? file_cap * 2 : CHUNK_SIZE;
             // Sanitize realloc
-            char* temp_ptr = realloc(file_content, new_cap);
+            char *temp_ptr = realloc(file_content, new_cap);
             if (!temp_ptr) {
                 free(file_content);
                 fclose(input_file);
@@ -493,7 +493,7 @@ int main(int argc, char** argv) {
     }
 
     // Sanitize realloc
-    char* temp_ptr = realloc(file_content, file_len + 1);
+    char *temp_ptr = realloc(file_content, file_len + 1);
     if (!temp_ptr) {
         free(file_content);
         fclose(input_file);
@@ -544,7 +544,7 @@ int main(int argc, char** argv) {
     }
 
     Parser      parser  = init_parser(&lexer);
-    AstProgram* program = parse_program(&parser);
+    AstProgram *program = parse_program(&parser);
 
     if (ast_mode) {
 

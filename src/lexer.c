@@ -8,7 +8,7 @@
 /* Create a token with a type, lexeme, line, and column range for error
  * reporting */
 static Token make_token(TokenType type,
-                        char*     lexeme,
+                        char     *lexeme,
                         int       line,
                         int       col_start,
                         int       col_end,
@@ -22,18 +22,18 @@ static Token make_token(TokenType type,
                    .heap_allocated = heap_allocated};
 }
 
-static char peek(Lexer* lexer) {
+static char peek(Lexer *lexer) {
     return lexer->src[lexer->pos];
 }
 
-static char peek_2(Lexer* lexer) {
+static char peek_2(Lexer *lexer) {
 
     char c = peek(lexer);
 
     return c ? lexer->src[lexer->pos + 1] : '\0';
 }
 
-static char advance_lexer(Lexer* lexer) {
+static char advance_lexer(Lexer *lexer) {
 
     char c = peek(lexer);
 
@@ -52,7 +52,7 @@ static char advance_lexer(Lexer* lexer) {
     return c;
 }
 
-static void ignore_ws_or_comment(Lexer* lexer) {
+static void ignore_ws_or_comment(Lexer *lexer) {
 
     for (;;) {
 
@@ -92,7 +92,7 @@ static bool is_digit(char c) {
     return c >= '0' && c <= '9';
 }
 
-static Token lex_ident_or_kw(Lexer* lexer) {
+static Token lex_ident_or_kw(Lexer *lexer) {
 
     int    line      = lexer->line;
     int    col_start = lexer->column;
@@ -107,7 +107,7 @@ static Token lex_ident_or_kw(Lexer* lexer) {
     size_t len     = end - start;
     int    col_end = col_start + (int)len - 1;
 
-    char* lexeme = malloc(len + 1);
+    char *lexeme = malloc(len + 1);
 
     if (!lexeme)
         error_oom();
@@ -177,7 +177,7 @@ static Token lex_ident_or_kw(Lexer* lexer) {
     return make_token(TOK_VARIABLE, lexeme, line, col_start, col_end, true);
 }
 
-static Token lex_string(Lexer* lexer) {
+static Token lex_string(Lexer *lexer) {
 
     int    line      = lexer->line;
     int    col_start = lexer->column;
@@ -186,7 +186,7 @@ static Token lex_string(Lexer* lexer) {
 
     advance_lexer(lexer);
 
-    char*  lexeme     = malloc(64);
+    char  *lexeme     = malloc(64);
     size_t lexeme_len = 0;
     size_t lexeme_cap = 64;
 
@@ -268,7 +268,7 @@ static Token lex_string(Lexer* lexer) {
 
                     if (lexeme_len + 1 >= lexeme_cap) {
                         size_t new_cap  = lexeme_cap ? lexeme_cap * 2 : 32;
-                        char*  temp_ptr = realloc(lexeme, new_cap);
+                        char  *temp_ptr = realloc(lexeme, new_cap);
                         if (!temp_ptr) {
                             free(lexeme);
                             error_oom();
@@ -286,7 +286,7 @@ static Token lex_string(Lexer* lexer) {
 
             if (lexeme_len + 1 >= lexeme_cap) {
                 size_t new_cap  = lexeme_cap ? lexeme_cap * 2 : 32;
-                char*  temp_ptr = realloc(lexeme, new_cap);
+                char  *temp_ptr = realloc(lexeme, new_cap);
                 if (!temp_ptr) {
                     free(lexeme);
                     error_oom();
@@ -304,7 +304,7 @@ static Token lex_string(Lexer* lexer) {
 
             if (lexeme_len + 1 >= lexeme_cap) {
                 size_t new_cap  = lexeme_cap ? lexeme_cap * 2 : 32;
-                char*  temp_ptr = realloc(lexeme, new_cap);
+                char  *temp_ptr = realloc(lexeme, new_cap);
                 if (!temp_ptr) {
                     free(lexeme);
                     error_oom();
@@ -327,7 +327,7 @@ static Token lex_string(Lexer* lexer) {
     return make_token(TOK_STRING_LIT, lexeme, line, col_start, col_end, true);
 }
 
-static Token lex_number(Lexer* lexer) {
+static Token lex_number(Lexer *lexer) {
 
     int    line      = lexer->line;
     int    col_start = lexer->column;
@@ -349,7 +349,7 @@ static Token lex_number(Lexer* lexer) {
     size_t end     = lexer->pos;
     size_t len     = end - start;
     int    col_end = col_start + (int)len - 1;
-    char*  lexeme  = malloc(len + 1);
+    char  *lexeme  = malloc(len + 1);
 
     if (!lexeme)
         error_oom();
@@ -362,7 +362,7 @@ static Token lex_number(Lexer* lexer) {
     return make_token(type, lexeme, line, col_start, col_end, true);
 }
 
-Token next_token(Lexer* lexer) {
+Token next_token(Lexer *lexer) {
 
     ignore_ws_or_comment(lexer);
 
@@ -534,9 +534,9 @@ Token next_token(Lexer* lexer) {
 }
 
 /* Get token type name for displaying in token mode */
-const char* get_token_name(TokenType type) {
+const char *get_token_name(TokenType type) {
 
-    static const char* token_names[] = {
+    static const char *token_names[] = {
 
             [TOK_EOF]           = "EOF",
             [TOK_NEWLINE]       = "NEWLINE",

@@ -51,7 +51,7 @@ typedef struct AstExpression {
     union {
 
         struct {
-            char* value;
+            char *value;
         } str_lit;
         struct {
             int value;
@@ -63,20 +63,20 @@ typedef struct AstExpression {
             bool value;
         } bool_lit;
         struct {
-            char* name;
+            char *name;
         } variable;
         struct {
-            char*                  func_name;
-            struct AstExpression** args;
+            char                  *func_name;
+            struct AstExpression **args;
             size_t                 arg_count;
         } call;
         struct {
-            struct AstExpression* left;
-            struct AstExpression* right;
+            struct AstExpression *left;
+            struct AstExpression *right;
             TokenType             op;
         } binary;
         struct {
-            struct AstExpression* expr;
+            struct AstExpression *expr;
             TokenType             op;
         } unary;
     };
@@ -85,7 +85,7 @@ typedef struct AstExpression {
 
 typedef struct {
 
-    char*     name;
+    char     *name;
     TokenType type;
     int       line;
     int       column_start;
@@ -103,31 +103,31 @@ typedef struct {
     union {
 
         struct {
-            AstExpression* expression;
+            AstExpression *expression;
         } out;
         struct {
-            char*          var_name;
-            AstExpression* expression;
+            char          *var_name;
+            AstExpression *expression;
         } assign;
         struct {
 
-            char**          var_names;
+            char          **var_names;
             size_t          var_count;
             TokenType       var_type;
-            AstExpression** init_exprs;
+            AstExpression **init_exprs;
             size_t          init_count;
 
         } var_decl;
         struct {
-            AstExpression* expression;
+            AstExpression *expression;
         } ret;
         struct {
-            AstExpression* expression;
+            AstExpression *expression;
         } expr;
         struct {
-            AstExpression* condition;
-            AstBlock*      then_block;
-            AstBlock*      else_block;
+            AstExpression *condition;
+            AstBlock      *then_block;
+            AstBlock      *else_block;
         } if_stmt;
     };
 
@@ -135,7 +135,7 @@ typedef struct {
 
 struct AstBlock {
 
-    AstStatement** statements;
+    AstStatement **statements;
     size_t         len, cap;
 };
 
@@ -149,22 +149,22 @@ typedef struct {
     union {
 
         struct {
-            AstBlock* block;
+            AstBlock *block;
         } entry;
         struct {
 
-            char**    var_names;
+            char    **var_names;
             size_t    var_count;
             TokenType var_type;
 
         } var_decl;
         struct {
 
-            char*     name;
-            AstParam* params;
+            char     *name;
+            AstParam *params;
             size_t    param_count;
             TokenType return_type;
-            AstBlock* body;
+            AstBlock *body;
 
         } func;
     };
@@ -173,20 +173,20 @@ typedef struct {
 
 typedef struct {
 
-    AstDeclaration** declarations;
+    AstDeclaration **declarations;
     size_t           len, cap;
 
 } AstProgram;
 
 typedef struct {
-    Lexer* lexer;
+    Lexer *lexer;
     Token  look;
     size_t depth;
 } Parser;
 
-Parser      init_parser(Lexer* lexer);
-AstProgram* parse_program(Parser* parser);
-void        free_program(AstProgram* program);
-void        free_token(Token* token);
+Parser      init_parser(Lexer *lexer);
+AstProgram *parse_program(Parser *parser);
+void        free_program(AstProgram *program);
+void        free_token(Token *token);
 
 #endif

@@ -59,7 +59,7 @@ typedef enum {
 typedef struct {
 
     TokenType type;
-    char*     lexeme;
+    char     *lexeme;
     int       line;
     int       column_start;
     int       column_end;
@@ -69,15 +69,15 @@ typedef struct {
 
 typedef struct {
 
-    const char* src;
+    const char *src;
     size_t      pos;
     int         line;
     int         column;
-    const char* file_path;
+    const char *file_path;
 
 } Lexer;
 
-Token       next_token(Lexer* lexer);
-const char* get_token_name(TokenType type);
+Token       next_token(Lexer *lexer);
+const char *get_token_name(TokenType type);
 
 #endif
