@@ -1,5 +1,10 @@
 # Phase
 
+![GitHub Tag](https://img.shields.io/github/v/tag/williamalexakis/phase)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/williamalexakis/phase/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-green)
+](LICENSE)
+
 A statically-typed bytecode-interpreted programming language in C with zero dependencies.
 
 [Bytecode Interpretation From Scratch in C](https://williamalexakis.com/interpreter-in-c)
@@ -66,5 +71,3 @@ Programs are compiled into hexadecimal bytecode and executed by a stack-based VM
 - `phase <file.phase> --tokens` — print the token stream
 - `phase <file.phase> --ast` — print the AST
 - `phase <file.phase> --loud` — print a success message on exit
-
-[MIT](LICENSE)
