@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
 #include "parser.h"
 
 typedef enum {
@@ -53,9 +54,9 @@ typedef struct {
     union {
 
         char *str;
-        int integer;
+        int   integer;
         float floating;
-        bool boolean;
+        bool  boolean;
 
     } as;
 
@@ -63,39 +64,39 @@ typedef struct {
 
 typedef struct {
 
-    char *name;
-    TokenType return_type;
+    char      *name;
+    TokenType  return_type;
     TokenType *param_types;
-    size_t param_count;
-    bool has_return;
-    char **local_names;
+    size_t     param_count;
+    bool       has_return;
+    char     **local_names;
     TokenType *local_types;
-    size_t local_count;
-    size_t local_cap;
-    size_t start_ip;
+    size_t     local_count;
+    size_t     local_cap;
+    size_t     start_ip;
 
 } FunctionDef;
 
 typedef struct {
 
     uint8_t *code;
-    size_t code_len;
-    size_t code_cap;
+    size_t   code_len;
+    size_t   code_cap;
 
     Value *constants;
     size_t const_count;
     size_t const_cap;
 
-    char **global_names;
+    char     **global_names;
     TokenType *global_types;
-    size_t global_count;
-    size_t global_cap;
+    size_t     global_count;
+    size_t     global_cap;
 
     FunctionDef entry;
 
     FunctionDef *functions;
-    size_t func_count;
-    size_t func_cap;
+    size_t       func_count;
+    size_t       func_cap;
 
 } Emitter;
 
@@ -109,7 +110,7 @@ typedef struct {
     size_t const_count;
 
     uint8_t *code;
-    size_t code_len;
+    size_t   code_len;
 
     size_t pos;
 
@@ -117,20 +118,28 @@ typedef struct {
     size_t global_count;
 
     FunctionDef *functions;
-    size_t func_count;
-    FunctionDef entry_fn;
+    size_t       func_count;
+    FunctionDef  entry_fn;
 
     struct CallFrame *frames;
-    size_t frame_count;
-    size_t frame_cap;
+    size_t            frame_count;
+    size_t            frame_cap;
 
 } VM;
 
-void emit_program(Emitter *emitter, AstProgram *program);
-void free_emitter(Emitter *emitter);
-void init_vm(VM *vm, Value *constants, size_t const_count, uint8_t *code, size_t code_len, FunctionDef *functions, size_t func_count, FunctionDef entry_fn, size_t global_count);
-void free_vm(VM *vm);
-void interpret(VM *vm);
+void        emit_program(Emitter *emitter, AstProgram *program);
+void        free_emitter(Emitter *emitter);
+void        init_vm(VM          *vm,
+                    Value       *constants,
+                    size_t       const_count,
+                    uint8_t     *code,
+                    size_t       code_len,
+                    FunctionDef *functions,
+                    size_t       func_count,
+                    FunctionDef  entry_fn,
+                    size_t       global_count);
+void        free_vm(VM *vm);
+void        interpret(VM *vm);
 const char *token_type_to_string(TokenType type);
 
 #endif

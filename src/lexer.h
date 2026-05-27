@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+
 #include "errors.h"
 
 typedef enum {
@@ -58,25 +59,25 @@ typedef enum {
 typedef struct {
 
     TokenType type;
-    char *lexeme;
-    int line;
-    int column_start;
-    int column_end;
-    bool heap_allocated;
+    char     *lexeme;
+    int       line;
+    int       column_start;
+    int       column_end;
+    bool      heap_allocated;
 
 } Token;
 
 typedef struct {
 
     const char *src;
-    size_t pos;
-    int line;
-    int column;
+    size_t      pos;
+    int         line;
+    int         column;
     const char *file_path;
 
 } Lexer;
 
-Token next_token(Lexer *lexer);
+Token       next_token(Lexer *lexer);
 const char *get_token_name(TokenType type);
 
 #endif

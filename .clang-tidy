@@ -1,0 +1,8 @@
+Checks: 'modernize-*,readability-*'
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+#AnalyzeTemporaryDtors: false
+FormatStyle: none
+ExtraArgs:
+  - -std=gnu17
+  - -I./src

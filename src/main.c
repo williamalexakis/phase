@@ -2,15 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "codegen.h"
 #include "colours.h"
 #include "errors.h"
 
-static void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
+static void indent(int n) {
+    for (int i = 0; i < n; i++)
+        putchar(' ');
+}
 
 static const char *branch_glyph = "╰";
 
-static void set_branch_glyph(bool unicode) { branch_glyph = unicode ? "╰" : ">"; }
+static void set_branch_glyph(bool unicode) {
+    branch_glyph = unicode ? "╰" : ">";
+}
 
 static void print_block(AstBlock *block, int ind);
 static void print_expression(AstExpression *expression, int ind);
@@ -24,47 +30,82 @@ static void print_expression(AstExpression *expression, int ind) {
         case EXP_STRING: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->str_lit.value, RESET);
+            printf("%s EXPRESSION (%sSTRING%s) [%s\"%s\"%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->str_lit.value,
+                   RESET);
 
         } break;
 
         case EXP_INTEGER: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sINTEGER%s) [%s%d%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->int_lit.value, RESET);
+            printf("%s EXPRESSION (%sINTEGER%s) [%s%d%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->int_lit.value,
+                   RESET);
 
         } break;
 
         case EXP_FLOAT: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sFLOAT%s) [%s%g%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->float_lit.value, RESET);
+            printf("%s EXPRESSION (%sFLOAT%s) [%s%g%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->float_lit.value,
+                   RESET);
 
         } break;
 
         case EXP_BOOLEAN: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sBOOLEAN%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->bool_lit.value ? "true" : "false", RESET);
+            printf("%s EXPRESSION (%sBOOLEAN%s) [%s%s%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->bool_lit.value ? "true" : "false",
+                   RESET);
 
         } break;
 
         case EXP_VARIABLE: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sVARIABLE%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->variable.name, RESET);
+            printf("%s EXPRESSION (%sVARIABLE%s) [%s%s%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->variable.name,
+                   RESET);
 
         } break;
 
         case EXP_CALL: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sCALL%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, expression->call.func_name, RESET);
+            printf("%s EXPRESSION (%sCALL%s) [%s%s%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->call.func_name,
+                   RESET);
 
             for (size_t i = 0; i < expression->call.arg_count; i++) {
 
                 print_expression(expression->call.args[i], ind + 6);
-
             }
 
         } break;
@@ -72,11 +113,16 @@ static void print_expression(AstExpression *expression, int ind) {
         case EXP_BINARY: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sBINARY%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE,
-                   expression->binary.op == TOK_ADD ? "+" :
-                   expression->binary.op == TOK_SUBTRACT ? "-" :
-                   expression->binary.op == TOK_MULTIPLY ? "*" :
-                   expression->binary.op == TOK_DIVIDE ? "/" : "?",
+            printf("%s EXPRESSION (%sBINARY%s) [%s%s%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->binary.op == TOK_ADD        ? "+"
+                   : expression->binary.op == TOK_SUBTRACT ? "-"
+                   : expression->binary.op == TOK_MULTIPLY ? "*"
+                   : expression->binary.op == TOK_DIVIDE   ? "/"
+                                                           : "?",
                    RESET);
             print_expression(expression->binary.left, ind + 6);
             print_expression(expression->binary.right, ind + 6);
@@ -86,14 +132,20 @@ static void print_expression(AstExpression *expression, int ind) {
         case EXP_UNARY: {
 
             indent(ind);
-            printf("%s EXPRESSION (%sUNARY%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE,
-                   expression->unary.op == TOK_BANG || expression->unary.op == TOK_NOT ? "!" : "-", RESET);
+            printf("%s EXPRESSION (%sUNARY%s) [%s%s%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   expression->unary.op == TOK_BANG ||
+                                   expression->unary.op == TOK_NOT
+                           ? "!"
+                           : "-",
+                   RESET);
             print_expression(expression->unary.expr, ind + 6);
 
         } break;
-
     }
-
 }
 
 static void print_statement(AstStatement *statement, int ind) {
@@ -111,7 +163,13 @@ static void print_statement(AstStatement *statement, int ind) {
         case STM_ASSIGN: {
 
             indent(ind);
-            printf("%s STATEMENT (%sASSIGNMENT%s) [%s%s%s]\n", branch_glyph, FG_CYAN, RESET, FG_PURPLE, statement->assign.var_name, RESET);
+            printf("%s STATEMENT (%sASSIGNMENT%s) [%s%s%s]\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   statement->assign.var_name,
+                   RESET);
             print_expression(statement->assign.expression, ind + 6);
 
         } break;
@@ -119,8 +177,13 @@ static void print_statement(AstStatement *statement, int ind) {
         case STM_VAR_DECL: {
 
             indent(ind);
-            printf("%s STATEMENT (%sVAR DECLARATION%s) [%s%s%s", branch_glyph, FG_CYAN, RESET,
-                   FG_PURPLE, token_type_to_string(statement->var_decl.var_type), RESET);
+            printf("%s STATEMENT (%sVAR DECLARATION%s) [%s%s%s",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   token_type_to_string(statement->var_decl.var_type),
+                   RESET);
 
             for (size_t i = 0; i < statement->var_decl.var_count; i++) {
 
@@ -131,11 +194,12 @@ static void print_statement(AstStatement *statement, int ind) {
                 } else {
 
                     printf(", ");
-
                 }
 
-                printf("%s%s%s", FG_PURPLE, statement->var_decl.var_names[i], RESET);
-
+                printf("%s%s%s",
+                       FG_PURPLE,
+                       statement->var_decl.var_names[i],
+                       RESET);
             }
 
             printf("]\n");
@@ -143,7 +207,6 @@ static void print_statement(AstStatement *statement, int ind) {
             for (size_t i = 0; i < statement->var_decl.init_count; i++) {
 
                 print_expression(statement->var_decl.init_exprs[i], ind + 6);
-
             }
 
         } break;
@@ -152,7 +215,8 @@ static void print_statement(AstStatement *statement, int ind) {
 
             indent(ind);
             printf("%s STATEMENT (%sRETURN%s)\n", branch_glyph, FG_CYAN, RESET);
-            if (statement->ret.expression) print_expression(statement->ret.expression, ind + 6);
+            if (statement->ret.expression)
+                print_expression(statement->ret.expression, ind + 6);
 
         } break;
 
@@ -178,7 +242,6 @@ static void print_statement(AstStatement *statement, int ind) {
                 indent(ind + 6);
                 printf("%s ELSE\n", branch_glyph);
                 print_block(statement->if_stmt.else_block, ind + 6);
-
             }
 
         } break;
@@ -193,9 +256,7 @@ static void print_statement(AstStatement *statement, int ind) {
             print_block(statement->if_stmt.then_block, ind + 6);
 
         } break;
-
     }
-
 }
 
 static void print_block(AstBlock *block, int ind) {
@@ -203,8 +264,8 @@ static void print_block(AstBlock *block, int ind) {
     indent(ind);
     printf("%s BLOCK\n", branch_glyph);
 
-    for (size_t i = 0; i < block->len; i++) print_statement(block->statements[i], ind + 6);
-
+    for (size_t i = 0; i < block->len; i++)
+        print_statement(block->statements[i], ind + 6);
 }
 
 static void print_declaration(AstDeclaration *declare, int ind) {
@@ -214,7 +275,10 @@ static void print_declaration(AstDeclaration *declare, int ind) {
         case DEC_ENTRY: {
 
             indent(ind);
-            printf("%s DECLARATION (%sENTRY%s)\n", branch_glyph, FG_CYAN, RESET);
+            printf("%s DECLARATION (%sENTRY%s)\n",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET);
             print_block(declare->entry.block, ind + 6);
 
         } break;
@@ -222,8 +286,13 @@ static void print_declaration(AstDeclaration *declare, int ind) {
         case DEC_VAR: {
 
             indent(ind);
-            printf("%s DECLARATION (%sVAR%s) [%s%s%s", branch_glyph, FG_CYAN, RESET,
-                   FG_PURPLE, token_type_to_string(declare->var_decl.var_type), RESET);
+            printf("%s DECLARATION (%sVAR%s) [%s%s%s",
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   token_type_to_string(declare->var_decl.var_type),
+                   RESET);
 
             if (declare->var_decl.var_count == 0) {
 
@@ -240,13 +309,13 @@ static void print_declaration(AstDeclaration *declare, int ind) {
                     } else {
 
                         printf(", ");
-
                     }
 
-                    printf("%s%s%s", FG_PURPLE, declare->var_decl.var_names[i], RESET);
-
+                    printf("%s%s%s",
+                           FG_PURPLE,
+                           declare->var_decl.var_names[i],
+                           RESET);
                 }
-
             }
 
             printf("]\n");
@@ -257,9 +326,15 @@ static void print_declaration(AstDeclaration *declare, int ind) {
 
             indent(ind);
             printf("%s DECLARATION (%sFUNC%s) [%s%s%s -> %s%s%s]\n",
-                   branch_glyph, FG_CYAN, RESET,
-                   FG_PURPLE, declare->func.name, RESET,
-                   FG_PURPLE, token_type_to_string(declare->func.return_type), RESET);
+                   branch_glyph,
+                   FG_CYAN,
+                   RESET,
+                   FG_PURPLE,
+                   declare->func.name,
+                   RESET,
+                   FG_PURPLE,
+                   token_type_to_string(declare->func.return_type),
+                   RESET);
 
             if (declare->func.param_count == 0) {
 
@@ -274,30 +349,31 @@ static void print_declaration(AstDeclaration *declare, int ind) {
                 for (size_t i = 0; i < declare->func.param_count; i++) {
 
                     indent(ind + 12);
-                    printf("%s %s%s%s: %s%s%s\n", branch_glyph,
-                           FG_PURPLE, declare->func.params[i].name, RESET,
-                           FG_PURPLE, token_type_to_string(declare->func.params[i].type), RESET);
-
+                    printf("%s %s%s%s: %s%s%s\n",
+                           branch_glyph,
+                           FG_PURPLE,
+                           declare->func.params[i].name,
+                           RESET,
+                           FG_PURPLE,
+                           token_type_to_string(declare->func.params[i].type),
+                           RESET);
                 }
-
             }
 
             print_block(declare->func.body, ind + 6);
 
         } break;
-
     }
-
 }
 
 static void print_program(AstProgram *program) {
 
     printf("PROGRAM\n");
 
-    for (size_t i = 0; i < program->len; i++) print_declaration(program->declarations[i], 6);
+    for (size_t i = 0; i < program->len; i++)
+        print_declaration(program->declarations[i], 6);
 
     exit_phase(2);
-
 }
 
 static void display_tokens(Lexer *lexer) {
@@ -306,57 +382,74 @@ static void display_tokens(Lexer *lexer) {
 
         Token token = next_token(lexer);
 
-        printf("%d | ", token.line);  // Display line num
-        printf("%s%s%s", FG_CYAN, get_token_name(token.type), RESET);  // Display token type
+        printf("%d | ", token.line); // Display line num
+        printf("%s%s%s",
+               FG_CYAN,
+               get_token_name(token.type),
+               RESET); // Display token type
 
-        if (token.lexeme) printf(" %s'%s'%s", FG_PURPLE, token.lexeme, RESET);  // Display the lexeme
+        if (token.lexeme)
+            printf(" %s'%s'%s",
+                   FG_PURPLE,
+                   token.lexeme,
+                   RESET); // Display the lexeme
 
         printf("\n");
 
-        if (token.lexeme && token.heap_allocated) free(token.lexeme);
-        if (token.type == TOK_EOF) break;
-
+        if (token.lexeme && token.heap_allocated)
+            free(token.lexeme);
+        if (token.type == TOK_EOF)
+            break;
     }
 
     exit_phase(2);
-
 }
 
 static void help_flag() {
 
     printf("Usage: %s./phase <input.phase>%s\n\n", FG_BLUE_BOLD, RESET);
     printf("Options:\n");
-    printf("  %s--help,   -h%s        Print this message.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--tokens, -t%s        Print the token stream of a source.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--ast,    -a%s        Print the AST of a source.\n", FG_BLUE_BOLD, RESET);
-    printf("  %s--loud,   -l%s        Print a success message on exit.\n", FG_BLUE_BOLD, RESET);
+    printf("  %s--help,   -h%s        Print this message.\n",
+           FG_BLUE_BOLD,
+           RESET);
+    printf("  %s--tokens, -t%s        Print the token stream of a source.\n",
+           FG_BLUE_BOLD,
+           RESET);
+    printf("  %s--ast,    -a%s        Print the AST of a source.\n",
+           FG_BLUE_BOLD,
+           RESET);
+    printf("  %s--loud,   -l%s        Print a success message on exit.\n",
+           FG_BLUE_BOLD,
+           RESET);
 
     exit_phase(2);
-
 }
 
 int main(int argc, char **argv) {
 
     bool token_mode = false;
-    bool ast_mode = false;
-    bool loud_mode = false;
+    bool ast_mode   = false;
+    bool loud_mode  = false;
     set_branch_glyph(unicode_available());
 
-    if (argc < 2) error_no_args();
+    if (argc < 2)
+        error_no_args();
     error_set_source(argv[1]);
-    if ((strcmp(argv[1], "--help") == 0) || (strcmp(argv[1], "-h") == 0)) help_flag();
+    if ((strcmp(argv[1], "--help") == 0) || (strcmp(argv[1], "-h") == 0))
+        help_flag();
 
     FILE *input_file = fopen(argv[1], "r");
-    if (!input_file) error_ifnf(argv[1]);
+    if (!input_file)
+        error_ifnf(argv[1]);
 
     const size_t CHUNK_SIZE = 4096;
-    size_t file_len = 0;
-    size_t file_cap = CHUNK_SIZE;
-    
+    size_t       file_len   = 0;
+    size_t       file_cap   = CHUNK_SIZE;
+
     char *file_content = malloc(file_cap);
-    if (!file_content) { 
-        fclose(input_file); 
-        error_oom(); 
+    if (!file_content) {
+        fclose(input_file);
+        error_oom();
     }
 
     // We read the source file in chunks of
@@ -369,43 +462,45 @@ int main(int argc, char **argv) {
             size_t new_cap = file_cap ? file_cap * 2 : CHUNK_SIZE;
             // Sanitize realloc
             char *temp_ptr = realloc(file_content, new_cap);
-            if (!temp_ptr) { 
+            if (!temp_ptr) {
                 free(file_content);
-                fclose(input_file); 
-                error_oom(); 
+                fclose(input_file);
+                error_oom();
             }
-            
+
             file_content = temp_ptr;
-            file_cap = new_cap;
+            file_cap     = new_cap;
         }
         // We try to read CHUNK_SIZE bytes so we
         // can ensure there's more content in
         // the source to read from
-        size_t num_bytes = fread(file_content + file_len, 1, CHUNK_SIZE, input_file);
+        size_t num_bytes =
+                fread(file_content + file_len, 1, CHUNK_SIZE, input_file);
         file_len += num_bytes;
 
         // Either hit EOF or an error occurred
-        if (num_bytes < CHUNK_SIZE) break;
+        if (num_bytes < CHUNK_SIZE)
+            break;
     }
 
     // Nonzero ferror tells us it's
     // an actual error instead of
     // just EOF
-    if (ferror(input_file) != 0) { 
+    if (ferror(input_file) != 0) {
         free(file_content);
-        fclose(input_file); 
-        error_io(argv[1]); 
+        fclose(input_file);
+        error_io(argv[1]);
     }
 
     // Sanitize realloc
     char *temp_ptr = realloc(file_content, file_len + 1);
-    if (!temp_ptr) { 
+    if (!temp_ptr) {
         free(file_content);
-        fclose(input_file); 
-        error_oom(); 
+        fclose(input_file);
+        error_oom();
     }
-    
-    file_content = temp_ptr;
+
+    file_content           = temp_ptr;
     file_content[file_len] = '\0';
     fclose(input_file);
 
@@ -415,36 +510,40 @@ int main(int argc, char **argv) {
 
             help_flag();
 
-        } else if ((strcmp(argv[i], "--tokens") == 0) || (strcmp(argv[i], "-t") == 0)) {
+        } else if ((strcmp(argv[i], "--tokens") == 0) ||
+                   (strcmp(argv[i], "-t") == 0)) {
 
             token_mode = true;
 
-        } else if ((strcmp(argv[i], "--ast") == 0) || (strcmp(argv[i], "-a") == 0)) {
+        } else if ((strcmp(argv[i], "--ast") == 0) ||
+                   (strcmp(argv[i], "-a") == 0)) {
 
             ast_mode = true;
 
-        } else if ((strcmp(argv[i], "--loud") == 0) || (strcmp(argv[i], "-l") == 0)) {
+        } else if ((strcmp(argv[i], "--loud") == 0) ||
+                   (strcmp(argv[i], "-l") == 0)) {
 
             loud_mode = true;
 
         } else {
 
             error_invalid_arg(argv[i]);
-
         }
-
     }
 
-    Lexer lexer = { .src = file_content, .pos = 0, .line = 1, .column = 1, .file_path = argv[1] };
+    Lexer lexer = {.src       = file_content,
+                   .pos       = 0,
+                   .line      = 1,
+                   .column    = 1,
+                   .file_path = argv[1]};
 
     if (token_mode) {
 
         display_tokens(&lexer);
         free(file_content);
-
     }
 
-    Parser parser = init_parser(&lexer);
+    Parser      parser  = init_parser(&lexer);
     AstProgram *program = parse_program(&parser);
 
     if (ast_mode) {
@@ -453,7 +552,6 @@ int main(int argc, char **argv) {
         free_program(program);
         free_token(&parser.look);
         free(file_content);
-
     }
 
     if (!token_mode && !ast_mode) {
@@ -462,7 +560,15 @@ int main(int argc, char **argv) {
         emit_program(&emitter, program);
 
         VM vm = {0};
-        init_vm(&vm, emitter.constants, emitter.const_count, emitter.code, emitter.code_len, emitter.functions, emitter.func_count, emitter.entry, emitter.global_count);
+        init_vm(&vm,
+                emitter.constants,
+                emitter.const_count,
+                emitter.code,
+                emitter.code_len,
+                emitter.functions,
+                emitter.func_count,
+                emitter.entry,
+                emitter.global_count);
 
         interpret(&vm);
 
@@ -472,11 +578,11 @@ int main(int argc, char **argv) {
         free_token(&parser.look);
         free(file_content);
 
-        if (loud_mode) printf("\n%sPROGRAM EXECUTED%s\n", FG_GREEN_BOLD, RESET);
-        
+        if (loud_mode)
+            printf("\n%sPROGRAM EXECUTED%s\n", FG_GREEN_BOLD, RESET);
+
         exit_phase(0);
     }
 
     return 0;
-
 }

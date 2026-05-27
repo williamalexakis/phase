@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+
 #include "lexer.h"
 
 typedef enum {
@@ -43,74 +44,91 @@ typedef struct AstBlock AstBlock;
 typedef struct AstExpression {
 
     ExpressionTag tag;
-    int line;
-    int column_start;
-    int column_end;
+    int           line;
+    int           column_start;
+    int           column_end;
 
     union {
 
-        struct { char *value; } str_lit;
-        struct { int value; } int_lit;
-        struct { float value; } float_lit;
-        struct { bool value; } bool_lit;
-        struct { char *name; } variable;
         struct {
-            char *func_name;
+            char *value;
+        } str_lit;
+        struct {
+            int value;
+        } int_lit;
+        struct {
+            float value;
+        } float_lit;
+        struct {
+            bool value;
+        } bool_lit;
+        struct {
+            char *name;
+        } variable;
+        struct {
+            char                  *func_name;
             struct AstExpression **args;
-            size_t arg_count;
+            size_t                 arg_count;
         } call;
         struct {
             struct AstExpression *left;
             struct AstExpression *right;
-            TokenType op;
+            TokenType             op;
         } binary;
         struct {
             struct AstExpression *expr;
-            TokenType op;
+            TokenType             op;
         } unary;
-
     };
 
 } AstExpression;
 
 typedef struct {
 
-    char *name;
+    char     *name;
     TokenType type;
-    int line;
-    int column_start;
-    int column_end;
+    int       line;
+    int       column_start;
+    int       column_end;
 
 } AstParam;
 
 typedef struct {
 
     StatementTag tag;
-    int line;
-    int column_start;
-    int column_end;
+    int          line;
+    int          column_start;
+    int          column_end;
 
     union {
 
-        struct { AstExpression *expression; } out;
-        struct { char *var_name; AstExpression *expression; } assign;
+        struct {
+            AstExpression *expression;
+        } out;
+        struct {
+            char          *var_name;
+            AstExpression *expression;
+        } assign;
         struct {
 
-            char **var_names;
-            size_t var_count;
-            TokenType var_type;
+            char          **var_names;
+            size_t          var_count;
+            TokenType       var_type;
             AstExpression **init_exprs;
-            size_t init_count;
+            size_t          init_count;
 
         } var_decl;
-        struct { AstExpression *expression; } ret;
-        struct { AstExpression *expression; } expr;
+        struct {
+            AstExpression *expression;
+        } ret;
+        struct {
+            AstExpression *expression;
+        } expr;
         struct {
             AstExpression *condition;
-            AstBlock *then_block;
-            AstBlock *else_block;
+            AstBlock      *then_block;
+            AstBlock      *else_block;
         } if_stmt;
-
     };
 
 } AstStatement;
@@ -118,37 +136,37 @@ typedef struct {
 struct AstBlock {
 
     AstStatement **statements;
-    size_t len, cap;
-
+    size_t         len, cap;
 };
 
 typedef struct {
 
     DeclarationTag tag;
-    int line;
-    int column_start;
-    int column_end;
+    int            line;
+    int            column_start;
+    int            column_end;
 
     union {
 
-        struct { AstBlock *block; } entry;
+        struct {
+            AstBlock *block;
+        } entry;
         struct {
 
-            char **var_names;
-            size_t var_count;
+            char    **var_names;
+            size_t    var_count;
             TokenType var_type;
 
         } var_decl;
         struct {
 
-            char *name;
+            char     *name;
             AstParam *params;
-            size_t param_count;
+            size_t    param_count;
             TokenType return_type;
             AstBlock *body;
 
         } func;
-
     };
 
 } AstDeclaration;
@@ -156,19 +174,19 @@ typedef struct {
 typedef struct {
 
     AstDeclaration **declarations;
-    size_t len, cap;
+    size_t           len, cap;
 
 } AstProgram;
 
 typedef struct {
     Lexer *lexer;
-    Token look;
+    Token  look;
     size_t depth;
 } Parser;
 
-Parser init_parser(Lexer *lexer);
+Parser      init_parser(Lexer *lexer);
 AstProgram *parse_program(Parser *parser);
-void free_program(AstProgram *program);
-void free_token(Token *token);
+void        free_program(AstProgram *program);
+void        free_token(Token *token);
 
 #endif
