@@ -7,6 +7,8 @@
 
 A statically-typed bytecode-interpreted programming language in C with zero dependencies.
 
+[Bytecode Interpretation From Scratch in C](bytecode-interpretation-from-scratch.md)
+
 ## Building
 
 ```bash
