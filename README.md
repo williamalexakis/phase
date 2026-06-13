@@ -9,6 +9,8 @@ A statically-typed bytecode-interpreted programming language in C with zero depe
 
 [Bytecode Interpretation From Scratch in C](bytecode-interpretation-from-scratch.md)
 
+[Chunk-Based File Reading in C](chunk-reading-in-c.md)
+
 ## Building
 
 ```bash
