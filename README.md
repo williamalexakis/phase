@@ -7,9 +7,9 @@
 
 A statically-typed bytecode-interpreted programming language in C with zero dependencies.
 
-[Bytecode Interpretation From Scratch in C](bytecode-interpretation-from-scratch.md)
+[Bytecode Interpretation From Scratch in C](bytecode-interpretation-from-scratch-in-c.md)
 
-[Chunk-Based File Reading in C](chunk-reading-in-c.md)
+[Chunk-Based File Reading in C](chunk-based-file-reading-in-c.md)
 
 ## Building
 
@@ -25,14 +25,14 @@ cmake --build .
 ## Syntax
 
 **Hello World**
-```go
+```
 entry {
     out("Hello world!")
 }
 ```
 
 **Functions**
-```go
+```
 func add(num1: int, num2: int): void {
     out(num1 + num2)
 }
@@ -43,7 +43,7 @@ entry {
 ```
 
 **Loops**
-```go
+```
 entry {
     let num: int = 0
     
